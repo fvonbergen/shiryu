@@ -1,0 +1,38 @@
+name: 'lint'
+description: 'Runs lint command on a project'
+
+inputs:
+  sdk_language:
+    required: true
+    type: choice
+    description: "SDK programming language"
+    options:
+      - python
+    default: python
+  project_directory:
+    required: true
+    type: string
+    description: "Project directory"
+  dagger_cloud_token:
+    required: true
+    description: "Dagger cloud token"
+  shiryu_version:
+    required: false
+    default: "main"
+    type: string
+    description: "Shiryu version"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Call Dagger Lint
+      uses: dagger/dagger-for-github@v7
+      with:
+        version: "latest"
+        verb: call
+        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        args: sdk --language="${{ inputs.sdk_language }}" lint --project="${{ inputs.project_directory }}"
+        # assumes the Dagger Cloud token is in
+        # a repository secret named DAGGER_CLOUD_TOKEN
+        # set via the GitHub UI/CLI
+        cloud-token: ${{ inputs.dagger_cloud_token }}

@@ -1,12 +1,55 @@
 [project]
 name = "shiryu"
-version = "0.1.0"
+dynamic = ["version"]
+description = "A SDK for programming languages."
+readme = "README.md"
+authors = [
+  { name = "von Bergen, Federico", email = "federicovonbergen@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "Framework :: AnyIO",
+  "Framework :: Pytest",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+# python3.9: we are using the | operator for dictionaries
+# python3.9: we are using the dict, list, set, tuple, type types
+# python3.10: dagger-io requires-python = ">=3.10"
+# python3.11: use tomllib
+# python3.12: we are using Path().walk()
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+  # Should be the same version as the dagger.json engineVersion field, but conflicts with [tool.uv.sources].
+  "dagger-io",
+  # jinja is usable after version 3.0.0. Before that version throws:
+  # ImportError: cannot import name 'soft_unicode' from 'markupsafe'
+  "jinja2 >= 3.0.0",
+]
+
+[project.urls]
+# "Homepage" = ""
+# "Documentation" = ""
+"Repository" = "https://github.com/fvonbergen/shiryu"
+"Tracker" = "https://github.com/fvonbergen/shiryu/issues"
+# "Release Notes" = ""
+# "Community" = ""
+# "Twitter" = ""
 
 [tool.uv.sources]
 dagger-io = { path = "sdk", editable = true }
 
 [build-system]
-requires = ["hatchling==1.25.0"]
+requires = ["hatchling==1.25.0", "hatch-vcs==0.4.0"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0"

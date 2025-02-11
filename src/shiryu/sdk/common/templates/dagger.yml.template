@@ -1,0 +1,32 @@
+name: quality
+on:
+  push
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Lint
+        id: lint
+        uses: ./.github/actions/lint
+        with:
+          project_directory: "."
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+  check:
+    name: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Check
+        id: check
+        uses: ./.github/actions/check
+        with:
+          sdk_language: python
+          project_directory: "."
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"

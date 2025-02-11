@@ -1,0 +1,15 @@
+
+# target-version = "py38"
+cache-dir = "{{cache_folder}}"
+# {% if exclude is defined and exclude|length > 0 %}exclude = [ "{{ exclude|join('", ') }}",]{% endif %}
+respect-gitignore = true
+
+[lint]
+select = [ "A", "B", "C90", "D", "E", "EM", "F", "I", "N", "PTH", "RUF", "W",]
+ignore = [ "D203", "D212", "E501",]
+# extend-ignore = []
+
+[lint.pydocstyle]
+convention = "google"
+
+# [lint.per-file-ignores]
