@@ -1,0 +1,22 @@
+include:
+  {%- for job in jobs|sort(attribute="name") %}
+  - local: "{{ job.path }}"
+  {%- endfor %}
+
+{%- for job in jobs|sort(attribute="name") %}
+{{ job.name }}:
+  extends:{%- if job.extends|length == 1 %} {{ job.extends|first }}{% else %}
+    {%- for extend in job.extends -%}
+    - {{ extend }}
+    {%- endfor %}
+  {%- endif %}
+  stage: {{ job.stage }}
+  needs:
+    - [{{ job.needs|join(", ") }}]
+  {%- if job.rules|length != 0 %}
+  rules:
+    {%- for rule in job.rules %}
+    - if: '{{ rule }}'
+    {%- endfor %}
+  {%- endif %}
+{%- endfor %}

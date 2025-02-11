@@ -1,0 +1,36 @@
+name: "tester unit"
+description: "Runs tester unit function on a project"
+
+inputs:
+  dagger_cloud_token:
+    required: true
+    description: "Dagger cloud token"
+  shiryu_version:
+    required: false
+    description: "Shiryu version"
+    default: "feat-add-python-sdk"
+  sdk_language:
+    description: "SDK programming language"
+    default: "python"
+  experimental_privileged_nesting:
+    description: "Whether to allow container dagger client to connect to the dagger engine."
+    default: "false"
+  platform:
+    description: "Platform config OS and architecture in a Container."
+    default: "linux/amd64"
+  project_directory:
+    description: "Project directory path"
+    default: "."
+
+runs:
+  using: "composite"
+  steps:
+    - id: call_dagger_tester_unit
+      name: Call Dagger Tester unit
+      uses: dagger/dagger-for-github@v8.4.0
+      with:
+        version: "v0.20.8"
+        verb: call
+        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        args: ${{ inputs.sdk_language }} tester unit --experimental-privileged-nesting="${{ inputs.experimental_privileged_nesting }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
+        cloud-token: ${{ inputs.dagger_cloud_token }}

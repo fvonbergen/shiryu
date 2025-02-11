@@ -1,0 +1,35 @@
+[project]
+name = "{{ project_name }}"
+dynamic = ["version"]
+description = ""
+readme = "{{ readme_file_name }}"
+authors = [
+  { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
+]
+# requires-python = ">=3.12"
+dependencies = []
+
+# Dependencies that will be installed for the specific module.
+[project.optional-dependencies]
+environment = ["uv"]
+{%- for module, dependencies in optional_dependencies|dictsort %}
+{{ module }} = ["{{ dependencies|list|sort|join('", "') }}"]
+{%- endfor %}
+
+[project.urls]
+# "Homepage" = ""
+# "Documentation" = ""
+# "Repository" = ""
+# "Issues" = ""
+# "Changelog" = ""
+# "Release Notes" = ""
+# "Community" = ""
+# "Twitter" = ""
+
+[build-system]
+requires = ["hatchling==1.27.0", "hatch-vcs==0.4.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0+unknown"

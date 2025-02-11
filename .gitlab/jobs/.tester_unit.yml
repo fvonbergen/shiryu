@@ -1,0 +1,13 @@
+include:
+  - local: ".gitlab/jobs/.dagger.yml"
+
+.tester_unit:
+  extends: .dagger
+  variables:
+    SHIRYU_VERSION: "feat-add-python-sdk"
+    SDK_LANGUAGE: "python"
+    EXPERIMENTAL_PRIVILEGED_NESTING: "true"
+    PLATFORM: "linux/amd64"
+    PROJECT_DIRECTORY: "."
+  script:
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --experimental-privileged-nesting="${EXPERIMENTAL_PRIVILEGED_NESTING}" --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"

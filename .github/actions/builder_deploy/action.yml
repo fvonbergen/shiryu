@@ -1,0 +1,39 @@
+name: "builder deploy"
+description: "Runs builder deploy function on a project"
+
+inputs:
+  dagger_cloud_token:
+    required: true
+    description: "Dagger cloud token"
+  shiryu_version:
+    required: false
+    description: "Shiryu version"
+    default: "feat-add-python-sdk"
+  sdk_language:
+    description: "SDK programming language"
+    default: "python"
+  platform:
+    description: "Platform config OS and architecture in a Container."
+    default: "linux/amd64"
+  project_directory:
+    description: "Project directory path"
+    default: "."
+  repository_password:
+    description: "Repository password"
+  repository_url:
+    description: "Repository to push distributable"
+  repository_user:
+    description: "Repository user"
+
+runs:
+  using: "composite"
+  steps:
+    - id: call_dagger_builder_deploy
+      name: Call Dagger Builder deploy
+      uses: dagger/dagger-for-github@v8.4.0
+      with:
+        version: "v0.20.8"
+        verb: call
+        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password="${{ inputs.repository_password }}" --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
+        cloud-token: ${{ inputs.dagger_cloud_token }}

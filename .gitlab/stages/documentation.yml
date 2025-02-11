@@ -1,0 +1,17 @@
+include:
+  - local: "/.gitlab/jobs/.documenter_document.yml"
+
+documentation_documenter_document:
+  extends: .documenter_document
+  stage: documentation
+  needs:
+    - []
+pages:
+  stage: documentation
+  needs:
+    - ["documentation_documenter_document"]
+  script:
+    - echo "Deploying site"
+  artifacts:
+    paths:
+      - public

@@ -1,12 +1,98 @@
 [project]
 name = "shiryu"
-version = "0.1.0"
+dynamic = ["version"]
+description = "A SDK for programming languages."
+readme = "README.md"
+authors = [
+  { name = "von Bergen, Federico", email = "federicovonbergen@gmail.com" },
+]
+classifiers = [
+  # "Development Status :: 5 - Production/Stable",
+  # "Framework :: AsyncIO",
+  # "Framework :: Pytest",
+  # "Intended Audience :: Developers",
+  # "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: OS Independent",
+  "Typing :: Typed",
+]
+# linked to [tool.uv] environments
+# python3.9: we are using the | operator for dictionaries
+# python3.9: we are using the dict, list, set, tuple, type types
+# python3.9: we are using typing.Annotated
+# python3.10: dagger-io requires-python = ">=3.10"
+# python3.11: use tomllib, StrEnum
+# python3.12: we are using Path().walk()
 requires-python = ">=3.12"
-dependencies = []
+# Dagger module developments ends up using uv.lock to install module dependencies.
+dependencies = [
+  # Should be the same version as the dagger.json engineVersion field.
+  # >= v0.18.15: New container.Exists and directory. Exists API for testing if a file exists, and optionally type (e.g. file or directory). (https://github.com/dagger/dagger/releases/tag/v0.18.15)
+  # <release>
+  "dagger-io >= v0.18.15",
+  # </release>
+  # <develop>
+  # "dagger-io",
+  # </develop>
+  # >= 3.0.0: jinja is usable after version 3.0.0. Before that version throws: `ImportError: cannot import name 'soft_unicode' from 'markupsafe'`
+  "jinja2 >= 3.0.0",
+  # "setuptools-scm",
+]
 
-[tool.uv.sources]
-dagger-io = { path = "sdk", editable = true }
+# Dependencies that will be installed for the specific module.
+[project.optional-dependencies]
+environment = ["uv"]
+builder = ["hatch"]
+checker = ["mypy", "pytest", "pytest-asyncio"]
+documenter = ["sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
+linter = ["ruff"]
+tester = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-xdist[psutil]"]
 
+[project.urls]
+# "Homepage" = ""
+"Documentation" = "https://fvonbergen.github.io/shiryu"
+"Repository" = "https://github.com/fvonbergen/shiryu"
+"Issues" = "https://github.com/fvonbergen/shiryu/issues"
+"Changelog" = "https://github.com/fvonbergen/shiryu/blob/master/CHANGELOG.md"
+# "Release Notes" = ""
+# "Community" = ""
+# "Twitter" = ""
+
+# <develop>
+# [tool.dagger]
+# base-image = "localhost:5000/shiryu/python:3.12-slim-git"
+# </develop>
+
+# <develop>
+# [tool.uv.sources]
+# dagger-io = { path = "sdk", editable = true }
+# </develop>
+
+# Build system changed in dagger v0.18.6 (https://github.com/dagger/dagger/releases/tag/sdk%2Fpython%2Fv0.18.16)
+# https://github.com/ninoseki/uv-dynamic-versioning/
+# uv_build backend does not support a hook for dynamic versioning yet (https://github.com/astral-sh/uv/issues/14561)
+#[build-system]
+#requires = ["uv_build>=0.8.4,<0.9.0", "uv-dynamic-versioning"]
+#build-backend = "uv_build"
+#
+#[tool.uv-dynamic-versioning]
+#fallback-version = "0.0.0"
+
+[tool.uv]
+# linked to [project] requires-python
+environments = [
+  "python_version == '3.12'",
+  "python_version == '3.13'",
+  "python_version == '3.14'",
+]
 [build-system]
-requires = ["hatchling==1.25.0"]
+requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
 build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+fallback-version = "0.0.0+unknown"

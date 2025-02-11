@@ -1,4 +1,11 @@
 *.swp
-__pycache__/
+/.coverage
+/.ruff_cache/
 /.venv/
+/dist/
+/docs/build/
+/docs/source/reference/modules\.rst
+/docs/source/reference/shiryu\.*rst
 /sdk/
+/shiryu-registry/
+__pycache__/

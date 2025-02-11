@@ -1,0 +1,88 @@
+name: quality
+on: push
+
+env:
+  DO_NOT_TRACK: "1"
+
+jobs:
+  builder_test:
+    name: Builder test
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: builder_test
+        name: Builder test
+        uses: "./.github/actions/builder_test"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
+  checker_check:
+    name: Checker check
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: checker_check
+        name: Checker check
+        uses: "./.github/actions/checker_check"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
+  documenter_document:
+    name: Documenter document
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: documenter_document
+        name: Documenter document
+        uses: "./.github/actions/documenter_document"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
+  linter_lint:
+    name: Linter lint
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: linter_lint
+        name: Linter lint
+        uses: "./.github/actions/linter_lint"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
+  tester_unit:
+    name: Tester unit
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: tester_unit
+        name: Tester unit
+        uses: "./.github/actions/tester_unit"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          experimental_privileged_nesting: "true"
+          platform: "linux/amd64"
+          project_directory: "."
