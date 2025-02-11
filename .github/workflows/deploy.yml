@@ -1,0 +1,67 @@
+name: deploy
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  builder_deploy:
+    name: Builder deploy
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: builder_deploy
+        name: Builder deploy
+        uses: "./.github/actions/builder_deploy"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project: "."
+          repository_password: ${{ secrets.REPOSITORY_PASSWORD }}
+          repository_url: ${{ secrets.REPOSITORY_URL }}
+          repository_user: ${{ secrets.REPOSITORY_USER }}
+  documenter_document:
+    name: Documenter document
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: documenter_document
+        name: Documenter document
+        uses: "./.github/actions/documenter_document"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project: "."
+      - id: upload_artifact
+        name: Upload artifact
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/build/html
+      - id: deploy_to_github_pages
+        name: Deploy to GitHub pages
+        uses: actions/deploy-pages@v5

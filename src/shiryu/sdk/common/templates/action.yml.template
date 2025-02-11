@@ -1,0 +1,36 @@
+name: "{{ module }} {{ function }}"
+description: "Runs {{ module }} {{ function }} function on a project"
+
+inputs:
+  dagger_cloud_token:
+    required: true
+    description: "Dagger cloud token"
+  shiryu_version:
+    required: false
+    description: "Shiryu version"
+    default: "{{ shiryu_version.default }}"
+  sdk_language:
+    description: "SDK programming language"
+    default: "{{ sdk_language.default }}"
+  {%- for parameter in parameters %}
+  {{ parameter.name }}:
+    description: "{{ parameter.description }}"
+    {%- if parameter.default is not none %}
+    default: "{{ parameter.default }}"
+    {%- endif %}
+  {%- endfor %}
+
+runs:
+  using: "composite"
+  steps:
+    {%- for step in steps %}
+    - id: {{ step.id }}
+      name: {{ step.name }}
+      uses: {{ step.uses }}
+      {%- if step.with_|length != 0 %}
+      with:
+        {%- for name, value in step.with_ %}
+        {{ name }}: {{ value }}
+        {%- endfor %}
+      {%- endif %}
+    {%- endfor %}

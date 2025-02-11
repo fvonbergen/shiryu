@@ -1,0 +1,15 @@
+include:
+  - local: ".gitlab/jobs/.dagger.yml"
+
+.builder_deploy:
+  extends: .dagger
+  variables:
+    SHIRYU_VERSION: "feat-add-python-sdk"
+    SDK_LANGUAGE: "python"
+    PLATFORM: "linux/amd64"
+    PROJECT: "."
+    REPOSITORY_PASSWORD: ${REPOSITORY_PASSWORD}
+    REPOSITORY_URL: ${REPOSITORY_URL}
+    REPOSITORY_USER: ${REPOSITORY_USER}
+  script:
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} builder deploy --platform="${PLATFORM}" --project="${PROJECT}" --repository-password="${REPOSITORY_PASSWORD}" --repository-url="${REPOSITORY_URL}" --repository-user="${REPOSITORY_USER}"

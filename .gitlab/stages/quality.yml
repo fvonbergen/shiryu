@@ -1,0 +1,31 @@
+include:
+  - local: ".gitlab/jobs/.builder_test.yml"
+  - local: ".gitlab/jobs/.checker_check.yml"
+  - local: ".gitlab/jobs/.documenter_document.yml"
+  - local: ".gitlab/jobs/.linter_lint.yml"
+  - local: ".gitlab/jobs/.tester_unit.yml"
+quality_builder_test:
+  extends: .builder_test
+  stage: quality
+  needs:
+    - []
+quality_checker_check:
+  extends: .checker_check
+  stage: quality
+  needs:
+    - []
+quality_documenter_document:
+  extends: .documenter_document
+  stage: quality
+  needs:
+    - []
+quality_linter_lint:
+  extends: .linter_lint
+  stage: quality
+  needs:
+    - []
+quality_tester_unit:
+  extends: .tester_unit
+  stage: quality
+  needs:
+    - []

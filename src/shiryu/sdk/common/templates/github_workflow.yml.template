@@ -1,0 +1,42 @@
+name: {{ name }}
+on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys()|list|first }}{% else %}
+  {%- for action, action_properties in on|dictsort -%}
+  {% if action_properties is none %}
+  {{ action }}:
+  {%- else %}
+  {{ action }}:
+    {%- for action_property_name, action_property_value in action_properties|dictsort %}
+    {{ action_property_name }}:{%- if action_property_value is string %} {{ action_property_value }}{% else %}
+      {%- for value in action_property_value %}
+      - {{ value }}
+      {%- endfor %}
+    {%- endif %}
+    {%- endfor -%}
+  {%- endif -%}
+  {%- endfor %}
+{%- endif %}
+
+jobs:
+  {%- for job in jobs|sort(attribute="id") %}
+  {{ job.id }}:
+    name: {{ job.name }}
+    {%- if job.environment is not none %}
+    environment:{%- if job.environment.url is none %} {{ job.environment.name }}{% else %}
+      name: {{ job.environment.name }}
+      url: {{ job.environment.url }}
+    {%- endif %}
+    {%- endif %}
+    runs-on: ubuntu-latest
+    steps:
+      {%- for step in job.steps %}
+      - id: {{ step.id }}
+        name: {{ step.name }}
+        uses: {{ step.uses }}
+        {%- if step.with_|length != 0 %}
+        with:
+          {%- for name, value in step.with_ %}
+          {{ name }}: {{ value }}
+          {%- endfor %}
+        {%- endif %}
+      {%- endfor %}
+  {%- endfor %}

@@ -1,0 +1,24 @@
+include:
+  - local: ".gitlab/jobs/.dagger.yml"
+
+{{ name }}:
+  extends: .dagger
+  variables:
+    SHIRYU_VERSION: "{{ shiryu_version.default }}"
+    SDK_LANGUAGE: "{{ sdk_language.default }}"
+    {%- for parameter in parameters %}
+    {{ parameter.name|upper }}:{%- if parameter.default is not none %} "{{ parameter.default }}"{% else %} {{ "${" ~ parameter.name|upper ~ "}" }}{% endif -%}
+    {%- endfor %}
+  script:
+    {%- for script in scripts %}
+    - {{ script }}
+    {%- endfor %}
+  {%- if artifacts is not none %}
+  artifacts:
+    {%- if artifacts.paths|length != 0 %}
+    paths:
+      {%- for path in artifacts.paths %}
+      - {{ path }}
+      {%- endfor %}
+    {%- endif %}
+  {%- endif %}
