@@ -8,7 +8,7 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat-add-python-sdk"
+    default: "debug-dagger-module-testing-inside-pytest"
   sdk_language:
     description: "SDK programming language"
     default: "python"
@@ -31,3 +31,4 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder test --platform="${{ inputs.platform }}" --project="${{ inputs.project }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+

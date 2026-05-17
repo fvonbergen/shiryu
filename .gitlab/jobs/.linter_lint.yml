@@ -4,9 +4,10 @@ include:
 .linter_lint:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat-add-python-sdk"
+    SHIRYU_VERSION: "debug-dagger-module-testing-inside-pytest"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
     PROJECT: "."
   script:
     - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint --platform="${PLATFORM}" --project="${PROJECT}"
+

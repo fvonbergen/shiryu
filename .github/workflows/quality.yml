@@ -14,7 +14,7 @@ jobs:
         uses: "./.github/actions/builder_test"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "debug-dagger-module-testing-inside-pytest"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."
@@ -30,7 +30,7 @@ jobs:
         uses: "./.github/actions/checker_check"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "debug-dagger-module-testing-inside-pytest"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."
@@ -46,7 +46,7 @@ jobs:
         uses: "./.github/actions/documenter_document"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "debug-dagger-module-testing-inside-pytest"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."
@@ -62,7 +62,7 @@ jobs:
         uses: "./.github/actions/linter_lint"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "debug-dagger-module-testing-inside-pytest"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."
@@ -78,7 +78,8 @@ jobs:
         uses: "./.github/actions/tester_unit"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "debug-dagger-module-testing-inside-pytest"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."
+

@@ -26,6 +26,12 @@ from ..templates import PYTHON_JINJA_ENVIRONMENT
 OptionalKeywordType = Annotated[
     str | None, dagger.Doc("Run tests that match substring expression")
 ]
+ExperimentalPrivilegedNestingType = Annotated[
+    bool,
+    dagger.Doc(
+        "Whether to allow container dagger client to connect to the dagger engine."
+    ),
+]
 
 
 class TesterInit(PythonModuleInit):
@@ -335,7 +341,11 @@ class Tester(PythonModule, TesterInit):
     @final
     @classmethod
     async def __pipeline(
-        cls, project: ProjectType, platform: PlatformType, keyword: OptionalKeywordType
+        cls,
+        project: ProjectType,
+        platform: PlatformType,
+        keyword: OptionalKeywordType,
+        experimental_privileged_nesting: ExperimentalPrivilegedNestingType,
     ) -> dagger.Container:
         """
         Test pipeline.
@@ -344,6 +354,7 @@ class Tester(PythonModule, TesterInit):
             project: Project directory.
             platform: The container platform.
             keyword: Run tests that match substring expression.
+            experimental_privileged_nesting: Whether to allow container dagger client to connect to the dagger engine.
 
         Returns:
             A container with the project test command executed.
@@ -373,10 +384,16 @@ class Tester(PythonModule, TesterInit):
             "--module",
             "pytest",
             f"--config-file={pytest_unit_ini_output_path}",
+            "--tb=long",
+            "-vvv",
         ]
         if keyword:
             pytest_command.append(f"-k={keyword}")
-        return await container.with_exec(pytest_command, expect=expect).sync()
+        return await container.with_exec(
+            pytest_command,
+            expect=expect,
+            experimental_privileged_nesting=experimental_privileged_nesting,
+        ).sync()
 
     @final
     @dagger.function
@@ -384,10 +401,13 @@ class Tester(PythonModule, TesterInit):
         self,
         project: ProjectType,
         keyword: OptionalKeywordType = None,
+        experimental_privileged_nesting: ExperimentalPrivilegedNestingType = False,
         platform: PlatformType = PLATFORM_DEFAULT,
     ) -> str:
         """Run unit tests in the project of the provided source Directory."""
-        container = await self.__pipeline(project, platform, keyword)
+        container = await self.__pipeline(
+            project, platform, keyword, experimental_privileged_nesting
+        )
         return await container.stdout()
 
     # @final
