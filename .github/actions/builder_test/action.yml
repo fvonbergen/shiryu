@@ -26,7 +26,7 @@ runs:
       name: Call Dagger Builder test
       uses: dagger/dagger-for-github@v8.4.0
       with:
-        version: "v0.20.8"
+        version: "v0.21.0"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder test --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"

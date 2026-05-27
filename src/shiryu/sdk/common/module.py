@@ -25,7 +25,7 @@ from ...utils.enum import get_enum_values
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
 
-DAGGER_VERSION = "0.20.8"
+DAGGER_VERSION = "0.21.0"
 
 
 @final
