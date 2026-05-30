@@ -32,7 +32,7 @@ runs:
       name: Call Dagger Builder deploy
       uses: dagger/dagger-for-github@v8.4.0
       with:
-        version: "v0.20.8"
+        version: "v0.21.3"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password="${{ inputs.repository_password }}" --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"

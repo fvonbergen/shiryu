@@ -29,7 +29,7 @@ runs:
       name: Call Dagger Tester unit
       uses: dagger/dagger-for-github@v8.4.0
       with:
-        version: "v0.20.8"
+        version: "v0.21.3"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} tester unit --experimental-privileged-nesting="${{ inputs.experimental_privileged_nesting }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
