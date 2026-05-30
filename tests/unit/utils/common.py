@@ -94,7 +94,7 @@ print(json.dumps(final_paths))
     container_project_path_str = "/project"
     output_json = await (
         dagger.dag.container(platform=dagger.Platform("linux/amd64"))
-        .from_("debian:trixie-slim")
+        .from_("public.ecr.aws/debian/debian:trixie-slim")
         .with_env_variable(name="LC_ALL", value="C.UTF-8")
         # Prevent hanging scripts due to interactive prompts
         .with_env_variable(name="DEBIAN_FRONTEND", value="noninteractive")

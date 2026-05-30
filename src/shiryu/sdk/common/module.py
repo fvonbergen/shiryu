@@ -446,7 +446,7 @@ class SDKModuleInit(ABC):
         apt_install = ("apt-get", "install", "--assume-yes", "--no-install-recommends")
         return (
             dagger.dag.container(platform=platform)
-            .from_("debian:trixie-slim")
+            .from_("public.ecr.aws/debian/debian:trixie-slim")
             # Prevent hanging scripts due to interactive prompts
             .with_env_variable(name="DEBIAN_FRONTEND", value="noninteractive")
             # Prevent crashes from special characters/emojis in filenames or logs
@@ -1204,6 +1204,31 @@ class SDKModuleInit(ABC):
 
         return SDKEnv(container, project_properties)
 
+    @classmethod
+    @abstractmethod
+    async def _sdk_module_init(
+        cls,
+        container: dagger.Container,
+        project_name: ProjectNameType | None,
+        vcs_user: VCSUser,
+        is_overwrite: bool,
+        scm: SCMListType,
+    ) -> SDKEnv:
+        """
+        Initialize the SDK module environment.
+
+        Args:
+            container: SDK container to initialize.
+            project_name: Project name.
+            vcs_user: VCS user.
+            is_overwrite: Whether to overwrite files or not.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+
+        Returns:
+            Returns an SDK module environment.
+        """
+        ...
+
 
 @dagger.object_type
 class SDKModule(ClassName, SDKModuleInit):
@@ -1284,14 +1309,14 @@ class SDKModule(ClassName, SDKModuleInit):
         cls, project_directory: ProjectDirectoryType | None, platform: PlatformType
     ) -> tuple[dagger.Container, VCSUser]:
         """
-        Base container with initialized project.
+        Base container with git initialized project.
 
         Args:
             project_directory: Project directory.
             platform: The container platform.
 
         Returns:
-            A base container with initialized project and the VCS user.
+            A base container with git initialized project and the VCS user.
         """
         container_project_path_str = str(cls._container_project_path())
         container = cls._base_container(platform).with_workdir(
@@ -1302,31 +1327,6 @@ class SDKModule(ClassName, SDKModuleInit):
                 container_project_path_str, project_directory.filter(gitignore=True)
             )
         return await cls.__vcs_init(container)
-
-    @classmethod
-    @abstractmethod
-    async def _sdk_module_init(
-        cls,
-        container: dagger.Container,
-        project_name: ProjectNameType | None,
-        vcs_user: VCSUser,
-        is_overwrite: bool,
-        scm: SCMListType,
-    ) -> SDKEnv:
-        """
-        Initialize the SDK module environment.
-
-        Args:
-            container: SDK container to initialize.
-            project_name: Project name.
-            vcs_user: VCS user.
-            is_overwrite: Whether to overwrite files or not.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
-
-        Returns:
-            Returns an SDK module environment.
-        """
-        ...
 
     @final
     @classmethod

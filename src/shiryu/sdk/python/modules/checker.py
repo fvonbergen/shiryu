@@ -20,7 +20,7 @@ from ...common.module import (
     SDKEnv,
     SDKModuleModule,
 )
-from ..module import ModulesPythonPackages, PythonModule, PythonModuleInit
+from ..module import PythonModule, PythonModuleInit
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 
@@ -56,6 +56,11 @@ class CheckerInit(PythonModuleInit):
         _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
         container = _sdk_env.container
         project_properties = _sdk_env.project_properties
+        # pyproject.toml: add group dependencies
+        python_packages = {*cls._sdk_source_code_python_packages(), "mypy"}
+        container = container.with_exec(
+            ["uv", "add", "--group", Checker.name(), *python_packages, "--no-sync"]
+        )
         # mypy.ini
         mypy_init_template_mapping: Mapping = {
             "project_source_path": str(
@@ -151,23 +156,6 @@ class CheckerInit(PythonModuleInit):
 class Checker(PythonModule, CheckerInit):
     """Python SDK checker."""
 
-    @classmethod
-    def _base_container_modules_python_packages(cls) -> ModulesPythonPackages:
-        """
-        Base container modules python packages.
-
-        Returns:
-            Base container modules python packages.
-        """
-        base_container_modules_python_packages = (
-            super()._base_container_modules_python_packages()
-        )
-        base_container_modules_python_packages[Checker.name()] = {
-            *cls._sdk_source_code_python_packages(),
-            "mypy",
-        }
-        return base_container_modules_python_packages
-
     @final
     @classmethod
     async def __pipeline(
@@ -222,7 +210,8 @@ class Checker(PythonModule, CheckerInit):
         mypy_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Checker.name(),
             "--module",
             "mypy",
             f"--config-file={cls._mypy_ini_template_file().file_name}",

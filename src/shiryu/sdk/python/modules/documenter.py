@@ -25,14 +25,12 @@ from ...common.module import (
     SDKEnv,
     SDKModuleModule,
 )
-from ..module import ModulesPythonPackages, PythonModule, PythonModuleInit
+from ..module import PythonModule, PythonModuleInit
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
     "github-pages", "${{ steps.deployment.outputs.page_url }}"
 )
-
-SPHINX_PACKAGE_NAME: Final = "sphinx"
 
 
 class DocumenterInit(PythonModuleInit):
@@ -138,6 +136,11 @@ class DocumenterInit(PythonModuleInit):
                 for project_author in pyproject_toml_data_project["authors"]
             ]
         )
+        # pyproject.toml: add group dependencies
+        python_packages = {"sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"}
+        container = container.with_exec(
+            ["uv", "add", "--group", Documenter.name(), *python_packages, "--no-sync"]
+        )
         # <documentation>/
         project_documentation_path_str = str(
             cls._container_project_documentation_path()
@@ -176,12 +179,11 @@ class DocumenterInit(PythonModuleInit):
                         project_documentation_path_str + "/source/explanation",
                     ]
                 )
-                .with_exec(["uv", "pip", "install", SPHINX_PACKAGE_NAME])
                 .with_exec(
                     [
-                        "uv",
-                        "run",
-                        "--no-project",
+                        "uvx",
+                        "--from",
+                        "sphinx",
                         "sphinx-quickstart",
                         "--sep",
                         f"--project={project_name}",
@@ -343,24 +345,6 @@ class Documenter(PythonModule, DocumenterInit):
         base_container_base_packages.update({"make"})
         return base_container_base_packages
 
-    @classmethod
-    def _base_container_modules_python_packages(cls) -> ModulesPythonPackages:
-        """
-        Base container modules python packages.
-
-        Returns:
-            Base container modules python packages.
-        """
-        base_container_modules_python_packages = (
-            super()._base_container_modules_python_packages()
-        )
-        base_container_modules_python_packages[Documenter.name()] = {
-            SPHINX_PACKAGE_NAME,
-            "sphinx-autodoc-typehints",
-            "sphinx_rtd_theme",
-        }
-        return base_container_modules_python_packages
-
     @final
     @classmethod
     async def __pipeline(
@@ -377,17 +361,11 @@ class Documenter(PythonModule, DocumenterInit):
             A container with the project document command executed.
         """
         container, sdk_env = await cls.sdk_module_env(project_directory, platform)
-        project_install = [
-            "uv",
-            "pip",
-            "install",
-            "--no-sources",
-            str(cls._container_project_path()),
-        ]
         sphinx_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Documenter.name(),
             "sphinx-apidoc",
             "--implicit-namespaces",
             f"-o={cls._container_project_documentation_path() / 'source' / 'reference'}",
@@ -396,16 +374,13 @@ class Documenter(PythonModule, DocumenterInit):
         make_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Documenter.name(),
             "make",
             f"--directory={cls._container_project_documentation_path()}",
             "html",
         ]
-        return (
-            container.with_exec(project_install)
-            .with_exec(sphinx_command)
-            .with_exec(make_command)
-        )
+        return container.with_exec(sphinx_command).with_exec(make_command)
 
     @final
     @dagger.function

@@ -5,8 +5,6 @@ from typing import Annotated, Final, final
 
 import dagger
 
-from ....utils.dagger.container import container_with_files
-from ....utils.template import Mapping, Template, TemplateFile
 from ...common.module import (
     PLATFORM_DEFAULT,
     GitHubActionsWorkflows,
@@ -20,9 +18,7 @@ from ...common.module import (
     SDKEnv,
     SDKModuleModule,
 )
-from ..module import ModulesPythonPackages, PythonModule, PythonModuleInit
-from ..templates import PYTHON_JINJA_ENVIRONMENT
-from ..utils import get_package_name_canonical
+from ..module import PythonModule, PythonModuleInit
 
 RepositoryUrlType = Annotated[str, dagger.Doc("Repository to push distributable")]
 RepositoryUserType = Annotated[str, dagger.Doc("Repository user")]
@@ -99,20 +95,10 @@ class BuilderInit(PythonModuleInit):
         _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
         container = _sdk_env.container
         project_properties = _sdk_env.project_properties
-        project_name = project_properties.name
-        package_name_canonical = get_package_name_canonical(project_name)
-        # __init__.py
-        __init___py_template_mapping: Mapping = {"project_name": project_name}
-        __init___py_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            TemplateFile(
-                Path("__init__.py"),
-                cls._container_project_source_path() / package_name_canonical,
-            ),
-            __init___py_template_mapping,
-        )
-        container = await container_with_files(
-            container, (__init___py_template,), is_overwrite
+        # pyproject.toml: add group dependencies
+        python_packages = {"hatch"}
+        container = container.with_exec(
+            ["uv", "add", "--group", Builder.name(), *python_packages, "--no-sync"]
         )
         return SDKEnv(container, project_properties)
 
@@ -220,20 +206,6 @@ class BuilderInit(PythonModuleInit):
 class Builder(PythonModule, BuilderInit):
     """Python SDK builder."""
 
-    @classmethod
-    def _base_container_modules_python_packages(cls) -> ModulesPythonPackages:
-        """
-        Base container modules python packages.
-
-        Returns:
-            Base container modules python packages.
-        """
-        base_container_modules_python_packages = (
-            super()._base_container_modules_python_packages()
-        )
-        base_container_modules_python_packages[Builder.name()] = {"hatch"}
-        return base_container_modules_python_packages
-
     @final
     @classmethod
     async def __pipeline(
@@ -259,7 +231,8 @@ class Builder(PythonModule, BuilderInit):
         build_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Builder.name(),
             "--module",
             "hatch",
             "build",
@@ -295,7 +268,8 @@ class Builder(PythonModule, BuilderInit):
         deploy_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Builder.name(),
             "--module",
             "hatch",
             "publish",
@@ -356,7 +330,7 @@ class Builder(PythonModule, BuilderInit):
             container.with_exec(
                 [
                     "uv",
-                    "pip",
+                    "package",
                     "install",
                     "--no-build-isolation",
                     "--no-index",
@@ -364,7 +338,7 @@ class Builder(PythonModule, BuilderInit):
                     package_name_version,
                 ]
             )
-            .with_exec(["uv", "pip", "uninstall", package_name])
+            .with_exec(["uv", "package", "uninstall", package_name])
             .sync()
         )
         return "Test build successfull"

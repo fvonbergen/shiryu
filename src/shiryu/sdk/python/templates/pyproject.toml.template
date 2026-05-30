@@ -6,15 +6,10 @@ readme = "{{ readme_file_name }}"
 authors = [
   { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
 ]
-# requires-python = ">=3.12"
+# uv does not work with Python versions prior to 3.6
+# https://docs.astral.sh/uv/reference/policies/python/#python-versions
+requires-python = ">=3.6"
 dependencies = []
-
-# Dependencies that will be installed for the specific module.
-[project.optional-dependencies]
-environment = ["uv"]
-{%- for module, dependencies in optional_dependencies|dictsort %}
-{{ module }} = ["{{ dependencies|list|sort|join('", "') }}"]
-{%- endfor %}
 
 [project.urls]
 # "Homepage" = ""

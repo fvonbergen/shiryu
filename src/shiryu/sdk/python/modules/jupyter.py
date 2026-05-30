@@ -15,7 +15,7 @@ from ...common.module import (
     SDKEnv,
     SDKModuleModule,
 )
-from ..module import ModulesPythonPackages, PythonModule, PythonModuleInit
+from ..module import PythonModule, PythonModuleInit
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 PortType = Annotated[int, dagger.Doc("Jupyter notebooks port")]
@@ -66,6 +66,11 @@ class JupyterInit(PythonModuleInit):
         _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
         container = _sdk_env.container
         project_properties = _sdk_env.project_properties
+        # pyproject.toml: add group dependencies
+        python_packages = {"notebook", "python-lsp-server"}
+        container = container.with_exec(
+            ["uv", "add", "--group", Jupyter.name(), *python_packages, "--no-sync"]
+        )
         # <jupyter notebooks>/
         container = container.with_exec(
             [
@@ -96,23 +101,6 @@ class JupyterInit(PythonModuleInit):
 @dagger.object_type
 class Jupyter(PythonModule, JupyterInit):
     """Python SDK jupyter."""
-
-    @classmethod
-    def _base_container_modules_python_packages(cls) -> ModulesPythonPackages:
-        """
-        Base container modules python packages.
-
-        Returns:
-            Base container modules python packages.
-        """
-        base_container_modules_python_packages = (
-            super()._base_container_modules_python_packages()
-        )
-        base_container_modules_python_packages[Jupyter.name()] = {
-            "notebook",
-            "python-lsp-server",
-        }
-        return base_container_modules_python_packages
 
     @final
     @classmethod
@@ -169,7 +157,8 @@ class Jupyter(PythonModule, JupyterInit):
         jupyter_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Jupyter.name(),
             "--module",
             "jupyter",
             "notebook",

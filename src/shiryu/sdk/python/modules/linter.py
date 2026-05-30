@@ -20,7 +20,7 @@ from ...common.module import (
     SDKEnv,
     SDKModuleModule,
 )
-from ..module import ModulesPythonPackages, PythonModule, PythonModuleInit
+from ..module import PythonModule, PythonModuleInit
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 
@@ -94,6 +94,11 @@ class LinterInit(PythonModuleInit):
         _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
         container = _sdk_env.container
         project_properties = _sdk_env.project_properties
+        # pyproject.toml: add group dependencies
+        python_packages = {"ruff"}
+        container = container.with_exec(
+            ["uv", "add", "--group", Linter.name(), *python_packages, "--no-sync"]
+        )
         # ruff.toml
         ruff_toml_template_mapping: Mapping = {"cache_folder": cls.__cache_folder()}
         ruff_toml_template = Template(
@@ -181,20 +186,6 @@ class LinterInit(PythonModuleInit):
 class Linter(PythonModule, LinterInit):
     """Python SDK linter."""
 
-    @classmethod
-    def _base_container_modules_python_packages(cls) -> ModulesPythonPackages:
-        """
-        Base container modules python packages.
-
-        Returns:
-            Base container modules python packages.
-        """
-        base_container_modules_python_packages = (
-            super()._base_container_modules_python_packages()
-        )
-        base_container_modules_python_packages[Linter.name()] = {"ruff"}
-        return base_container_modules_python_packages
-
     @final
     @classmethod
     async def __pipeline(
@@ -216,7 +207,8 @@ class Linter(PythonModule, LinterInit):
         ruff_check_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Linter.name(),
             "--module",
             "ruff",
             "check",
@@ -227,7 +219,8 @@ class Linter(PythonModule, LinterInit):
         ruff_format_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Linter.name(),
             "--module",
             "ruff",
             "format",

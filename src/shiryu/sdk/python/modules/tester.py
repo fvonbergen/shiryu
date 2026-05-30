@@ -20,7 +20,7 @@ from ...common.module import (
     SDKEnv,
     SDKModuleModule,
 )
-from ..module import ModulesPythonPackages, PythonModule, PythonModuleInit
+from ..module import PythonModule, PythonModuleInit
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 OptionalKeywordType = Annotated[
@@ -166,6 +166,17 @@ class TesterInit(PythonModuleInit):
         return TemplateFile(Path(".coveragerc"), cls._container_project_path())
 
     @classmethod
+    def _sdk_source_code_python_packages(cls) -> set[str]:
+        """
+        Python packages used in modules source code.
+
+        Returns:
+            Python packages used in modules source code.
+        """
+        python_packages = super()._sdk_source_code_python_packages()
+        return {*python_packages, "pytest", "pytest-asyncio"}
+
+    @classmethod
     async def _module_init(
         cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
     ) -> SDKEnv:
@@ -183,6 +194,16 @@ class TesterInit(PythonModuleInit):
         _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
         container = _sdk_env.container
         project_properties = _sdk_env.project_properties
+        # pyproject.toml: add group dependencies
+        python_packages = {
+            *cls._sdk_source_code_python_packages(),
+            "pytest-cov",
+            "pytest-xdist[psutil]",
+        }
+        container = container.with_exec(
+            ["uv", "add", "--group", Tester.name(), *python_packages, "--no-sync"]
+        )
+
         # <tests>/<tests unit>/
         container = container.with_exec(
             [
@@ -269,16 +290,6 @@ class TesterInit(PythonModuleInit):
         return {"actions": github_actions, "workflows": github_workflows}
 
     @classmethod
-    def _sdk_source_code_python_packages(cls) -> set[str]:
-        """
-        Python packages used in modules source code.
-
-        Returns:
-            Python packages used in modules source code.
-        """
-        return {"pytest", "pytest-asyncio"}
-
-    @classmethod
     def _gitlab_jobs_stages(
         cls, dagger_version: str, shiryu_version: str
     ) -> GitLabJobsStages:
@@ -316,24 +327,6 @@ class TesterInit(PythonModuleInit):
 @dagger.object_type
 class Tester(PythonModule, TesterInit):
     """Python SDK tester."""
-
-    @classmethod
-    def _base_container_modules_python_packages(cls) -> ModulesPythonPackages:
-        """
-        Base container modules python packages.
-
-        Returns:
-            Base container modules python packages.
-        """
-        base_container_modules_python_packages = (
-            super()._base_container_modules_python_packages()
-        )
-        base_container_modules_python_packages[Tester.name()] = {
-            *cls._sdk_source_code_python_packages(),
-            "pytest-cov",
-            "pytest-xdist[psutil]",
-        }
-        return base_container_modules_python_packages
 
     @final
     @classmethod
@@ -377,7 +370,8 @@ class Tester(PythonModule, TesterInit):
         pytest_command = [
             "uv",
             "run",
-            "--no-project",
+            "--group",
+            Tester.name(),
             "--module",
             "pytest",
             f"--config-file={pytest_unit_ini_output_path}",

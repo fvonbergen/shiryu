@@ -43,8 +43,12 @@ dependencies = [
   # "setuptools-scm",
 ]
 
-# Dependencies that will be installed for the specific module.
-[project.optional-dependencies]
+[build-system]
+requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
+build-backend = "hatchling.build"
+
+# Dependencies that will be installed for the specific module call.
+[dependency-groups]
 environment = ["uv"]
 builder = ["hatch"]
 checker = ["mypy", "pytest", "pytest-asyncio"]
@@ -52,7 +56,7 @@ documenter = ["sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
 linter = ["ruff"]
 tester = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-xdist[psutil]"]
 
-[project.urls]
+[urls]
 # "Homepage" = ""
 "Documentation" = "https://fvonbergen.github.io/shiryu"
 "Repository" = "https://github.com/fvonbergen/shiryu"
@@ -89,9 +93,6 @@ environments = [
   "python_version == '3.13'",
   "python_version == '3.14'",
 ]
-[build-system]
-requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
-build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "vcs"

@@ -88,9 +88,10 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMListType) -> Path
         ),
         "CHANGELOG.md",
         "README.md",
-        "pylock.toml",
         "pyproject.toml",
+        f"src/{package_name_canonical}/__init__.py",
         f"src/{package_name_canonical}/py.typed",
+        "uv.lock",
     )
 
 

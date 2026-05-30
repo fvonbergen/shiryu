@@ -29,7 +29,6 @@ def python_builder_init_paths(project_name: ProjectNameType, scm: SCMListType) -
     Returns:
         The python builder initializer paths.
     """
-    package_name_canonical = get_package_name_canonical(project_name)
     return (
         *(
             (
@@ -51,7 +50,6 @@ def python_builder_init_paths(project_name: ProjectNameType, scm: SCMListType) -
             if SCM.GITHUB in scm
             else ()
         ),
-        *(f"src/{package_name_canonical}/__init__.py",),
     )
 
 
@@ -110,7 +108,7 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
     date_pattern = r"\d{4}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
     expected_paths_compiled_patterns = (
         re.compile(
-            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-py2\.py3-none-any\.whl$"
+            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-\.py3-none-any\.whl$"
         ),
         re.compile(
             rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}\.tar\.gz$"
