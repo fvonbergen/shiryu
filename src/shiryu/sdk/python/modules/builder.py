@@ -1,257 +1,206 @@
 """builder module."""
 
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
 
+from ....utils.dagger.client import container_uv
+from ...common.context import DaggerModuleMetadata
 from ...common.module import (
-    PLATFORM_DEFAULT,
-    GitHubActionsWorkflows,
-    GitHubWorkflowId,
-    GitLabJobsStages,
-    GitLabStageId,
+    PLATFORM_DAGGER_DEFAULT,
+    PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryType,
-    ProjectNameType,
-    SCMListType,
-    SDKEnv,
-    SDKModuleModule,
+    ProjectDirectoryDaggerType,
+    ProjectMetadata,
 )
-from ..module import PythonModule, PythonModuleInit
+from ...common.scm import (
+    GitHubWorkflowId,
+    GitLabStageId,
+    build_github_action,
+    build_github_workflow_job,
+    build_gitlab_job,
+    build_gitlab_stage_job,
+)
+from ..context import PythonModuleInitContextDirectory
+from ..module import PythonModule
 
-RepositoryUrlType = Annotated[str, dagger.Doc("Repository to push distributable")]
-RepositoryUserType = Annotated[str, dagger.Doc("Repository user")]
-RepositoryPasswordType = Annotated[dagger.Secret, dagger.Doc("Repository password")]
+RepositoryUrlDaggerType = Annotated[str, dagger.Doc("Repository to push distributable")]
+RepositoryUserDaggerType = Annotated[str, dagger.Doc("Repository user")]
+RepositoryPasswordDaggerType = Annotated[dagger.Secret, dagger.Doc("Repository password")]
 
-
-class BuilderInit(PythonModuleInit):
-    """Python SDK builder initializer."""
-
-    @final
-    @staticmethod
-    def _project_distributable_folder() -> str:
-        """
-        Get the project distributable folder.
-
-        Returns:
-            Project distributable folder.
-        """
-        return "dist"
-
-    @classmethod
-    def _exclude_folders(cls) -> set[str]:
-        """
-        Folders to exclude from project.
-
-        Returns:
-            Folders to exclude from project.
-        """
-        return {cls._project_distributable_folder()}
-
-    @classmethod
-    def _vcs_exclude_files_folders(cls, project_name: ProjectNameType) -> set[str]:
-        """
-        Files and folders to exclude from vcs.
-
-        Args:
-            project_name: Project name.
-
-        Returns:
-            Files and folders to exclude from vcs.
-        """
-        vcs_exclude_files_folders = super()._vcs_exclude_files_folders(project_name)
-        vcs_exclude_files_folders.update(
-            {f"/{folder}/" for folder in cls._exclude_folders()}
-        )
-        return vcs_exclude_files_folders
-
-    @final
-    @classmethod
-    def _container_project_distributable_path(cls) -> Path:
-        """
-        Get the container project distributable path.
-
-        Returns:
-            Container project distibutable path.
-        """
-        return cls._container_project_path() / cls._project_distributable_folder()
-
-    @classmethod
-    async def _module_init(
-        cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
-    ) -> SDKEnv:
-        """
-        Initialize the SDK module environment.
-
-        Args:
-            sdk_env: SDK environment.
-            is_overwrite: Whether to overwrite files or not.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
-
-        Returns:
-            Returns an SDK module environment.
-        """
-        _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
-        container = _sdk_env.container
-        project_properties = _sdk_env.project_properties
-        # pyproject.toml: add group dependencies
-        python_packages = {"hatch"}
-        container = container.with_exec(
-            ["uv", "add", "--group", Builder.name(), *python_packages, "--no-sync"]
-        )
-        return SDKEnv(container, project_properties)
-
-    @classmethod
-    def _github_actions_workflows(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitHubActionsWorkflows:
-        """
-        Get the GitHub actions and workflows.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitHub actions and workflows.
-        """
-        github_actions_workflows = super()._github_actions_workflows(
-            dagger_version, shiryu_version
-        )
-        github_actions = github_actions_workflows["actions"]
-        github_workflows = github_actions_workflows["workflows"]
-        github_action_builder_deploy = cls._build_github_action(
-            Builder,
-            Builder.deploy,  # pyright: ignore [reportArgumentType]
-            dagger_version,
-            shiryu_version,
-            None,
-        )
-        github_action_builder_test = cls._build_github_action(
-            Builder,
-            Builder.test,  # pyright: ignore [reportArgumentType]
-            dagger_version,
-            shiryu_version,
-            None,
-        )
-        github_actions.update(
-            {github_action_builder_deploy, github_action_builder_test}
-        )
-        github_workflows.add(
-            GitHubWorkflowId.DEPLOY,
-            cls._build_github_workflow_job(
-                github_action_builder_deploy, shiryu_version, None, tuple()
-            ),
-        )
-        github_workflows.add(
-            GitHubWorkflowId.QUALITY,
-            cls._build_github_workflow_job(
-                github_action_builder_test, shiryu_version, None, tuple()
-            ),
-        )
-        return {"actions": github_actions, "workflows": github_workflows}
-
-    @classmethod
-    def _gitlab_jobs_stages(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitLabJobsStages:
-        """
-        Get the GitLab jobs and stages.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitLab jobs and stages.
-        """
-        gitlab_jobs_stages = super()._gitlab_jobs_stages(dagger_version, shiryu_version)
-        gitlab_jobs = gitlab_jobs_stages["jobs"]
-        gitlab_stages = gitlab_jobs_stages["stages"]
-        gitlab_job_builder_deploy = cls._build_gitlab_job(
-            Builder,
-            Builder.deploy,  # pyright: ignore [reportArgumentType]
-            shiryu_version,
-            (),
-            None,
-            (),
-            None,
-        )
-        gitlab_job_builder_test = cls._build_gitlab_job(
-            Builder,
-            Builder.test,  # pyright: ignore [reportArgumentType]
-            shiryu_version,
-            (),
-            None,
-            (),
-            None,
-        )
-        gitlab_jobs.update({gitlab_job_builder_deploy, gitlab_job_builder_test})
-        gitlab_stages.add(
-            GitLabStageId.DEPLOY,
-            cls._build_gitlab_stage_job(
-                GitLabStageId.DEPLOY, gitlab_job_builder_deploy
-            ),
-        )
-        gitlab_stages.add(
-            GitLabStageId.QUALITY,
-            cls._build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job_builder_test),
-        )
-        return {"jobs": gitlab_jobs, "stages": gitlab_stages}
+PROJECT_DISTRIBUTABLE_FOLDER: Final = "dist"
 
 
-@final
 @dagger.object_type
-class Builder(PythonModule, BuilderInit):
+class Builder(PythonModule):
     """Python SDK builder."""
 
-    @final
     @classmethod
-    async def __pipeline(
+    def _init_context_directory(
         cls,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType,
-        clean: bool,
-    ) -> SDKEnv:
+        init_context_directory: PythonModuleInitContextDirectory,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> PythonModuleInitContextDirectory:
         """
-        Build pipeline.
+        Initialization directory context used in the SDK module directory initialization.
 
         Args:
-            project_directory: Project directory.
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: ProjectMetadata,
+
+        Returns:
+            The updated SDK module initialization directory context.
+        """
+        init_context_directory = super()._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
+        )
+        dagger_version = shiryu_metadata.dagger_version
+        shiryu_version = shiryu_metadata.git_tag_or_branch
+        sdk_language = cls._sdk_name()
+        sdk_module_name = cls.name()
+        github_action_builder_deploy = build_github_action(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=cls.deploy,  # pyright: ignore [reportArgumentType]
+            dagger_version=dagger_version,
+            shiryu_version=shiryu_version,
+            export_path=None,
+        )
+        github_action_builder_test = build_github_action(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=cls.test,  # pyright: ignore [reportArgumentType]
+            dagger_version=dagger_version,
+            shiryu_version=shiryu_version,
+            export_path=None,
+        )
+        gitlab_job_builder_deploy = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=cls.deploy,  # pyright: ignore [reportArgumentType]
+            shiryu_version=shiryu_version,
+            pre_script=(),
+            export_path=None,
+            post_script=(),
+            artifacts=None,
+        )
+        gitlab_job_builder_test = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=cls.test,  # pyright: ignore [reportArgumentType]
+            shiryu_version=shiryu_version,
+            pre_script=(),
+            export_path=None,
+            post_script=(),
+            artifacts=None,
+        )
+        return init_context_directory.evolve(
+            vcs=init_context_directory.vcs.evolve(
+                exclude_files_folders=init_context_directory.vcs.exclude_files_folders
+                | {f"/{PROJECT_DISTRIBUTABLE_FOLDER}/"}
+            ),
+            scm=init_context_directory.scm.evolve(
+                github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
+                    actions=init_context_directory.scm.github_actions_workflows.actions
+                    | {github_action_builder_deploy, github_action_builder_test},
+                    workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
+                        GitHubWorkflowId.DEPLOY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action_builder_deploy,
+                            shiryu_version=shiryu_version,
+                            job_environment=None,
+                            post_steps=(),
+                        ),
+                    ).add(
+                        GitHubWorkflowId.QUALITY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action_builder_test,
+                            shiryu_version=shiryu_version,
+                            job_environment=None,
+                            post_steps=(),
+                        ),
+                    ),
+                ),
+                gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
+                    | {gitlab_job_builder_deploy, gitlab_job_builder_test},
+                    stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
+                        GitLabStageId.DEPLOY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.DEPLOY,
+                            gitlab_job=gitlab_job_builder_deploy,
+                        ),
+                    ).add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY,
+                            gitlab_job=gitlab_job_builder_test,
+                        ),
+                    ),
+                ),
+            ),
+            dependency_groups=init_context_directory.dependency_groups.add(
+                sdk_module_name, {"hatch"}
+            ),
+        )
+
+    @final
+    @classmethod
+    def __build_container(
+        cls, container: dagger.Container, platform: dagger.Platform, clean: bool
+    ) -> dagger.Container:
+        """
+        Build wheel in the distributable directory container.
+
+        Args:
+            container: Project container.
             platform: The container platform.
             clean: Whether to clean project distributables before build or not.
 
         Returns:
-            A container with the project build command executed.
+            A container with the distributable directory.
         """
-        container, project_properties = await cls.sdk_module_env(
-            project_directory, platform
+        build_command = cls._build_uv_run_command(
+            ["hatch", "build", str(PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform)]
         )
-        build_command = [
-            "uv",
-            "run",
-            "--group",
-            Builder.name(),
-            "--module",
-            "hatch",
-            "build",
-            str(cls._container_project_distributable_path() / platform),
-        ]
         if clean:
             build_command.append("--clean")
-        return SDKEnv(container.with_exec(build_command), project_properties)
+        return container.with_exec(build_command)
+
+    @final
+    @classmethod
+    def __build(cls, container: dagger.Container, platform: dagger.Platform) -> dagger.Directory:
+        """
+        Build wheel in the distributable directory.
+
+        Args:
+            container: Project container.
+            platform: The container platform.
+
+        Returns:
+            A directory with the distributable directory.
+        """
+        return (
+            cls.__build_container(container, platform, False)
+            .directory(".")
+            .filter(include=[PROJECT_DISTRIBUTABLE_FOLDER])
+        )
 
     @final
     @classmethod
     async def __deploy(
         cls,
         container: dagger.Container,
-        repository_url: RepositoryUrlType,
-        repository_user: RepositoryUserType,
-        repository_password: RepositoryPasswordType,
+        repository_url: RepositoryUrlDaggerType,
+        repository_user: RepositoryUserDaggerType,
+        repository_password: RepositoryPasswordDaggerType,
         platform: PlatformType,
-    ) -> dagger.Container:
+    ) -> None:
         """
         Deploy distributable.
 
@@ -265,83 +214,75 @@ class Builder(PythonModule, BuilderInit):
         Returns:
             A container with the project build command executed.
         """
-        deploy_command = [
-            "uv",
-            "run",
-            "--group",
-            Builder.name(),
-            "--module",
-            "hatch",
-            "publish",
-            f"--user={repository_user}",
-            f"--auth={repository_password}",
-            f"--repo={repository_url}",
-            str(cls._container_project_distributable_path() / platform),
-        ]
-        return container.with_exec(deploy_command)
+        container = cls.__build_container(container, platform, True)
+        deploy_command = cls._build_uv_run_command(
+            [
+                "hatch",
+                "publish",
+                f"--user={repository_user}",
+                f"--auth={repository_password}",
+                f"--repo={repository_url}",
+                str(PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform),
+            ]
+        )
+        await container.with_exec(deploy_command).sync()
 
     @dagger.function
     async def build(
         self,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Build project distributable of the provided source Directory."""
-        container, _ = await self.__pipeline(project_directory, platform, False)
-        return self._container_project_directory(
-            container, include=[f"{self._project_distributable_folder()}/"]
-        )
+        container = await self._exec_container(project_directory, platform)
+        return self.__build(container, platform)
 
     @dagger.function
     async def deploy(
         self,
-        project_directory: ProjectDirectoryType,
-        repository_url: RepositoryUrlType,
-        repository_user: RepositoryUserType,
-        repository_password: RepositoryPasswordType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        repository_url: RepositoryUrlDaggerType,
+        repository_user: RepositoryUserDaggerType,
+        repository_password: RepositoryPasswordDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Build and deploy project distributable of the provided source Directory."""
-        container, _ = await self.__pipeline(project_directory, platform, True)
-        await (
-            await self.__deploy(
-                container,
-                repository_url,
-                repository_user,
-                repository_password,
-                platform,
-            )
-        ).sync()
+        container = await self._exec_container(project_directory, platform)
+        await self.__deploy(
+            container, repository_url, repository_user, repository_password, platform
+        )
         return "Deploy successfull"
 
     @dagger.function
     async def test(
         self,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Test the project installation process for the provided source Directory."""
-        container, project_properties = await self.__pipeline(
-            project_directory, platform, False
-        )
-        package_name = project_properties.name
-        package_name_version = f"{package_name}=={project_properties.version}"
+        container = await self._exec_container(project_directory, platform)
+        directory = self.__build(container, platform)
+        project_metadata = await self._get_project_metadata(project_directory, platform)
+        package_name = project_metadata.name
+        package_name_version = f"{package_name}=={project_metadata.version}"
         await (
-            container.with_exec(
+            container_uv(dagger.dag, platform, self._container_project_path())
+            .with_directory(".", directory)
+            .with_exec(["uv", "venv"])
+            .with_exec(
                 [
                     "uv",
-                    "package",
+                    "pip",
                     "install",
                     "--no-build-isolation",
-                    "--no-index",
-                    f"--find-links={self._container_project_distributable_path() / platform}",
+                    f"--find-links={PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform}",
                     package_name_version,
                 ]
             )
-            .with_exec(["uv", "package", "uninstall", package_name])
+            .with_exec(["uv", "pip", "uninstall", package_name])
             .sync()
         )
         return "Test build successfull"
 
 
-sdk_module: Final = SDKModuleModule(init=BuilderInit, module=Builder)
+sdk_module: Final = Builder

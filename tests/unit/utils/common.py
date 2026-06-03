@@ -116,9 +116,7 @@ print(json.dumps(final_paths))
             permissions=0o644,
         )
         .with_exec(["apt-get", "update"])
-        .with_exec(
-            ["apt-get", "install", "--assume-yes", "--no-install-recommends", "python3"]
-        )
+        .with_exec(["apt-get", "install", "--assume-yes", "--no-install-recommends", "python3"])
         .with_mounted_directory(container_project_path_str, dir_)
         .with_workdir(container_project_path_str)
         .with_exec(["python3", "-c", python_script])

@@ -5,27 +5,33 @@ from typing import Final, final
 
 import dagger
 
-from ....utils.dagger.container import container_with_files
+from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
+from ...common.context import DaggerModuleMetadata
 from ...common.module import (
-    PLATFORM_DEFAULT,
-    GitHubActionsWorkflows,
-    GitHubWorkflowId,
-    GitLabJobsStages,
-    GitLabStageId,
+    PLATFORM_DAGGER_DEFAULT,
+    PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryType,
-    ProjectNameType,
-    SCMListType,
-    SDKEnv,
-    SDKModuleModule,
+    ProjectDirectoryDaggerType,
+    ProjectMetadata,
+    SCMType,
 )
-from ..module import PythonModule, PythonModuleInit
+from ...common.scm import (
+    GitHubWorkflowId,
+    GitLabStageId,
+    build_github_action,
+    build_github_workflow_job,
+    build_gitlab_job,
+    build_gitlab_stage_job,
+)
+from ..context import PythonModuleInitContextDirectory
+from ..module import PythonModule
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 
-class LinterInit(PythonModuleInit):
-    """Python SDK linter initializer."""
+@dagger.object_type
+class Linter(PythonModule):
+    """Python SDK linter."""
 
     @final
     @staticmethod
@@ -39,31 +45,83 @@ class LinterInit(PythonModuleInit):
         return ".ruff_cache"
 
     @classmethod
-    def _exclude_folders(cls) -> set[str]:
+    def _init_context_directory(
+        cls,
+        init_context_directory: PythonModuleInitContextDirectory,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> PythonModuleInitContextDirectory:
         """
-        Folders to exclude from project.
-
-        Returns:
-            Folders to exclude from project.
-        """
-        return {cls.__cache_folder()}
-
-    @classmethod
-    def _vcs_exclude_files_folders(cls, project_name: ProjectNameType) -> set[str]:
-        """
-        Files and folders to exclude from vcs.
+        Initialization directory context used in the SDK module directory initialization.
 
         Args:
-            project_name: Project name.
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
 
         Returns:
-            Files and folders to exclude from vcs.
+            The updated SDK module initialization directory context.
         """
-        vcs_exclude_files_folders = super()._vcs_exclude_files_folders(project_name)
-        vcs_exclude_files_folders.update(
-            {f"/{folder}/" for folder in cls._exclude_folders()}
+        init_context_directory = super()._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
         )
-        return vcs_exclude_files_folders
+        dagger_version = shiryu_metadata.dagger_version
+        shiryu_version = shiryu_metadata.git_tag_or_branch
+        sdk_language = cls._sdk_name()
+        sdk_module_name = cls.name()
+        sdk_module_function = cls.lint
+        github_action = build_github_action(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            dagger_version=dagger_version,
+            shiryu_version=shiryu_version,
+            export_path=None,
+        )
+        gitlab_job = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            shiryu_version=shiryu_version,
+            pre_script=(),
+            export_path=None,
+            post_script=(),
+            artifacts=None,
+        )
+        return init_context_directory.evolve(
+            vcs=init_context_directory.vcs.evolve(
+                exclude_files_folders=init_context_directory.vcs.exclude_files_folders
+                | {f"/{cls.__cache_folder()}/"}
+            ),
+            scm=init_context_directory.scm.evolve(
+                github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
+                    actions=init_context_directory.scm.github_actions_workflows.actions
+                    | {github_action},
+                    workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
+                        GitHubWorkflowId.QUALITY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action,
+                            shiryu_version=shiryu_version,
+                            job_environment=None,
+                            post_steps=(),
+                        ),
+                    ),
+                ),
+                gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
+                    stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
+                        ),
+                    ),
+                ),
+            ),
+            dependency_groups=init_context_directory.dependency_groups.add(
+                sdk_module_name, {"ruff"}
+            ),
+        )
 
     @final
     @classmethod
@@ -74,171 +132,77 @@ class LinterInit(PythonModuleInit):
         Returns:
             The ruff.toml template file.
         """
-        return TemplateFile(Path("ruff.toml"), cls._container_project_path())
+        return TemplateFile(Path("ruff.toml"))
 
     @classmethod
-    async def _module_init(
-        cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
-    ) -> SDKEnv:
+    async def _init_directory(
+        cls,
+        init_directory: dagger.Directory,
+        init_context_directory: PythonModuleInitContextDirectory,
+        project_metadata: ProjectMetadata,
+        scm: SCMType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
         """
-        Initialize the SDK module environment.
+        Build the initialization directory.
 
         Args:
-            sdk_env: SDK environment.
-            is_overwrite: Whether to overwrite files or not.
+            init_directory: The dagger directory to initialize.
+            init_context_directory: SDK module initialization directory context.
+            project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform used for initialization.
 
         Returns:
-            Returns an SDK module environment.
+            The initialization directory.
         """
-        _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
-        container = _sdk_env.container
-        project_properties = _sdk_env.project_properties
-        # pyproject.toml: add group dependencies
-        python_packages = {"ruff"}
-        container = container.with_exec(
-            ["uv", "add", "--group", Linter.name(), *python_packages, "--no-sync"]
+        init_directory = await super()._init_directory(
+            init_directory, init_context_directory, project_metadata, scm, platform
         )
         # ruff.toml
         ruff_toml_template_mapping: Mapping = {"cache_folder": cls.__cache_folder()}
         ruff_toml_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            cls._ruff_toml_template_file(),
-            ruff_toml_template_mapping,
+            PYTHON_JINJA_ENVIRONMENT, cls._ruff_toml_template_file(), ruff_toml_template_mapping
         )
-        # ruff.toml
-        container = await container_with_files(
-            container, (ruff_toml_template,), is_overwrite
-        )
-        return SDKEnv(container, project_properties)
-
-    @classmethod
-    def _github_actions_workflows(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitHubActionsWorkflows:
-        """
-        Get the GitHub actions and workflows.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitHub actions and workflows.
-        """
-        github_actions_workflows = super()._github_actions_workflows(
-            dagger_version, shiryu_version
-        )
-        github_actions = github_actions_workflows["actions"]
-        github_workflows = github_actions_workflows["workflows"]
-        github_action = cls._build_github_action(
-            Linter,
-            Linter.lint,  # pyright: ignore [reportArgumentType]
-            dagger_version,
-            shiryu_version,
-            None,
-        )
-        github_actions.add(github_action)
-        github_workflows.add(
-            GitHubWorkflowId.QUALITY,
-            cls._build_github_workflow_job(
-                github_action, shiryu_version, None, tuple()
-            ),
-        )
-        return {"actions": github_actions, "workflows": github_workflows}
-
-    @classmethod
-    def _gitlab_jobs_stages(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitLabJobsStages:
-        """
-        Get the GitLab jobs and stages.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitLab jobs and stages.
-        """
-        gitlab_jobs_stages = super()._gitlab_jobs_stages(dagger_version, shiryu_version)
-        gitlab_jobs = gitlab_jobs_stages["jobs"]
-        gitlab_stages = gitlab_jobs_stages["stages"]
-        gitlab_job = cls._build_gitlab_job(
-            Linter,
-            Linter.lint,  # pyright: ignore [reportArgumentType]
-            shiryu_version,
-            (),
-            None,
-            (),
-            None,
-        )
-        gitlab_jobs.update({gitlab_job})
-        gitlab_stages.add(
-            GitLabStageId.QUALITY,
-            cls._build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
-        )
-        return {"jobs": gitlab_jobs, "stages": gitlab_stages}
-
-
-@final
-@dagger.object_type
-class Linter(PythonModule, LinterInit):
-    """Python SDK linter."""
+        return directory_with_new_file(init_directory, ruff_toml_template)
 
     @final
     @classmethod
-    async def __pipeline(
-        cls, project_directory: ProjectDirectoryType, platform: PlatformType, fix: bool
-    ) -> dagger.Directory:
+    async def __lint_fix(cls, container: dagger.Container, fix: bool) -> dagger.Directory:
         """
         Lint pipeline.
 
         Args:
-            project_directory: Project directory.
-            platform: The container platform.
+            container: Project container.
             fix: Whether to fix the project files or not.
 
         Returns:
-            The modified files between the project directory before and after running the pipeline command.
+            Modified files between the project directory before and after running commands.
         """
-        container, _ = await cls.sdk_module_env(project_directory, platform)
+        container = container.with_mounted_cache(
+            str(cls._container_project_path() / cls.__cache_folder()),
+            dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim"),
+        )
         ruff_toml_file_name = cls._ruff_toml_template_file().file_name
-        ruff_check_command = [
-            "uv",
-            "run",
-            "--group",
-            Linter.name(),
-            "--module",
-            "ruff",
-            "check",
-            "--show-fixes",
-            f"--config={ruff_toml_file_name}",
-            ".",
-        ]
-        ruff_format_command = [
-            "uv",
-            "run",
-            "--group",
-            Linter.name(),
-            "--module",
-            "ruff",
-            "format",
-            f"--config={ruff_toml_file_name}",
-            ".",
-        ]
+        ruff_check_command = cls._build_uv_run_command(
+            ["ruff", "check", "--show-fixes", f"--config={ruff_toml_file_name}", "."]
+        )
+        ruff_format_command = cls._build_uv_run_command(
+            ["ruff", "format", f"--config={ruff_toml_file_name}", "."]
+        )
+        expect_check = dagger.ReturnType.SUCCESS
         if fix:
+            expect_check = dagger.ReturnType.ANY
             ruff_check_command = [*ruff_check_command, "--fix"]
         else:
             ruff_format_command = [*ruff_format_command, "--diff"]
-        exclude = [f"{folder}/" for folder in cls._exclude_folders()]
         # Diff directories before and after command.
-        initial_dir = cls._container_project_directory(container, exclude=exclude)
-        executed_container = container.with_exec(ruff_check_command).with_exec(
+        initial_dir = container.directory(".")
+        executed_container = container.with_exec(ruff_check_command, expect=expect_check).with_exec(
             ruff_format_command
         )
-        modified_dir = cls._container_project_directory(
-            executed_container, exclude=exclude
+        modified_dir = executed_container.directory(".").filter(
+            exclude=[f"{cls.__cache_folder()}/"]
         )
         return await initial_dir.diff(modified_dir).sync()
 
@@ -246,22 +210,24 @@ class Linter(PythonModule, LinterInit):
     @dagger.function
     async def lint(
         self,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Run linter analysis in the project of the provided source Directory."""
-        await self.__pipeline(project_directory, platform, False)
+        container = await self._exec_container(project_directory, platform)
+        await self.__lint_fix(container, False)
         return "Lint successfull"
 
     @final
     @dagger.function
     async def fix(
         self,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Run linter fixes in the project of the provided source Directory."""
-        return await self.__pipeline(project_directory, platform, True)
+        container = await self._exec_container(project_directory, platform)
+        return await self.__lint_fix(container, True)
 
 
-sdk_module: Final = SDKModuleModule(init=LinterInit, module=Linter)
+sdk_module: Final = Linter

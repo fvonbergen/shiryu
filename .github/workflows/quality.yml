@@ -83,6 +83,6 @@ jobs:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
           shiryu_version: "feat-add-python-sdk"
           sdk_language: "python"
-          experimental_privileged_nesting: "true"
+          privileged_nesting: "true"
           platform: "linux/amd64"
           project_directory: "."

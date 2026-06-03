@@ -1,399 +1,341 @@
 """documenter module."""
 
-import tomllib
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Final, final
 
 import dagger
 
-from ....utils.dagger.container import container_with_files, is_container_with_file
+from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
+from ...common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
 from ...common.module import (
-    PLATFORM_DEFAULT,
-    GitHubActionsWorkflows,
+    PLATFORM_DAGGER_DEFAULT,
+    PlatformDaggerType,
+    PlatformType,
+    ProjectDirectoryDaggerType,
+    ProjectMetadata,
+    SCMType,
+)
+from ...common.scm import (
     GitHubJobEnvironment,
     GitHubWorkflowId,
     GitHubWorkflowJobStep,
     GitHubWorkflowStepInputParameter,
     GitLabArtifacts,
-    GitLabJobsStages,
     GitLabStageId,
-    PlatformType,
-    ProjectDirectoryType,
-    ProjectNameType,
-    SCMListType,
-    SDKEnv,
-    SDKModuleModule,
+    build_github_action,
+    build_github_workflow_job,
+    build_gitlab_job,
+    build_gitlab_stage_job,
 )
-from ..module import PythonModule, PythonModuleInit
+from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
+from ..context import PythonModuleInitContextDirectory
+from ..module import ExecutionMode, PythonModule
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+from ..utils import get_package_name_canonical
 
 GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
     "github-pages", "${{ steps.deployment.outputs.page_url }}"
 )
 
+PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
 
-class DocumenterInit(PythonModuleInit):
-    """Python SDK documenter initializer."""
 
-    @final
-    @staticmethod
-    def __project_documentation_folder() -> str:
-        """
-        Get the project documentation folder.
-
-        Returns:
-            Project documentation folder.
-        """
-        return "docs"
-
-    @final
-    @staticmethod
-    def __project_shiryu_templates_folder() -> str:
-        """
-        Get the project documentation folder.
-
-        Returns:
-            Project documentation folder.
-        """
-        return "shiryu-templates"
+@dagger.object_type
+class Documenter(PythonModule):
+    """Python SDK documenter."""
 
     @classmethod
-    def _vcs_exclude_files_folders(cls, project_name: ProjectNameType) -> set[str]:
+    def _init_context_directory(
+        cls,
+        init_context_directory: PythonModuleInitContextDirectory,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> PythonModuleInitContextDirectory:
         """
-        Files and folders to exclude from vcs.
+        Initialization directory context used in the SDK module directory initialization.
 
         Args:
-            project_name: Project name.
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
 
         Returns:
-            Files and folders to exclude from vcs.
+            The updated SDK module initialization directory context.
         """
-        vcs_exclude_files_folders = super()._vcs_exclude_files_folders(project_name)
-        vcs_exclude_files_folders.update(
-            {
-                f"/{cls.__project_documentation_folder()}/build/",
-                rf"/{cls.__project_documentation_folder()}/source/reference/modules\.rst",
-                rf"/{cls.__project_documentation_folder()}/source/reference/{project_name}\.*\.rst",
-            }
+        init_context_directory = super()._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
         )
-        return vcs_exclude_files_folders
-
-    @final
-    @classmethod
-    def _container_project_documentation_path(cls) -> Path:
-        """
-        Get the container project documentation path.
-
-        Returns:
-            Container project documentation path.
-        """
-        return cls._container_project_path() / cls.__project_documentation_folder()
-
-    @final
-    @classmethod
-    def _container_project_documentation_shiryu_templates_path(cls) -> Path:
-        """
-        Get the container project documentation path.
-
-        Returns:
-            Container project documentation path.
-        """
-        return (
-            cls._container_project_path()
-            / cls.__project_documentation_folder()
-            / cls.__project_shiryu_templates_folder()
+        dagger_version = shiryu_metadata.dagger_version
+        shiryu_version = shiryu_metadata.git_tag_or_branch
+        sdk_language = cls._sdk_name()
+        sdk_module_name = cls.name()
+        github_action = build_github_action(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=cls.document,  # pyright: ignore [reportArgumentType]
+            dagger_version=dagger_version,
+            shiryu_version=shiryu_version,
+            export_path=PurePosixPath(PROJECT_DOCUMENTATION_FOLDER),
+        )
+        gitlab_documentation_folder_output = "public"
+        gitlab_job = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=cls.document,  # pyright: ignore [reportArgumentType]
+            shiryu_version=shiryu_version,
+            pre_script=(),
+            export_path=PurePosixPath(PROJECT_DOCUMENTATION_FOLDER),
+            post_script=(
+                f"mkdir {gitlab_documentation_folder_output}",
+                f"cp --recursive {PROJECT_DOCUMENTATION_FOLDER}/build/html/* {gitlab_documentation_folder_output}/",  # noqa: E501
+            ),
+            artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
+        )
+        return init_context_directory.evolve(
+            vcs=init_context_directory.vcs.evolve(
+                exclude_files_folders=init_context_directory.vcs.exclude_files_folders
+                | {
+                    f"/{PROJECT_DOCUMENTATION_FOLDER}/build/",
+                    rf"/{PROJECT_DOCUMENTATION_FOLDER}/source/reference/modules\.rst",
+                    rf"/{PROJECT_DOCUMENTATION_FOLDER}/source/reference/{project_metadata.name}\.*\.rst",
+                }
+            ),
+            scm=init_context_directory.scm.evolve(
+                github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
+                    actions=init_context_directory.scm.github_actions_workflows.actions
+                    | {github_action},
+                    workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
+                        GitHubWorkflowId.DEPLOY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action,
+                            shiryu_version=shiryu_version,
+                            job_environment=GITHUB_PAGES_ENVIRONMENT,
+                            post_steps=(
+                                GitHubWorkflowJobStep(
+                                    "upload_artifact",
+                                    "Upload artifact",
+                                    "actions/upload-pages-artifact@v5",
+                                    (
+                                        GitHubWorkflowStepInputParameter(
+                                            "path", f"{PROJECT_DOCUMENTATION_FOLDER}/build/html"
+                                        ),
+                                    ),
+                                ),
+                                GitHubWorkflowJobStep(
+                                    "deploy_to_github_pages",
+                                    "Deploy to GitHub pages",
+                                    "actions/deploy-pages@v5",
+                                    (),
+                                ),
+                            ),
+                        ),
+                    ).add(
+                        GitHubWorkflowId.QUALITY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action,
+                            shiryu_version=shiryu_version,
+                            job_environment=None,
+                            post_steps=(),
+                        ),
+                    ),
+                ),
+                gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
+                    stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
+                        GitLabStageId.DEPLOY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.DEPLOY, gitlab_job=gitlab_job
+                        ),
+                    ).add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
+                        ),
+                    ),
+                ),
+            ),
+            dependency_groups=init_context_directory.dependency_groups.add(
+                sdk_module_name, {"sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"}
+            ),
         )
 
     @classmethod
-    async def _module_init(
-        cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
-    ) -> SDKEnv:
+    async def _init_directory(
+        cls,
+        init_directory: dagger.Directory,
+        init_context_directory: PythonModuleInitContextDirectory,
+        project_metadata: ProjectMetadata,
+        scm: SCMType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
         """
-        Initialize the SDK module environment.
+        Build the initialization directory.
 
         Args:
-            sdk_env: SDK environment.
-            is_overwrite: Whether to overwrite files or not.
+            init_directory: The dagger directory to initialize.
+            init_context_directory: SDK module initialization directory context.
+            project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform used for initialization.
 
         Returns:
-            Returns an SDK module environment.
+            The initialization directory.
         """
-        _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
-        container = _sdk_env.container
-        project_properties = _sdk_env.project_properties
-        pyproject_toml_template_file = cls._pyproject_toml_template_file()
-        pyproject_toml_file_contents = await container.file(
-            str(pyproject_toml_template_file.output_path)
-        ).contents()
-        pyproject_toml_data = tomllib.loads(pyproject_toml_file_contents)
-        pyproject_toml_data_project = pyproject_toml_data["project"]
-        project_name = pyproject_toml_data_project["name"]
-        project_authors_names = ", ".join(
-            [
-                project_author["name"]
-                for project_author in pyproject_toml_data_project["authors"]
-            ]
+        init_directory = await super()._init_directory(
+            init_directory, init_context_directory, project_metadata, scm, platform
         )
-        # pyproject.toml: add group dependencies
-        python_packages = {"sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"}
-        container = container.with_exec(
-            ["uv", "add", "--group", Documenter.name(), *python_packages, "--no-sync"]
-        )
+        project_name = project_metadata.name
+        project_authors_names = ", ".join([author.name for author in project_metadata.authors])
+        project_documentation_path = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
         # <documentation>/
-        project_documentation_path_str = str(
-            cls._container_project_documentation_path()
-        )
         conf_py_jinja_template_mapping: Mapping = {}
         project_documentation_shiryu_templates_path = (
-            cls._container_project_documentation_shiryu_templates_path()
+            project_documentation_path / "shiryu-templates"
         )
-        project_documentation_shiryu_templates_path_str = str(
-            project_documentation_shiryu_templates_path
-        )
-        # TODO: add docs/source/index.rst file
-        # TODO: add diátaxis index.rst files: docs/source/{explanation, how_to, reference, tutorials}/index.rst
-        #
         # <documentation>/shiryu-templates/conf.py.jinja
         conf_py_jinja_template_file = TemplateFile(
             Path("conf.py.jinja"), project_documentation_shiryu_templates_path
         )
-        if not await is_container_with_file(container, conf_py_jinja_template_file):
-            conf_py_jinja_template = Template(
-                PYTHON_JINJA_ENVIRONMENT,
-                conf_py_jinja_template_file,
-                conf_py_jinja_template_mapping,
+        conf_py_jinja_template = Template(
+            PYTHON_JINJA_ENVIRONMENT, conf_py_jinja_template_file, conf_py_jinja_template_mapping
+        )
+        init_directory = directory_with_new_file(init_directory, conf_py_jinja_template)
+        # <documentation>/source/{explanation/, how_to/, reference/, tutorials/,}
+        # TODO: add docs/source/index.rst file
+        # TODO: add diátaxis index.rst files:
+        # docs/source/{explanation, how_to, reference, tutorials}/index.rst
+        empty_directory = dagger.dag.directory()
+        init_directory = (
+            init_directory.with_directory(
+                str(project_documentation_path / "source" / "explanation"), empty_directory
             )
-            container = await container_with_files(
-                container, (conf_py_jinja_template,), is_overwrite
+            .with_directory(str(project_documentation_path / "source" / "how_to"), empty_directory)
+            .with_directory(
+                str(project_documentation_path / "source" / "reference"), empty_directory
             )
-            container = (
-                container.with_exec(
-                    [
-                        "mkdir",
-                        "--parents",
-                        project_documentation_path_str + "/source/tutorials",
-                        project_documentation_path_str + "/source/how_to",
-                        project_documentation_path_str + "/source/reference",
-                        project_documentation_path_str + "/source/explanation",
-                    ]
-                )
-                .with_exec(
-                    [
-                        "uvx",
-                        "--from",
-                        "sphinx",
-                        "sphinx-quickstart",
-                        "--sep",
-                        f"--project={project_name}",
-                        f"--author='{project_authors_names}'",
-                        "--language=en",
-                        "--release=",
-                        "--ext-autodoc",
-                        "--ext-doctest",
-                        "--ext-intersphinx",
-                        "--ext-todo",
-                        "--ext-coverage",
-                        "--ext-imgmath",
-                        "--ext-mathjax",
-                        "--ext-ifconfig",
-                        "--ext-viewcode",
-                        "--ext-githubpages",
-                        "--extensions=sphinx.ext.napoleon,sphinx_autodoc_typehints",
-                        "--no-batchfile",
-                        f"--templatedir={project_documentation_shiryu_templates_path_str}",
-                        # "-d=append_syspath=true",
-                        # f"-d=module_path=os.path.abspath('../../{cls._source_folder()}')",
-                        project_documentation_path_str,
-                    ]
-                )
-                .with_exec(
-                    [
-                        "sed",
-                        "--in-place",
-                        "--regexp-extended",
-                        r"--expression=s/^   sphinx-quickstart on [a-zA-Z]{3} [a-zA-Z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}\.$/   sphinx-quickstart on --- --- -- --:--:-- ----./",
-                        r"--expression=/^Add your content using ``reStructuredText`` syntax\. See the$/d",
-                        r"--expression=\|^`reStructuredText <https://www\.sphinx-doc\.org/en/master/usage/restructuredtext/index\.html>`_$|d",
-                        r"--expression=/^documentation for details\.$/d",
-                        r"--expression=/^   :caption: Contents:$/a\ \n   modules\n\n\nIndices and tables\n==================\n\n* :ref:`genindex`\n* :ref:`modindex`\n* :ref:`search`",
-                        f"{cls._container_project_documentation_path() / 'source' / 'index.rst'}",
-                    ]
-                )
+            .with_directory(
+                str(project_documentation_path / "source" / "tutorials"), empty_directory
             )
-        return SDKEnv(container, project_properties)
+        )
+        # <documentation>/{Makefile, build/, source/_static/, source/_templates/, source/conf.py,
+        # source/index.rst}
+        init_directory = (
+            cls._base_container(
+                cls._init_context_container(SDKModuleInitContextContainer.create_default()),
+                platform,
+            )
+            .with_directory(".", init_directory)
+            .with_exec(
+                [
+                    "uvx",
+                    "--from",
+                    "sphinx",
+                    "sphinx-quickstart",
+                    "--sep",
+                    f"--project={project_name}",
+                    f"--author='{project_authors_names}'",
+                    "--language=en",
+                    "--release=",
+                    "--ext-autodoc",
+                    "--ext-doctest",
+                    "--ext-intersphinx",
+                    "--ext-todo",
+                    "--ext-coverage",
+                    "--ext-imgmath",
+                    "--ext-mathjax",
+                    "--ext-ifconfig",
+                    "--ext-viewcode",
+                    "--ext-githubpages",
+                    "--extensions=sphinx.ext.napoleon,sphinx_autodoc_typehints",
+                    "--no-batchfile",
+                    f"--templatedir={project_documentation_shiryu_templates_path}",
+                    # "-d=append_syspath=true",
+                    # f"-d=module_path=os.path.abspath('../../{cls._source_folder()}')",
+                    str(project_documentation_path),
+                ]
+            )
+            .with_exec(
+                [
+                    "sed",
+                    "--in-place",
+                    "--regexp-extended",
+                    r"--expression=s/^   sphinx-quickstart on [a-zA-Z]{3} [a-zA-Z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}\.$/   sphinx-quickstart on --- --- -- --:--:-- ----./",  # noqa: E501
+                    r"--expression=/^Add your content using ``reStructuredText`` syntax\. See the$/d",  # noqa: E501
+                    r"--expression=\|^`reStructuredText <https://www\.sphinx-doc\.org/en/master/usage/restructuredtext/index\.html>`_$|d",
+                    r"--expression=/^documentation for details\.$/d",
+                    r"--expression=/^   :caption: Contents:$/a\ \n   modules\n\n\nIndices and tables\n==================\n\n* :ref:`genindex`\n* :ref:`modindex`\n* :ref:`search`",  # noqa: E501
+                    f"{project_documentation_path / 'source' / 'index.rst'}",
+                ]
+            )
+            .directory(".")
+        )
+        return init_directory
 
     @classmethod
-    def _github_actions_workflows(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitHubActionsWorkflows:
+    def _init_context_container(
+        cls, init_context_container: SDKModuleInitContextContainer
+    ) -> SDKModuleInitContextContainer:
         """
-        Get the GitHub actions and workflows.
+        Initialization container context used in the SDK module container initialization.
 
         Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
+            init_context_container: SDK module initialization container context.
 
         Returns:
-            GitHub actions and workflows.
+            The updated SDK module initialization container context.
         """
-        github_actions_workflows = super()._github_actions_workflows(
-            dagger_version, shiryu_version
+        return init_context_container.evolve(
+            apt_packages=init_context_container.apt_packages | {"make"}
         )
-        github_actions = github_actions_workflows["actions"]
-        github_workflows = github_actions_workflows["workflows"]
-        github_action = cls._build_github_action(
-            Documenter,
-            Documenter.document,  # pyright: ignore [reportArgumentType]
-            dagger_version,
-            shiryu_version,
-            Path(cls.__project_documentation_folder()),
-        )
-        github_actions.add(github_action)
-        github_workflows.add(
-            GitHubWorkflowId.DEPLOY,
-            cls._build_github_workflow_job(
-                github_action,
-                shiryu_version,
-                GITHUB_PAGES_ENVIRONMENT,
-                (
-                    GitHubWorkflowJobStep(
-                        "upload_artifact",
-                        "Upload artifact",
-                        "actions/upload-pages-artifact@v5",
-                        (
-                            GitHubWorkflowStepInputParameter(
-                                "path",
-                                f"{cls.__project_documentation_folder()}/build/html",
-                            ),
-                        ),
-                    ),
-                    GitHubWorkflowJobStep(
-                        "deploy_to_github_pages",
-                        "Deploy to GitHub pages",
-                        "actions/deploy-pages@v5",
-                        (),
-                    ),
-                ),
-            ),
-        )
-        github_workflows.add(
-            GitHubWorkflowId.QUALITY,
-            cls._build_github_workflow_job(
-                github_action, shiryu_version, None, tuple()
-            ),
-        )
-        return {"actions": github_actions, "workflows": github_workflows}
-
-    @classmethod
-    def _gitlab_jobs_stages(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitLabJobsStages:
-        """
-        Get the GitLab jobs and stages.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitLab jobs and stages.
-        """
-        gitlab_jobs_stages = super()._gitlab_jobs_stages(dagger_version, shiryu_version)
-        gitlab_jobs = gitlab_jobs_stages["jobs"]
-        gitlab_stages = gitlab_jobs_stages["stages"]
-        gitlab_documentation_folder_output = "public"
-        gitlab_job = cls._build_gitlab_job(
-            Documenter,
-            Documenter.document,  # pyright: ignore [reportArgumentType]
-            shiryu_version,
-            (),
-            Path(cls.__project_documentation_folder()),
-            (
-                f"mkdir {gitlab_documentation_folder_output}",
-                f"cp --recursive {cls.__project_documentation_folder()}/build/html/* {gitlab_documentation_folder_output}/",
-            ),
-            GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
-        )
-        gitlab_jobs.update({gitlab_job})
-        gitlab_stages.add(
-            GitLabStageId.DEPLOY,
-            cls._build_gitlab_stage_job(GitLabStageId.DEPLOY, gitlab_job),
-        )
-        gitlab_stages.add(
-            GitLabStageId.QUALITY,
-            cls._build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
-        )
-        return {"jobs": gitlab_jobs, "stages": gitlab_stages}
-
-
-@final
-@dagger.object_type
-class Documenter(PythonModule, DocumenterInit):
-    """Python SDK documenter."""
-
-    @classmethod
-    def _base_container_base_packages(cls) -> set[str]:
-        """
-        Base container base packages.
-
-        Returns:
-            Base container base packages.
-        """
-        base_container_base_packages = super()._base_container_base_packages()
-        base_container_base_packages.update({"make"})
-        return base_container_base_packages
 
     @final
     @classmethod
-    async def __pipeline(
-        cls, project_directory: ProjectDirectoryType, platform: PlatformType
-    ) -> dagger.Container:
+    def __document(
+        cls, container: dagger.Container, project_metadata: ProjectMetadata
+    ) -> dagger.Directory:
         """
         Document pipeline.
 
         Args:
-            project_directory: Project directory.
-            platform: The container platform.
+            container: Project container.
+            project_metadata: Project metadata.
 
         Returns:
-            A container with the project document command executed.
+            The directory with the documentation files.
         """
-        container, sdk_env = await cls.sdk_module_env(project_directory, platform)
-        sphinx_command = [
-            "uv",
-            "run",
-            "--group",
-            Documenter.name(),
-            "sphinx-apidoc",
-            "--implicit-namespaces",
-            f"-o={cls._container_project_documentation_path() / 'source' / 'reference'}",
-            str(cls._container_project_source_path() / sdk_env.name),
-        ]
-        make_command = [
-            "uv",
-            "run",
-            "--group",
-            Documenter.name(),
-            "make",
-            f"--directory={cls._container_project_documentation_path()}",
-            "html",
-        ]
-        return container.with_exec(sphinx_command).with_exec(make_command)
+        package_name_canonical = get_package_name_canonical(project_metadata.name)
+        sphinx_command = cls._build_uv_run_command(
+            [
+                "sphinx-apidoc",
+                "--implicit-namespaces",
+                f"-o={PurePosixPath(PROJECT_DOCUMENTATION_FOLDER) / 'source' / 'reference'}",
+                str(PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical),
+            ],
+            ExecutionMode.SCRIPT,
+        )
+        make_command = cls._build_uv_run_command(
+            ["make", f"--directory={PROJECT_DOCUMENTATION_FOLDER}", "html"], ExecutionMode.SCRIPT
+        )
+        return (
+            container.with_exec(sphinx_command)
+            .with_exec(make_command)
+            .directory(PROJECT_DOCUMENTATION_FOLDER)
+        )
 
     @final
     @dagger.function
     async def document(
         self,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Run documenter document in the project of the provided source Directory."""
-        container = await self.__pipeline(project_directory, platform)
-        return await container.directory(
-            str(self._container_project_documentation_path())
-        )
+        project_metadata = await self._get_project_metadata(project_directory, platform)
+        container = await self._exec_container(project_directory, platform)
+        return self.__document(container, project_metadata)
 
 
-sdk_module: Final = SDKModuleModule(init=DocumenterInit, module=Documenter)
+sdk_module: Final = Documenter

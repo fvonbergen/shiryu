@@ -106,9 +106,7 @@ def __snake_case_to_dash_case_test_examples() -> set[tuple[str, str]]:
 def test_camel_case_to_snake_case() -> None:
     """Test camel case to snake case conversion."""
     snake_case_separator = "_"
-    for test_example in __camel_case_to_snake_or_dash_case_test_examples(
-        snake_case_separator
-    ):
+    for test_example in __camel_case_to_snake_or_dash_case_test_examples(snake_case_separator):
         assert camel_case_to_snake_case(test_example[0]) == test_example[1], (
             f"Test example: {test_example}"
         )
@@ -117,9 +115,7 @@ def test_camel_case_to_snake_case() -> None:
 def test_camel_case_to_dash_case() -> None:
     """Test camel case to dash case conversion."""
     dash_case_separator = "-"
-    for test_example in __camel_case_to_snake_or_dash_case_test_examples(
-        dash_case_separator
-    ):
+    for test_example in __camel_case_to_snake_or_dash_case_test_examples(dash_case_separator):
         assert camel_case_to_dash_case(test_example[0]) == test_example[1], (
             f"Test example: {test_example}"
         )
@@ -132,17 +128,17 @@ def test_snake_case_to_camel_case() -> None:
     for test_example in __snake_or_dash_case_to_camel_case_test_examples(
         snake_case_separator, camel_case
     ):
-        assert (
-            snake_case_to_camel_case(test_example[0], camel_case) == test_example[1]
-        ), f"Test example: {test_example}"
+        assert snake_case_to_camel_case(test_example[0], camel_case) == test_example[1], (
+            f"Test example: {test_example}"
+        )
 
     camel_case = CamelCase.UPPER
     for test_example in __snake_or_dash_case_to_camel_case_test_examples(
         snake_case_separator, camel_case
     ):
-        assert (
-            snake_case_to_camel_case(test_example[0], camel_case) == test_example[1]
-        ), f"Test example: {test_example}"
+        assert snake_case_to_camel_case(test_example[0], camel_case) == test_example[1], (
+            f"Test example: {test_example}"
+        )
 
 
 def test_snake_case_to_dash_case() -> None:

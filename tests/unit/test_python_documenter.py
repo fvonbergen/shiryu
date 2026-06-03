@@ -4,15 +4,13 @@ import dagger
 import pytest
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import SCM, ProjectNameType, SCMListType
+from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
 
 from .utils.common import Paths, get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
-def python_documenter_init_paths(
-    project_name: ProjectNameType, scm: SCMListType
-) -> Paths:
+def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
     """
     Get python documenter initializer paths.
 
@@ -44,6 +42,7 @@ def python_documenter_init_paths(
         ),
         *(
             "docs/Makefile",
+            "docs/build/",
             "docs/shiryu-templates/conf.py.jinja",
             "docs/source/_static/",
             "docs/source/_templates/",

@@ -6,7 +6,7 @@ from typing import Final
 
 from ....shiryu import SHIRYU_PACKAGE_PATH
 from ....utils.module import path_to_module_str
-from ...common.module import SDKModuleModule
+from ...common.module import SDKModule
 
 
 def get_files(directory: Path, ignore: list[str] | None = None) -> list[Path]:
@@ -25,14 +25,12 @@ def get_files(directory: Path, ignore: list[str] | None = None) -> list[Path]:
         raise Exception(exception_message)
     for _, _, sdk_files in directory.walk():
         return [
-            Path(sdk_file)
-            for sdk_file in sdk_files
-            if ignore is None or sdk_file not in ignore
+            Path(sdk_file) for sdk_file in sdk_files if ignore is None or sdk_file not in ignore
         ]
     return []
 
 
-def __get_sdk_module_modules() -> set[SDKModuleModule]:
+def __get_sdk_module_modules() -> set[type[SDKModule]]:
     """
     Get SDK module modules.
 
@@ -42,7 +40,7 @@ def __get_sdk_module_modules() -> set[SDKModuleModule]:
     file = Path(__file__)
     root_directory = file.parent
     sdk_module_modules_paths = get_files(file.parent, [file.name])
-    sdk_module_modules: set[SDKModuleModule] = set()
+    sdk_module_modules: set[type[SDKModule]] = set()
     for sdk_module_module_path in sdk_module_modules_paths:
         sdk_module_module = import_module(
             path_to_module_str(sdk_module_module_path),
@@ -54,4 +52,4 @@ def __get_sdk_module_modules() -> set[SDKModuleModule]:
     return sdk_module_modules
 
 
-sdk_modules: Final = __get_sdk_module_modules()
+sdk_module_modules: Final = __get_sdk_module_modules()

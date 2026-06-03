@@ -4,12 +4,20 @@ dynamic = ["version"]
 description = ""
 readme = "{{ readme_file_name }}"
 authors = [
+  {%- for project_author in project_authors|sort %}
   { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
+  {%- endfor %}
 ]
 # uv does not work with Python versions prior to 3.6
 # https://docs.astral.sh/uv/reference/policies/python/#python-versions
 requires-python = ">=3.6"
 dependencies = []
+
+# Dependencies that will be installed for the specific module call.
+[dependency-groups]
+{%- for module, dependencies in dependency_groups|dictsort %}
+{{ module }} = ["{{ dependencies|list|sort|join('", "') }}"]
+{%- endfor %}
 
 [project.urls]
 # "Homepage" = ""

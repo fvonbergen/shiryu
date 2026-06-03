@@ -27,6 +27,7 @@ classifiers = [
 # python3.10: dagger-io requires-python = ">=3.10"
 # python3.11: use tomllib, StrEnum
 # python3.12: we are using Path().walk()
+# python3.12: new generics syntax (https://docs.python.org/3/whatsnew/3.12.html#pep-695-type-parameter-syntax)
 requires-python = ">=3.12"
 # Dagger module developments ends up using uv.lock to install module dependencies.
 dependencies = [

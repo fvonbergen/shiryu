@@ -4,13 +4,13 @@ import dagger
 import pytest
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import ProjectNameType, SCMListType
+from shiryu.sdk.common.module import ProjectNameType, SCMType
 
 from .utils.common import Paths, get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
-def python_jupyter_init_paths(project_name: ProjectNameType, scm: SCMListType) -> Paths:
+def python_jupyter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
     """
     Get python jupyter initializer paths.
 
@@ -29,9 +29,7 @@ TEST_CASES = build_test_cases_init((python_jupyter_init_paths,))
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
-async def test_python_builder_init(
-    dagger_client: dagger.Client, test_case: TestCaseInit
-) -> None:
+async def test_python_builder_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
     """
     Test python jupyter init function module.
 

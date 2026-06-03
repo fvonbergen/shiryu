@@ -1,5 +1,5 @@
 [mypy]
 mypy_path = {{ project_source_path }}
-files = {{ source_code_files_and_folders|sort|join(", ") }}
+files = {{ source_code_files_folders|sort|join(", ") }}
 show_error_codes = True
 explicit_package_bases = True

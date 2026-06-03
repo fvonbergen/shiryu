@@ -1,34 +1,45 @@
 """module module."""
 
 import tomllib
-from pathlib import Path
-from typing import Any, Final
+from dataclasses import replace
+from enum import Enum, auto, unique
+from pathlib import Path, PurePosixPath
+from typing import Final, final
 
 import dagger
 
-from ...utils.dagger.container import container_with_files, is_container_with_file
+from ...utils.dagger.client import container_uv
+from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
+from ..common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
 from ..common.module import (
-    PROJECT_NAME_DEFAULT,
     PlatformType,
     ProjectAuthor,
-    ProjectNameType,
-    ProjectProperties,
-    SCMListType,
-    SDKEnv,
+    ProjectDirectoryType,
+    ProjectMetadata,
+    SCMType,
     SDKModule,
-    SDKModuleInit,
-    VCSUser,
 )
+from ..common.utils import PROJECT_SOURCE_CODE_FOLDER
+from .context import PythonModuleInitContextDirectory
 from .templates import PYTHON_JINJA_ENVIRONMENT
 from .utils import get_package_name_canonical
 
 SDK_MODULE_NAME: Final = str(Path(__file__).parent.name)
 
 
-class PythonModuleInit(SDKModuleInit):
-    """PythonModuleInit class."""
+@unique
+class ExecutionMode(Enum):
+    """Execution mode options."""
 
+    SCRIPT = auto()
+    MODULE = auto()
+
+
+class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitContextDirectory]):
+    """PythonModule class."""
+
+    @final
     @staticmethod
     def _sdk_name() -> str:
         """
@@ -38,21 +49,90 @@ class PythonModuleInit(SDKModuleInit):
         """
         return SDK_MODULE_NAME
 
+    @final
     @classmethod
-    def _vcs_exclude_files_folders(cls, project_name: ProjectNameType) -> set[str]:
+    async def _get_project_metadata(
+        cls, project_directory: ProjectDirectoryType, platform: PlatformType
+    ) -> ProjectMetadata:
         """
-        Files and folders to exclude from vcs.
+        Get project metadata.
 
         Args:
-            project_name: Project name.
+            project_directory: Project directory.
+            platform: The container platform.
 
         Returns:
-            Files and folders to exclude from vcs.
+            The project metadata.
         """
-        vcs_exclude_files_folders = super()._vcs_exclude_files_folders(project_name)
-        vcs_exclude_files_folders.update({"/.venv/", "__pycache__/"})
-        return vcs_exclude_files_folders
+        project_metadata = await super()._get_project_metadata(project_directory, platform)
+        project_container = container_uv(
+            dagger.dag, platform, cls._container_project_path(), {"git"}
+        ).with_directory(".", project_directory)
+        try:
+            pyproject_toml_file_contents = await project_container.file(
+                str(cls._pyproject_toml_template_file().output_path)
+            ).contents()
+            pyproject_toml = tomllib.loads(pyproject_toml_file_contents)
+            pyproject_toml_project = pyproject_toml["project"]
+            project_metadata = replace(
+                project_metadata,
+                name=pyproject_toml_project["name"],
+                authors=frozenset(
+                    {
+                        ProjectAuthor(name=project_author["name"], email=project_author["email"])
+                        for project_author in pyproject_toml_project["authors"]
+                    }
+                ),
+            )
+        except dagger.QueryError:
+            ...
+        try:
+            project_version = (
+                await project_container.with_exec(["uvx", "hatch", "version"]).stdout()
+            ).strip()
+            project_metadata = replace(project_metadata, version=project_version)
+        except dagger.QueryError:
+            ...
+        return project_metadata
 
+    @final
+    @classmethod
+    def _create_init_context_directory(cls) -> PythonModuleInitContextDirectory:
+        """
+        Create an initialization context directory.
+
+        Returns:
+            An initialization context directory.
+        """
+        return PythonModuleInitContextDirectory.create_default()
+
+    @classmethod
+    def _init_context_directory(
+        cls,
+        init_context_directory: PythonModuleInitContextDirectory,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> PythonModuleInitContextDirectory:
+        """
+        Initialization directory context used in the SDK module directory initialization.
+
+        Args:
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
+
+        Returns:
+            The updated SDK module initialization directory context.
+        """
+        init_context_directory = super()._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
+        )
+        return init_context_directory.evolve(
+            source_code_files_folders=init_context_directory.source_code_files_folders
+            | {PROJECT_SOURCE_CODE_FOLDER}
+        )
+
+    @final
     @classmethod
     def _pyproject_toml_template_file(cls) -> TemplateFile:
         """
@@ -61,195 +141,129 @@ class PythonModuleInit(SDKModuleInit):
         Returns:
             The pyproject.toml template file.
         """
-        return TemplateFile(Path("pyproject.toml"), cls._container_project_path())
+        return TemplateFile(Path("pyproject.toml"))
 
     @classmethod
-    def _sdk_source_code_python_packages(cls) -> set[str]:
+    async def _init_directory(
+        cls,
+        init_directory: dagger.Directory,
+        init_context_directory: PythonModuleInitContextDirectory,
+        project_metadata: ProjectMetadata,
+        scm: SCMType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
         """
-        Python packages used in modules source code.
-
-        Returns:
-            Python packages used in modules source code.
-        """
-        return set()
-
-    @classmethod
-    async def _module_init(
-        cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
-    ) -> SDKEnv:
-        """
-        Initialize the SDK module environment.
+        Build the initialization directory.
 
         Args:
-            sdk_env: SDK environment.
-            is_overwrite: Whether to overwrite files or not.
+            init_directory: The dagger directory to initialize.
+            project_metadata: Project metadata.
+            init_context_directory: SDK module initialization directory context.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform used for initialization.
 
         Returns:
-            Returns an SDK module environment.
+            The initialization directory.
         """
-        _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
-        container = _sdk_env.container
-        project_properties = _sdk_env.project_properties
-        package_name_canonical = get_package_name_canonical(project_properties.name)
+        init_directory = await super()._init_directory(
+            init_directory, init_context_directory, project_metadata, scm, platform
+        )
+        project_name = project_metadata.name
+        project_authors = project_metadata.authors
+        package_name_canonical = get_package_name_canonical(project_name)
+        # A decision is made to not run uv init and let shiryu create the files.
+        pyproject_toml_template_file = cls._pyproject_toml_template_file()
+        # pyproject.toml
+        pyproject_toml_template_mapping: Mapping = {
+            "project_name": project_name,
+            "project_authors": project_authors,
+            "readme_file_name": str(cls._readme_md_template_file().output_file_name),
+            "dependency_groups": init_context_directory.dependency_groups,
+        }
+        pyproject_toml_template = Template(
+            PYTHON_JINJA_ENVIRONMENT, pyproject_toml_template_file, pyproject_toml_template_mapping
+        )
+        init_directory = directory_with_new_file(init_directory, pyproject_toml_template)
         # py.typed
         py_typed_template_mapping: Mapping = {}
         py_typed_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("py.typed"),
-                cls._container_project_source_path() / package_name_canonical,
+                Path("py.typed"), PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical
             ),
             py_typed_template_mapping,
         )
-        container = await container_with_files(
-            container, (py_typed_template,), is_overwrite
-        )
-        return SDKEnv(container, project_properties)
-
-    @classmethod
-    async def _sdk_module_init(
-        cls,
-        container: dagger.Container,
-        project_name: ProjectNameType | None,
-        vcs_user: VCSUser,
-        is_overwrite: bool,
-        scm: SCMListType,
-    ) -> SDKEnv:
-        """
-        Initialize the SDK module environment.
-
-        Args:
-            container: SDK container to initialize.
-            project_name: Project name.
-            vcs_user: VCS user.
-            is_overwrite: Whether to overwrite files or not.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
-
-        Returns:
-            Returns an SDK module environment.
-        """
-        # A decision is made to not run uv init and let shiryu create the files.
-        pyproject_toml_template_file = cls._pyproject_toml_template_file()
-        # pyproject.toml
-        is_container_with_file_pyproject_toml = await is_container_with_file(
-            container, pyproject_toml_template_file
-        )
-        _project_name: str
-        pyproject_toml_data: dict[str, Any]
-        pyproject_toml_data_project: dict[str, Any]
-        if is_container_with_file_pyproject_toml and not is_overwrite:
-            pyproject_toml_file_contents = await container.file(
-                str(pyproject_toml_template_file.output_path)
-            ).contents()
-            pyproject_toml_data = tomllib.loads(pyproject_toml_file_contents)
-            pyproject_toml_data_project = pyproject_toml_data["project"]
-            _project_name = pyproject_toml_data_project["name"]
-            if project_name is not None and project_name != _project_name:
-                exception_message = f"{pyproject_toml_template_file.file_name} project name ({_project_name}) is different to the provided project name ({project_name})."
-                raise Exception(exception_message)
-            # TODO: print warning if project_author not in authors?
-        else:
-            _project_name = (
-                project_name if project_name is not None else PROJECT_NAME_DEFAULT
-            )
-            pyproject_toml_template_mapping: Mapping = {
-                "project_name": _project_name,
-                "project_author": ProjectAuthor(vcs_user.name, vcs_user.email),
-                "readme_file_name": str(
-                    cls._readme_md_template_file().output_file_name
-                ),
-            }
-            pyproject_toml_template = Template(
-                PYTHON_JINJA_ENVIRONMENT,
-                pyproject_toml_template_file,
-                pyproject_toml_template_mapping,
-            )
-            pyproject_toml_data = tomllib.loads(pyproject_toml_template.contents)
-            pyproject_toml_data_project = pyproject_toml_data["project"]
-            container = await container_with_files(
-                container, (pyproject_toml_template,), is_overwrite
-            )
-        # Project layers.
-        project_authors = {
-            ProjectAuthor(author["name"], author["email"])
-            for author in pyproject_toml_data_project["authors"]
-        }
-        project_version = await container.with_exec(
-            ["uvx", "hatch", "version"]
-        ).stdout()
+        init_directory = directory_with_new_file(init_directory, py_typed_template)
         # uv.lock
-        # uv lock needs the README.md file to create the uv.lock file.
-        # README.md
-        readme_md_template = cls._readme_md_template(_project_name)
         # uv run needs the project to be a package and have files.
         # __init__.py
-        package_name_canonical = get_package_name_canonical(_project_name)
-        __init___py_template_mapping: Mapping = {"project_name": _project_name}
+        __init___py_template_mapping: Mapping = {"project_name": project_name}
         __init___py_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("__init__.py"),
-                cls._container_project_source_path() / package_name_canonical,
+                PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical,
             ),
             __init___py_template_mapping,
         )
-        container = await container_with_files(
-            container,
-            (
-                readme_md_template,
-                __init___py_template,
-            ),
-            False,
-        )
-        container = container.with_exec(["uv", "lock"])
-        return SDKEnv(
-            container,
-            ProjectProperties(_project_name, project_authors, project_version),
+        init_directory = directory_with_new_file(init_directory, __init___py_template)
+        return (
+            container_uv(dagger.dag, platform, cls._container_project_path())
+            .with_directory(".", init_directory)
+            .with_exec(["uv", "lock"])
+            .directory(".")
         )
 
-
-class PythonModule(SDKModule, PythonModuleInit):
-    """PythonModule class."""
-
+    @final
     @classmethod
-    def _base_container_base_packages(cls) -> set[str]:
+    def _create_init_context_container(cls) -> SDKModuleInitContextContainer:
         """
-        Base container base packages.
+        Create an initialization context container.
 
         Returns:
-            Base container base packages.
+            An initialization context container.
         """
-        base_container_base_packages = super()._base_container_base_packages()
-        base_container_base_packages.update({"pipx"})
-        return base_container_base_packages
+        return SDKModuleInitContextContainer.create_default()
 
+    @final
     @classmethod
-    def _base_container(cls, platform: PlatformType) -> dagger.Container:
+    def _base_container(
+        cls, init_context_container: SDKModuleInitContextContainer, platform: PlatformType
+    ) -> dagger.Container:
         """
         Base container.
 
         Args:
+            init_context_container: SDK module initialization container context.
             platform: The container platform.
 
         Returns:
             A base container.
         """
-        container = super()._base_container(platform)
-        venv_path_str = "/opt/.venv"
-        return (
-            container.with_mounted_cache(
-                "/root/.cache/pipx",
-                dagger.dag.cache_volume("shiryu-pipx-debian-trixie-slim"),
-            )
-            .with_env_variable(
-                name="PATH", value="/root/.local/bin:${PATH}", expand=True
-            )
-            .with_exec(["pipx", "install", "uv"])
-            .with_mounted_cache(
-                "/root/.cache/uv",
-                dagger.dag.cache_volume("shiryu-uv-debian-trixie-slim"),
-            )
-            .with_exec(["uv", "venv", venv_path_str])
-            .with_env_variable(name="UV_PROJECT_ENVIRONMENT", value=venv_path_str)
+        return container_uv(
+            dagger.dag, platform, cls._container_project_path(), init_context_container.apt_packages
         )
+
+    @final
+    @classmethod
+    def _build_uv_run_command(
+        cls, command: list[str], execution_mode: ExecutionMode = ExecutionMode.MODULE
+    ) -> list[str]:
+        """
+        Builds the uv run command.
+
+        Args:
+            command: A command as a list of strings.
+            execution_mode: The execution mode to launch the target.
+
+        Returns:
+            The uv command to run.
+        """
+        return [
+            "uv",
+            "run",
+            "--group",
+            cls.name(),
+            *(("--module",) if execution_mode is ExecutionMode.MODULE else ()),
+            *command,
+        ]

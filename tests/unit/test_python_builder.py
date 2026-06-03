@@ -6,19 +6,14 @@ import dagger
 import pytest
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import (
-    PROJECT_NAME_DEFAULT,
-    SCM,
-    ProjectNameType,
-    SCMListType,
-)
+from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
 from shiryu.sdk.python.utils import get_package_name_canonical
 
 from .utils.common import Paths, get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
-def python_builder_init_paths(project_name: ProjectNameType, scm: SCMListType) -> Paths:
+def python_builder_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
     """
     Get python builder initializer paths.
 
@@ -58,9 +53,7 @@ TEST_CASES = build_test_cases_init((python_builder_init_paths,))
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
-async def test_python_builder_init(
-    dagger_client: dagger.Client, test_case: TestCaseInit
-) -> None:
+async def test_python_builder_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
     """
     Test python builder init function module.
 
@@ -98,22 +91,27 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
+    project_directory = (
+        await Shiryu.python()  # type: ignore[attr-defined]
+        .builder()()
+        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+    )
     directory = (
         await Shiryu.python()  # type: ignore[attr-defined]
         .builder()()
         .build(project_directory=project_directory, platform=platform)
     )
-
     paths = await get_all_paths(directory)
     date_pattern = r"\d{4}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
     expected_paths_compiled_patterns = (
         re.compile(
-            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-\.py3-none-any\.whl$"
+            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-py3-none-any\.whl$"
         ),
         re.compile(
             rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}\.tar\.gz$"
         ),
     )
+
     for path, pattern in zip(paths, expected_paths_compiled_patterns, strict=True):
         assert pattern.match(path)
 
@@ -126,9 +124,15 @@ async def test_python_builder_test(dagger_client: dagger.Client) -> None:
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
     """
+    project_name = PROJECT_NAME_DEFAULT
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
+    project_directory = (
+        await Shiryu.python()  # type: ignore[attr-defined]
+        .builder()()
+        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+    )
     stdout = (
         await Shiryu.python()  # type: ignore[attr-defined]
         .builder()()

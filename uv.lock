@@ -1553,7 +1553,7 @@ dependencies = [
     { name = "jinja2", marker = "python_full_version < '3.15'" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 builder = [
     { name = "hatch", marker = "python_full_version < '3.15'" },
 ]
@@ -1583,22 +1583,29 @@ tester = [
 [package.metadata]
 requires-dist = [
     { name = "dagger-io", specifier = ">=0.18.15" },
-    { name = "hatch", marker = "extra == 'builder'" },
     { name = "jinja2", specifier = ">=3.0.0" },
-    { name = "mypy", marker = "extra == 'checker'" },
-    { name = "pytest", marker = "extra == 'checker'" },
-    { name = "pytest", marker = "extra == 'tester'" },
-    { name = "pytest-asyncio", marker = "extra == 'checker'" },
-    { name = "pytest-asyncio", marker = "extra == 'tester'" },
-    { name = "pytest-cov", marker = "extra == 'tester'" },
-    { name = "pytest-xdist", extras = ["psutil"], marker = "extra == 'tester'" },
-    { name = "ruff", marker = "extra == 'linter'" },
-    { name = "sphinx", marker = "extra == 'documenter'" },
-    { name = "sphinx-autodoc-typehints", marker = "extra == 'documenter'" },
-    { name = "sphinx-rtd-theme", marker = "extra == 'documenter'" },
-    { name = "uv", marker = "extra == 'environment'" },
 ]
-provides-extras = ["builder", "checker", "documenter", "environment", "linter", "tester"]
+
+[package.metadata.requires-dev]
+builder = [{ name = "hatch" }]
+checker = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+]
+documenter = [
+    { name = "sphinx" },
+    { name = "sphinx-autodoc-typehints" },
+    { name = "sphinx-rtd-theme" },
+]
+environment = [{ name = "uv" }]
+linter = [{ name = "ruff" }]
+tester = [
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-xdist", extras = ["psutil"] },
+]
 
 [[package]]
 name = "snowballstemmer"

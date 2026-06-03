@@ -1,31 +1,39 @@
-"""check module."""
+"""checker module."""
 
-from configparser import ConfigParser
 from pathlib import Path
 from typing import Final, final
 
 import dagger
 
-from ....utils.dagger.container import container_with_files
+from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
+from ...common.context import DaggerModuleMetadata
 from ...common.module import (
-    PLATFORM_DEFAULT,
-    GitHubActionsWorkflows,
-    GitHubWorkflowId,
-    GitLabJobsStages,
-    GitLabStageId,
+    PLATFORM_DAGGER_DEFAULT,
+    PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryType,
-    SCMListType,
-    SDKEnv,
-    SDKModuleModule,
+    ProjectDirectoryDaggerType,
+    ProjectMetadata,
+    SCMType,
 )
-from ..module import PythonModule, PythonModuleInit
+from ...common.scm import (
+    GitHubWorkflowId,
+    GitLabStageId,
+    build_github_action,
+    build_github_workflow_job,
+    build_gitlab_job,
+    build_gitlab_stage_job,
+)
+from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
+from ..context import PythonModuleInitContextDirectory
+from ..module import PythonModule
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+from .tester import TESTS_CODE_DEPENDENCIES
 
 
-class CheckerInit(PythonModuleInit):
-    """Python SDK checker initializer."""
+@dagger.object_type
+class Checker(PythonModule):
+    """Python SDK checker."""
 
     @final
     @classmethod
@@ -36,197 +44,143 @@ class CheckerInit(PythonModuleInit):
         Returns:
             The mypy.ini template file.
         """
-        return TemplateFile(Path("mypy.ini"), cls._container_project_path())
+        return TemplateFile(Path("mypy.ini"))
 
     @classmethod
-    async def _module_init(
-        cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
-    ) -> SDKEnv:
+    def _init_context_directory(
+        cls,
+        init_context_directory: PythonModuleInitContextDirectory,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> PythonModuleInitContextDirectory:
         """
-        Initialize the SDK module environment.
+        Initialization directory context used in the SDK module directory initialization.
 
         Args:
-            sdk_env: SDK environment.
-            is_overwrite: Whether to overwrite files or not.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
 
         Returns:
-            Returns an SDK module environment.
+            The updated SDK module initialization directory context.
         """
-        _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
-        container = _sdk_env.container
-        project_properties = _sdk_env.project_properties
-        # pyproject.toml: add group dependencies
-        python_packages = {*cls._sdk_source_code_python_packages(), "mypy"}
-        container = container.with_exec(
-            ["uv", "add", "--group", Checker.name(), *python_packages, "--no-sync"]
+        init_context_directory = super()._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
+        )
+        dagger_version = shiryu_metadata.dagger_version
+        shiryu_version = shiryu_metadata.git_tag_or_branch
+        sdk_language = cls._sdk_name()
+        sdk_module_name = cls.name()
+        sdk_module_function = cls.check
+        github_action = build_github_action(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            dagger_version=dagger_version,
+            shiryu_version=shiryu_version,
+            export_path=None,
+        )
+        gitlab_job = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            shiryu_version=shiryu_version,
+            pre_script=(),
+            export_path=None,
+            post_script=(),
+            artifacts=None,
+        )
+        return init_context_directory.evolve(
+            scm=init_context_directory.scm.evolve(
+                github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
+                    actions=init_context_directory.scm.github_actions_workflows.actions
+                    | {github_action},
+                    workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
+                        GitHubWorkflowId.QUALITY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action,
+                            shiryu_version=shiryu_version,
+                            job_environment=None,
+                            post_steps=(),
+                        ),
+                    ),
+                ),
+                gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
+                    stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
+                        ),
+                    ),
+                ),
+            ),
+            dependency_groups=init_context_directory.dependency_groups.add(
+                sdk_module_name, {"mypy"} | TESTS_CODE_DEPENDENCIES
+            ),
+        )
+
+    @classmethod
+    async def _init_directory(
+        cls,
+        init_directory: dagger.Directory,
+        init_context_directory: PythonModuleInitContextDirectory,
+        project_metadata: ProjectMetadata,
+        scm: SCMType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
+        """
+        Build the initialization directory.
+
+        Args:
+            init_directory: The dagger directory to initialize.
+            init_context_directory: SDK module initialization directory context.
+            project_metadata: Project metadata.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform used for initialization.
+
+        Returns:
+            The initialization directory.
+        """
+        init_directory = await super()._init_directory(
+            init_directory, init_context_directory, project_metadata, scm, platform
         )
         # mypy.ini
         mypy_init_template_mapping: Mapping = {
-            "project_source_path": str(
-                cls._container_project_source_path().relative_to(
-                    cls._container_project_path()
-                )
-            ),
-            "source_code_files_and_folders": cls._sdk_source_code_files_folders(),
+            "project_source_path": PROJECT_SOURCE_CODE_FOLDER,
+            "source_code_files_folders": init_context_directory.source_code_files_folders,
         }
         mypy_ini_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            cls._mypy_ini_template_file(),
-            mypy_init_template_mapping,
+            PYTHON_JINJA_ENVIRONMENT, cls._mypy_ini_template_file(), mypy_init_template_mapping
         )
-        # mypy.ini
-        container = await container_with_files(
-            container, (mypy_ini_template,), is_overwrite
-        )
-
-        return SDKEnv(container, project_properties)
-
-    @classmethod
-    def _github_actions_workflows(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitHubActionsWorkflows:
-        """
-        Get the GitHub actions and workflows.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitHub actions and workflows.
-        """
-        github_actions_workflows = super()._github_actions_workflows(
-            dagger_version, shiryu_version
-        )
-        github_actions = github_actions_workflows["actions"]
-        github_workflows = github_actions_workflows["workflows"]
-        github_action = cls._build_github_action(
-            Checker,
-            Checker.check,  # pyright: ignore [reportArgumentType]
-            dagger_version,
-            shiryu_version,
-            None,
-        )
-        github_actions.add(github_action)
-        github_workflows.add(
-            GitHubWorkflowId.QUALITY,
-            cls._build_github_workflow_job(
-                github_action, shiryu_version, None, tuple()
-            ),
-        )
-        return {"actions": github_actions, "workflows": github_workflows}
-
-    @classmethod
-    def _gitlab_jobs_stages(
-        cls, dagger_version: str, shiryu_version: str
-    ) -> GitLabJobsStages:
-        """
-        Get the GitLab jobs and stages.
-
-        Args:
-            dagger_version: Dagger version.
-            shiryu_version: Shiryu version.
-
-        Returns:
-            GitLab jobs and stages.
-        """
-        gitlab_jobs_stages = super()._gitlab_jobs_stages(dagger_version, shiryu_version)
-        gitlab_jobs = gitlab_jobs_stages["jobs"]
-        gitlab_stages = gitlab_jobs_stages["stages"]
-        gitlab_job = cls._build_gitlab_job(
-            Checker,
-            Checker.check,  # pyright: ignore [reportArgumentType]
-            shiryu_version,
-            (),
-            None,
-            (),
-            None,
-        )
-        gitlab_jobs.update({gitlab_job})
-        gitlab_stages.add(
-            GitLabStageId.QUALITY,
-            cls._build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
-        )
-        return {"jobs": gitlab_jobs, "stages": gitlab_stages}
-
-
-@final
-@dagger.object_type
-class Checker(PythonModule, CheckerInit):
-    """Python SDK checker."""
+        return directory_with_new_file(init_directory, mypy_ini_template)
 
     @final
     @classmethod
-    async def __pipeline(
-        cls, project_directory: ProjectDirectoryType, platform: PlatformType
-    ) -> dagger.Container:
+    async def __check(cls, container: dagger.Container) -> None:
         """
         Check pipeline.
 
         Args:
-            project_directory: Project directory.
-            platform: The container platform.
-
-        Returns:
-            A container with the project check command executed.
+            container: Project container.
         """
-        container, _ = await cls.sdk_module_env(project_directory, platform)
-        # mypy needs files inside the source code folder.
-        config = ConfigParser()
-        mypy_ini_file_contents = await container.file(
-            str(cls._mypy_ini_template_file().output_path)
-        ).contents()
-        config.read_string(mypy_ini_file_contents)
-        source_code_files_folders = {
-            source_code_file_folder.strip()
-            for source_code_file_folder in config["mypy"]["files"].split(",")
-        }
-        # <source_code_folder>/mypy_dummy.py
-        for source_code_folder in source_code_files_folders:
-            mypy_dummy_py_output_path = (
-                cls._container_project_path() / source_code_folder
-            )
-            source_code_files = sorted(
-                await container.directory(str(mypy_dummy_py_output_path)).glob(
-                    "**/*.py"
-                )
-            )
-            if len(source_code_files) == 0:
-                mypy_dummy_py_template_file = TemplateFile(
-                    Path("mypy_dummy.py"), mypy_dummy_py_output_path
-                )
-                mypy_dummy_py_template_mapping: Mapping = {}
-                mypy_dummy_py_template = Template(
-                    PYTHON_JINJA_ENVIRONMENT,
-                    mypy_dummy_py_template_file,
-                    mypy_dummy_py_template_mapping,
-                )
-                # <source_code_folder>/dummy.py
-                container = await container_with_files(
-                    container, (mypy_dummy_py_template,), False
-                )
-        # MYPYPATH={PROJECT_SOURCE_CODE_FOLDER} mypy --config-file={mypy_ini_file.file_name} {' '.join(params)}
-        mypy_command = [
-            "uv",
-            "run",
-            "--group",
-            Checker.name(),
-            "--module",
-            "mypy",
-            f"--config-file={cls._mypy_ini_template_file().file_name}",
-        ]
-        return container.with_exec(mypy_command)
+        mypy_command = cls._build_uv_run_command(
+            ["mypy", f"--config-file={cls._mypy_ini_template_file().file_name}"]
+        )
+        await container.with_exec(mypy_command).sync()
 
+    @final
     @dagger.function
     async def check(
         self,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Run type checks in the project of the provided source Directory."""
-        await (await self.__pipeline(project_directory, platform)).sync()
+        container = await self._exec_container(project_directory, platform)
+        await self.__check(container)
         return "Check successfull"
 
 
-sdk_module: Final = SDKModuleModule(init=CheckerInit, module=Checker)
+sdk_module: Final = Checker

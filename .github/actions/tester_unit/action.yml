@@ -12,7 +12,7 @@ inputs:
   sdk_language:
     description: "SDK programming language"
     default: "python"
-  experimental_privileged_nesting:
+  privileged_nesting:
     description: "Whether to allow container dagger client to connect to the dagger engine."
     default: "false"
   platform:
@@ -32,5 +32,5 @@ runs:
         version: "v0.21.3"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} tester unit --experimental-privileged-nesting="${{ inputs.experimental_privileged_nesting }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
+        args: ${{ inputs.sdk_language }} tester unit --privileged-nesting="${{ inputs.privileged_nesting }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

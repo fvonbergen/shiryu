@@ -13,7 +13,7 @@ from shiryu.sdk.common.module import (
     PlatformType,
     ProjectDirectoryType,
     ProjectNameType,
-    SCMListType,
+    SCMType,
 )
 from shiryu.sdk.python.utils import get_package_name_canonical
 
@@ -27,7 +27,7 @@ class TestCaseInitInputs(NamedTuple):
     project_name: ProjectNameType
     project_directory: ProjectDirectoryType
     is_update: IsUpdateType
-    scm: SCMListType
+    scm: SCMType
     platform: PlatformType
 
 
@@ -41,7 +41,7 @@ class TestCaseInit(NamedTuple):
     output: DirectoryOutput
 
 
-def __python_init_paths(project_name: ProjectNameType, scm: SCMListType) -> Paths:
+def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
     """
     Get python initializer paths.
 
@@ -95,12 +95,12 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMListType) -> Path
     )
 
 
-ModulesInitPathsCallable = Callable[[ProjectNameType, SCMListType], Paths]
+ModulesInitPathsCallable = Callable[[ProjectNameType, SCMType], Paths]
 
 
 def __expected_paths(
     project_name: ProjectNameType,
-    scm: SCMListType,
+    scm: SCMType,
     modules_init_paths_functions: tuple[ModulesInitPathsCallable, ...],
 ) -> Paths:
     """
@@ -109,7 +109,7 @@ def __expected_paths(
     Args:
         project_name: Project name.
         scm: Project Source Code Management (SCM) list to be targeted or configured.
-        modules_init_paths_functions: An iterable of callable functions used to generate module initialization paths.
+        modules_init_paths_functions: Callable functions to generate module initialization paths.
 
     Returns:
         The module init expected paths.
@@ -130,13 +130,13 @@ def __expected_paths(
 
 
 def build_test_cases_init(
-    test_case_modules_init_paths_functions: tuple[ModulesInitPathsCallable, ...],
+    modules_init_paths_functions: tuple[ModulesInitPathsCallable, ...],
 ) -> tuple[TestCaseInit, ...]:
     """
     Builds the test cases used for testing init calls.
 
     Args:
-        test_case_modules_init_paths_functions: An iterable of callable functions used to generate module initialization paths.
+        modules_init_paths_functions: Callable functions to generate module initialization paths.
 
     Returns:
         The test cases.
@@ -159,13 +159,13 @@ def build_test_cases_init(
     )
     return tuple(
         TestCaseInit(
-            name=f"is_update={test_case_init_inputs.is_update},scm={[str(scm.value) for scm in test_case_init_inputs.scm]}",
+            name=f"is_update={test_case_init_inputs.is_update},scm={list(test_case_init_inputs.scm)}",
             inputs=test_case_init_inputs,
             output=DirectoryOutput(
                 paths=__expected_paths(
                     test_case_init_inputs.project_name,
                     test_case_init_inputs.scm,
-                    test_case_modules_init_paths_functions,
+                    modules_init_paths_functions,
                 )
             ),
         )

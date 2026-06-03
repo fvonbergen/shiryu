@@ -1,30 +1,36 @@
 """jupyter module."""
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
 
-from ....utils.dagger.container import container_with_files
+from ....utils.dagger.client import container_debian
+from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
+from ...common.context import DaggerModuleMetadata
 from ...common.module import (
-    PLATFORM_DEFAULT,
+    PLATFORM_DAGGER_DEFAULT,
+    PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryType,
-    SCMListType,
-    SDKEnv,
-    SDKModuleModule,
+    ProjectDirectoryDaggerType,
+    ProjectMetadata,
+    SCMType,
 )
-from ..module import PythonModule, PythonModuleInit
+from ..context import PythonModuleInitContextDirectory
+from ..module import PythonModule
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
-PortType = Annotated[int, dagger.Doc("Jupyter notebooks port")]
+PortType = int
+PortDaggerType = Annotated[PortType, dagger.Doc("Jupyter notebooks port")]
 
+PORT_DAGGER_DEFAULT: Final = 8888
 JUPYTER_NOTEBOOKS_CACHE_VOLUME = dagger.dag.cache_volume("shiryu-jupyter-debian-trixie")
 
 
-class JupyterInit(PythonModuleInit):
-    """Python SDK jupyter initializer."""
+@dagger.object_type
+class Jupyter(PythonModule):
+    """Python SDK jupyter."""
 
     @final
     @staticmethod
@@ -37,174 +43,149 @@ class JupyterInit(PythonModuleInit):
         """
         return "notebooks"
 
-    @final
     @classmethod
-    def _container_project_notebooks_path(cls) -> Path:
+    def _init_context_directory(
+        cls,
+        init_context_directory: PythonModuleInitContextDirectory,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> PythonModuleInitContextDirectory:
         """
-        Get the container project notebooks path.
-
-        Returns:
-            The container project notebooks path.
-        """
-        return cls._container_project_path() / cls._notebooks_folder()
-
-    @classmethod
-    async def _module_init(
-        cls, sdk_env: SDKEnv, is_overwrite: bool, scm: SCMListType
-    ) -> SDKEnv:
-        """
-        Initialize the SDK module environment.
+        Initialization directory context used in the SDK module directory initialization.
 
         Args:
-            sdk_env: SDK environment.
-            is_overwrite: Whether to overwrite files or not.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
 
         Returns:
-            Returns an SDK module environment.
+            The updated SDK module initialization directory context.
         """
-        _sdk_env = await super()._module_init(sdk_env, is_overwrite, scm)
-        container = _sdk_env.container
-        project_properties = _sdk_env.project_properties
-        # pyproject.toml: add group dependencies
-        python_packages = {"notebook", "python-lsp-server"}
-        container = container.with_exec(
-            ["uv", "add", "--group", Jupyter.name(), *python_packages, "--no-sync"]
+        init_context_directory = super()._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
         )
-        # <jupyter notebooks>/
-        container = container.with_exec(
-            [
-                "mkdir",
-                "--parents",
-                str(cls._container_project_notebooks_path()),
-            ]
+        sdk_module_name = cls.name()
+        return init_context_directory.evolve(
+            dependency_groups=init_context_directory.dependency_groups.add(
+                sdk_module_name, {"notebook", "python-lsp-server"}
+            ),
         )
+
+    @classmethod
+    async def _init_directory(
+        cls,
+        init_directory: dagger.Directory,
+        init_context_directory: PythonModuleInitContextDirectory,
+        project_metadata: ProjectMetadata,
+        scm: SCMType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
+        """
+        Build the initialization directory.
+
+        Args:
+            init_directory: The dagger directory to initialize.
+            init_context_directory: SDK module initialization directory context.
+            project_metadata: Project metadata.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform used for initialization.
+
+        Returns:
+            The initialization directory.
+        """
+        init_directory = await super()._init_directory(
+            init_directory, init_context_directory, project_metadata, scm, platform
+        )
+
         # <jupyter notebooks>/playground.ipynb
-        playground_ipynb_template_mapping: Mapping = {
-            "project_name": project_properties.name
-        }
+        playground_ipynb_template_mapping: Mapping = {"project_name": project_metadata.name}
         playground_ipynb_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
-            TemplateFile(
-                Path("playground.ipynb"), cls._container_project_notebooks_path()
-            ),
+            TemplateFile(Path("playground.ipynb"), PurePosixPath(cls._notebooks_folder())),
             playground_ipynb_template_mapping,
         )
-        # <jupyter notebooks>/playground.ipynb
-        container = await container_with_files(
-            container, (playground_ipynb_template,), is_overwrite
-        )
-        return SDKEnv(container, project_properties)
-
-
-@final
-@dagger.object_type
-class Jupyter(PythonModule, JupyterInit):
-    """Python SDK jupyter."""
+        return directory_with_new_file(init_directory, playground_ipynb_template)
 
     @final
     @classmethod
-    def __container_project_notebooks_cache_path(cls) -> Path:
+    def __notebooks_cache_folder(cls) -> str:
         """
-        Get the container project notebooks cache path.
+        Get the container project notebooks cache folder.
 
         Returns:
-            The container project notebooks cache path.
+            The container project notebooks cache folder.
         """
-        return cls._container_project_path() / "notebooks_cache"
+        return "notebooks_cache"
 
     @final
     @classmethod
-    async def __pipeline(
-        cls,
-        project_directory: ProjectDirectoryType,
-        platform: PlatformType,
-        jupyter_port: PortType,
-    ) -> dagger.Service:
+    async def __serve(cls, container: dagger.Container, jupyter_port: PortType) -> dagger.Service:
         """
         Jupyter pipeline.
 
         Args:
-            project_directory: Project directory.
-            platform: The container platform.
+            container: Project container.
             jupyter_port: Jupyter notebooks port.
 
         Returns:
             A container with the project jupyter command executed.
         """
-        container, _ = await cls.sdk_module_env(project_directory, platform)
-        container_project_notebooks_path_str = str(
-            cls._container_project_notebooks_path()
-        )
-        jupyter_notebooks_cache_path_str = str(
-            cls.__container_project_notebooks_cache_path()
-        )
+        jupyter_notebooks_cache_folder = cls.__notebooks_cache_folder()
         container = (
             await container.with_mounted_cache(
-                jupyter_notebooks_cache_path_str, JUPYTER_NOTEBOOKS_CACHE_VOLUME
+                jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME
             )
             .with_exec(
                 [
                     "cp",
                     "--no-clobber",
                     "--archive",
-                    f"{container_project_notebooks_path_str}/.",
-                    f"{jupyter_notebooks_cache_path_str}/",
+                    f"{cls._notebooks_folder()}/.",
+                    f"{jupyter_notebooks_cache_folder}/",
                 ]
             )
             .sync()
         )
-        jupyter_command = [
-            "uv",
-            "run",
-            "--group",
-            Jupyter.name(),
-            "--module",
-            "jupyter",
-            "notebook",
-            "--ip=0.0.0.0",
-            f"--port={jupyter_port}",
-            "--no-browser",
-            "--allow-root",
-            jupyter_notebooks_cache_path_str,
-        ]
+        jupyter_command = cls._build_uv_run_command(
+            [
+                "jupyter",
+                "notebook",
+                "--ip=0.0.0.0",
+                f"--port={jupyter_port}",
+                "--no-browser",
+                "--allow-root",
+                jupyter_notebooks_cache_folder,
+            ]
+        )
         return container.as_service(args=jupyter_command)
 
     @final
     @dagger.function
     async def service(
         self,
-        project_directory: ProjectDirectoryType,
-        backend_port: PortType = 8888,
-        platform: PlatformType = PLATFORM_DEFAULT,
+        project_directory: ProjectDirectoryDaggerType,
+        backend_port: PortDaggerType = PORT_DAGGER_DEFAULT,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Service:
         """Returns a jupyter notebooks service with the project of the provided source Directory."""
-        return await self.__pipeline(project_directory, platform, backend_port)
+        container = await self._exec_container(project_directory, platform)
+        return await self.__serve(container, backend_port)
 
     @final
     @dagger.function
-    def notebooks(self, platform: PlatformType = PLATFORM_DEFAULT) -> dagger.Directory:
+    def notebooks(self, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> dagger.Directory:
         """Returns jupyter notebooks Directory."""
-        jupyter_notebooks_cache_path_str = str(
-            self.__container_project_notebooks_cache_path()
-        )
-        export_path_str = str(Path("/export"))
+        jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
+        export_path_str = "/export"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
         return (
-            self._base_container(platform)
-            .with_mounted_cache(
-                jupyter_notebooks_cache_path_str, JUPYTER_NOTEBOOKS_CACHE_VOLUME
-            )
+            container_debian(dagger.dag, platform, self._container_project_path())
+            .with_mounted_cache(jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME)
             .with_exec(
-                [
-                    "cp",
-                    "--archive",
-                    f"{jupyter_notebooks_cache_path_str}/.",
-                    f"{export_path_str}/",
-                ]
+                ["cp", "--archive", f"{jupyter_notebooks_cache_folder}/.", f"{export_path_str}/"]
             )
             .directory(export_path_str)
         )
 
 
-sdk_module: Final = SDKModuleModule(init=JupyterInit, module=Jupyter)
+sdk_module: Final = Jupyter

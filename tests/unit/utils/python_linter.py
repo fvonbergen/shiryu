@@ -1,6 +1,6 @@
 """python_linter module."""
 
-from pathlib import Path
+from pathlib import PurePosixPath
 from typing import NamedTuple, final
 
 from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, ProjectNameType
@@ -13,11 +13,11 @@ from .common import DirectoryOutput, ignore_pytest
 class TestCaseLintFixInputFile(NamedTuple):
     """TestCaseLintFixInputFile class."""
 
-    path: Path
+    path: PurePosixPath
     contents: str
 
 
-def __get_source_file_path(project_name: ProjectNameType, file_name: str) -> Path:
+def __get_source_file_path(project_name: ProjectNameType, file_name: str) -> PurePosixPath:
     """
     Construct relative path to a source file within a shiryu project.
 
@@ -29,7 +29,7 @@ def __get_source_file_path(project_name: ProjectNameType, file_name: str) -> Pat
         The constructed project source file path.
     """
     package_name_canonical = get_package_name_canonical(project_name)
-    return Path("src") / str(package_name_canonical) / file_name
+    return PurePosixPath("src") / str(package_name_canonical) / file_name
 
 
 def __build_test_case_lint_fix_input_file(
@@ -120,17 +120,16 @@ def build_test_cases_linter_lint_failure() -> tuple[TestCaseLint, ...]:
         The test cases.
     """
     project_name = PROJECT_NAME_DEFAULT
-
+    source_file_path = __get_source_file_path(project_name, "lint_failure.py")
     return (
         TestCaseLint(
             name="invalid_file",
             inputs=TestCaseLintFixInputs(
-                __build_test_case_lint_fix_input_file(
-                    project_name, "lint_failure.py", ""
-                )
+                __build_test_case_lint_fix_input_file(project_name, "lint_failure.py", "")
             ),
             output=StringOutput(
-                f"D100 Missing docstring in public module\n--> {__get_source_file_path(project_name, 'lint_failure.py')}:1:1\n\nFound 1 error."
+                f"D100 Missing docstring in public module\n--> {source_file_path}:1:1\n\nFound 1 "
+                "error."
             ),
         ),
     )
@@ -170,38 +169,11 @@ def build_test_cases_linter_fix_success() -> tuple[TestCaseFixSuccess, ...]:
             ),
             output=DirectoryOutput(paths=()),
         ),
-    )
-
-
-@final
-@ignore_pytest
-class TestCaseFixFailure(NamedTuple):
-    """TestCaseFixFailure class."""
-
-    name: str
-    inputs: TestCaseLintFixInputs
-    output: StringOutput
-
-
-def build_test_cases_linter_fix_failure() -> tuple[TestCaseFixFailure, ...]:
-    """
-    Builds the test cases used for testing linter fix failure calls.
-
-    Returns:
-        The test cases.
-    """
-    project_name = PROJECT_NAME_DEFAULT
-
-    return (
-        TestCaseFixFailure(
+        TestCaseFixSuccess(
             name="invalid_file",
             inputs=TestCaseLintFixInputs(
-                __build_test_case_lint_fix_input_file(
-                    project_name, "fix_failure.py", ""
-                )
+                file=__build_test_case_lint_fix_input_file(project_name, "fix_failure.py", "")
             ),
-            output=StringOutput(
-                f"D100 Missing docstring in public module\n--> {__get_source_file_path(project_name, 'fix_failure.py')}:1:1\n\nFound 1 error."
-            ),
+            output=DirectoryOutput(paths=()),
         ),
     )

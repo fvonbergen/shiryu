@@ -29,8 +29,6 @@ runs:
       uses: {{ step.uses }}
       {%- if step.with_|length != 0 %}
       with:
-        {%- for name, value in step.with_ %}
-        {{ name }}: {{ value }}
-        {%- endfor %}
+        {{ step.with_.name }}: {{ step.with_.value }}
       {%- endif %}
     {%- endfor %}

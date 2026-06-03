@@ -1,6 +1,6 @@
 """template module."""
 
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Final, final
 
 import jinja2
@@ -44,8 +44,8 @@ class TemplateFile:
     def __init__(
         self,
         file_name: Path,
-        output_directory: Path,
-        output_file_name: Path | None = None,
+        output_directory: PurePosixPath | None = None,
+        output_file_name: PurePosixPath | None = None,
     ) -> None:
         """
         Class initializer.
@@ -56,8 +56,8 @@ class TemplateFile:
             output_file_name: Alternative output file name.
         """
         self.__file_name = file_name
-        self.__output_directory = output_directory
-        self.__output_file_name = output_file_name
+        self.__output_directory = output_directory if output_directory else PurePosixPath()
+        self.__output_file_name = output_file_name if output_file_name else PurePosixPath(file_name)
 
     @property
     def file_name(self) -> Path:
@@ -70,7 +70,7 @@ class TemplateFile:
         return self.__file_name
 
     @property
-    def output_directory(self) -> Path:
+    def output_directory(self) -> PurePosixPath:
         """
         Get output directory.
 
@@ -80,17 +80,17 @@ class TemplateFile:
         return self.__output_directory
 
     @property
-    def output_file_name(self) -> Path:
+    def output_file_name(self) -> PurePosixPath:
         """
         Get output file name.
 
         Returns:
             Output file name.
         """
-        return self.__output_file_name if self.__output_file_name else self.__file_name
+        return self.__output_file_name
 
     @property
-    def output_path(self) -> Path:
+    def output_path(self) -> PurePosixPath:
         """
         Get output path.
 
