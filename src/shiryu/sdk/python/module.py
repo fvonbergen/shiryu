@@ -228,20 +228,24 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
     @final
     @classmethod
     def _base_container(
-        cls, init_context_container: SDKModuleInitContextContainer, platform: PlatformType
+        cls,
+        init_context_container: SDKModuleInitContextContainer,
+        container_project_path: PurePosixPath,
+        platform: PlatformType,
     ) -> dagger.Container:
         """
         Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
+            container_project_path: The container project path.
             platform: The container platform.
 
         Returns:
             A base container.
         """
         return container_uv(
-            dagger.dag, platform, cls._container_project_path(), init_context_container.apt_packages
+            dagger.dag, platform, container_project_path, init_context_container.apt_packages
         )
 
     @final

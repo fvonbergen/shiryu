@@ -571,13 +571,17 @@ class SDKModule[
     @classmethod
     @abstractmethod
     def _base_container(
-        cls, init_context_container: SDKModuleInitContextContainerType, platform: PlatformType
+        cls,
+        init_context_container: SDKModuleInitContextContainerType,
+        container_project_path: PurePosixPath,
+        platform: PlatformType,
     ) -> dagger.Container:
         """
         Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
+            container_project_path: The container project path.
             platform: The container platform.
 
         Returns:
@@ -604,9 +608,9 @@ class SDKModule[
         Returns:
             An initialized directory for the SDK module.
         """
-        return cls._base_container(init_context_container, platform).with_directory(
-            ".", project_directory
-        )
+        return cls._base_container(
+            init_context_container, cls._container_project_path(), platform
+        ).with_directory(".", project_directory)
 
     @final
     @classmethod
