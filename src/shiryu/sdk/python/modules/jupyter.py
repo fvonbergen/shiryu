@@ -18,7 +18,7 @@ from ...common.module import (
     SCMType,
 )
 from ..context import PythonModuleInitContextDirectory
-from ..module import PythonModule
+from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 PortType = int
@@ -28,9 +28,8 @@ PORT_DAGGER_DEFAULT: Final = 8888
 JUPYTER_NOTEBOOKS_CACHE_VOLUME = dagger.dag.cache_volume("shiryu-jupyter-debian-trixie")
 
 
-@dagger.object_type
-class Jupyter(PythonModule):
-    """Python SDK jupyter."""
+class JupyterInitializer(PythonModuleInitializer):
+    """JupyterInitializer class."""
 
     @final
     @staticmethod
@@ -64,7 +63,8 @@ class Jupyter(PythonModule):
         init_context_directory = super()._init_context_directory(
             init_context_directory, shiryu_metadata, project_metadata
         )
-        sdk_module_name = cls.name()
+        sdk_module_cls = Jupyter
+        sdk_module_name = sdk_module_cls.name()
         return init_context_directory.evolve(
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name, {"notebook", "python-lsp-server"}
@@ -106,6 +106,21 @@ class Jupyter(PythonModule):
         )
         return directory_with_new_file(init_directory, playground_ipynb_template)
 
+
+@dagger.object_type
+class Jupyter(PythonModule):
+    """Python SDK jupyter."""
+
+    @staticmethod
+    def _initializer_cls() -> type[JupyterInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return JupyterInitializer
+
     @final
     @classmethod
     def __notebooks_cache_folder(cls) -> str:
@@ -130,6 +145,7 @@ class Jupyter(PythonModule):
         Returns:
             A container with the project jupyter command executed.
         """
+        initializer = cls._initializer_cls()
         jupyter_notebooks_cache_folder = cls.__notebooks_cache_folder()
         container = (
             await container.with_mounted_cache(
@@ -140,7 +156,7 @@ class Jupyter(PythonModule):
                     "cp",
                     "--no-clobber",
                     "--archive",
-                    f"{cls._notebooks_folder()}/.",
+                    f"{initializer._notebooks_folder()}/.",
                     f"{jupyter_notebooks_cache_folder}/",
                 ]
             )

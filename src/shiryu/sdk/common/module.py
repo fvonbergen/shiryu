@@ -97,9 +97,195 @@ class ProjectMetadata:
     authors: frozenset[ProjectAuthor]
 
 
+class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitContextDirectory](ABC):
+    """SDKModuleInitializer class."""
+
+    @classmethod
+    @abstractmethod
+    def _create_init_context_directory(cls) -> SDKModuleInitContextDirectoryType:
+        """
+        Create an initialization context.
+
+        Returns:
+            An initialization context.
+        """
+        ...
+
+    @classmethod
+    def _init_context_directory(
+        cls,
+        init_context_directory: SDKModuleInitContextDirectoryType,
+        shiryu_metadata: DaggerModuleMetadata,
+        project_metadata: ProjectMetadata,
+    ) -> SDKModuleInitContextDirectoryType:
+        """
+        Initialization directory context used in the SDK module directory initialization.
+
+        Args:
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
+
+        Returns:
+            The updated SDK module initialization directory context.
+        """
+        dagger_name = "dagger"
+        job_name = f".{dagger_name}"
+        dagger_yml_template_mapping: Mapping = {"dagger_version": shiryu_metadata.dagger_version}
+        dagger_yml_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(
+                Path(f"{job_name}.yml"), PurePosixPath(GITLAB_FOLDER) / GITLAB_JOBS_FOLDER
+            ),
+            dagger_yml_template_mapping,
+        )
+        dagger_job = GitLabJob(dagger_name, job_name, dagger_yml_template, ())
+        return init_context_directory.evolve(
+            scm=init_context_directory.scm.evolve(
+                gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {dagger_job}
+                )
+            )
+        )
+
+    @final
+    @classmethod
+    async def __vcs_init(
+        cls,
+        project_authors: frozenset[ProjectAuthor],
+        init_context_vcs: SDKModuleInitContextDirectoryVcs,
+        directory: dagger.Directory,
+        platform: PlatformType,
+    ) -> dagger.Directory:
+        """
+        Initialize the directory with the VCS folders and files.
+
+        Args:
+            project_authors: Project authors.
+            init_context_vcs: SDK module initialization directory VCS context.
+            directory: A directory to VCS initialize.
+            platform: The container platform used for initialization.
+
+        Returns:
+            Returns a directory with the VCS folders and files.
+        """
+        _project_authors = sorted(project_authors, key=lambda author: author.name)
+        project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
+        container = container_git(dagger.dag, platform)
+        _directory = (
+            container.with_directory(".", directory)
+            .with_exec(["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH])
+            .with_exec(["git", "config", "user.name", project_author.name])
+            .with_exec(["git", "config", "user.email", project_author.email])
+            .directory(".")
+        )
+        # .gitignore
+        _gitignore_template_mapping: Mapping = {
+            "exclude": sorted(init_context_vcs.exclude_files_folders)
+        }
+        _gitignore_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(Path(".gitignore")),
+            _gitignore_template_mapping,
+        )
+        return directory_with_new_file(_directory, _gitignore_template)
+
+    @final
+    @staticmethod
+    def __scm_init(
+        directory: dagger.Directory,
+        init_context_directory_scm: SDKModuleInitContextDirectoryScm,
+        scm: SCMType,
+    ) -> dagger.Directory:
+        """
+        Initialize the directory with the SCM's files and folders.
+
+        Args:
+            directory: A directory to SCM initialize.
+            init_context_directory_scm: SDK module initialization SCM directory context.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+
+        Returns:
+            Returns a directory with the SCM's initialized.
+        """
+        if len(scm):
+            if SCM.GITHUB in scm:
+                directory = github_init(
+                    directory, init_context_directory_scm.github_actions_workflows
+                )
+            if SCM.GITLAB in scm:
+                directory = gitlab_init(directory, init_context_directory_scm.gitlab_jobs_stages)
+        return directory
+
+    @final
+    @classmethod
+    def _readme_md_template_file(cls) -> TemplateFile:
+        """
+        README.md template file.
+
+        Returns:
+            The README.md template file.
+        """
+        return TemplateFile(Path("README.md"))
+
+    @final
+    @classmethod
+    def _readme_md_template(cls, project_name: ProjectNameType) -> Template:
+        """
+        README.md template.
+
+        Returns:
+            The README.md template.
+        """
+        readme_md_template_mapping: Mapping = {"project_name": project_name.capitalize()}
+        return Template(
+            COMMON_JINJA_ENVIRONMENT, cls._readme_md_template_file(), readme_md_template_mapping
+        )
+
+    @classmethod
+    async def _init_directory(
+        cls,
+        init_directory: dagger.Directory,
+        init_context_directory: SDKModuleInitContextDirectoryType,
+        project_metadata: ProjectMetadata,
+        scm: SCMType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
+        """
+        Build the initialization directory.
+
+        Args:
+            init_directory: The dagger directory to initialize.
+            init_context_directory: SDK module initialization directory context.
+            project_metadata: Project metadata.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform used for initialization.
+
+        Returns:
+            The initialization directory.
+        """
+        directory = init_directory
+        directory = await cls.__vcs_init(
+            project_metadata.authors, init_context_directory.vcs, directory, platform
+        )
+        # README.md
+        readme_md_template = cls._readme_md_template(project_metadata.name)
+        directory = directory_with_new_file(directory, readme_md_template)
+        # CHANGELOG.md
+        changelog_md_template_mapping: Mapping = {}
+        changelog_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(Path("CHANGELOG.md")),
+            changelog_md_template_mapping,
+        )
+        directory = directory_with_new_file(directory, changelog_md_template)
+        directory = cls.__scm_init(directory, init_context_directory.scm, scm)
+        return directory
+
+
 class SDKModule[
+    SDKModuleInitializerType: SDKModuleInitializer,
     SDKModuleInitContextContainerType: SDKModuleInitContextContainer,
-    SDKModuleInitContextDirectoryType: SDKModuleInitContextDirectory,
 ](ABC, ClassName):
     """SDKModule class."""
 
@@ -110,6 +296,17 @@ class SDKModule[
         Get the SDK name.
 
         Returns the SDK name.
+        """
+        ...
+
+    @staticmethod
+    @abstractmethod
+    def _initializer_cls() -> type[SDKModuleInitializerType]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
         """
         ...
 
@@ -250,186 +447,6 @@ class SDKModule[
         )
         return (shiryu_metadata, project_metadata)
 
-    @classmethod
-    @abstractmethod
-    def _create_init_context_directory(cls) -> SDKModuleInitContextDirectoryType:
-        """
-        Create an initialization context.
-
-        Returns:
-            An initialization context.
-        """
-        ...
-
-    @classmethod
-    def _init_context_directory(
-        cls,
-        init_context_directory: SDKModuleInitContextDirectoryType,
-        shiryu_metadata: DaggerModuleMetadata,
-        project_metadata: ProjectMetadata,
-    ) -> SDKModuleInitContextDirectoryType:
-        """
-        Initialization directory context used in the SDK module directory initialization.
-
-        Args:
-            init_context_directory: SDK module initialization directory context.
-            shiryu_metadata: Shiryu metadata.
-            project_metadata: Project metadata.
-
-        Returns:
-            The updated SDK module initialization directory context.
-        """
-        dagger_name = "dagger"
-        job_name = f".{dagger_name}"
-        dagger_yml_template_mapping: Mapping = {"dagger_version": shiryu_metadata.dagger_version}
-        dagger_yml_template = Template(
-            COMMON_JINJA_ENVIRONMENT,
-            TemplateFile(
-                Path(f"{job_name}.yml"), PurePosixPath(GITLAB_FOLDER) / GITLAB_JOBS_FOLDER
-            ),
-            dagger_yml_template_mapping,
-        )
-        dagger_job = GitLabJob(dagger_name, job_name, dagger_yml_template, ())
-        return init_context_directory.evolve(
-            scm=init_context_directory.scm.evolve(
-                gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
-                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {dagger_job}
-                )
-            )
-        )
-
-    @final
-    @classmethod
-    async def __vcs_init(
-        cls,
-        project_authors: frozenset[ProjectAuthor],
-        init_context_vcs: SDKModuleInitContextDirectoryVcs,
-        directory: dagger.Directory,
-        platform: PlatformType,
-    ) -> dagger.Directory:
-        """
-        Initialize the directory with the VCS folders and files.
-
-        Args:
-            project_authors: Project authors.
-            init_context_vcs: SDK module initialization directory VCS context.
-            directory: A directory to VCS initialize.
-            platform: The container platform used for initialization.
-
-        Returns:
-            Returns a directory with the VCS folders and files.
-        """
-        _project_authors = sorted(project_authors, key=lambda author: author.name)
-        project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
-        container = container_git(dagger.dag, platform)
-        _directory = (
-            container.with_directory(".", directory)
-            .with_exec(["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH])
-            .with_exec(["git", "config", "user.name", project_author.name])
-            .with_exec(["git", "config", "user.email", project_author.email])
-            .directory(".")
-        )
-        # .gitignore
-        _gitignore_template_mapping: Mapping = {
-            "exclude": sorted(init_context_vcs.exclude_files_folders)
-        }
-        _gitignore_template = Template(
-            COMMON_JINJA_ENVIRONMENT, TemplateFile(Path(".gitignore")), _gitignore_template_mapping
-        )
-        return directory_with_new_file(_directory, _gitignore_template)
-
-    @final
-    @staticmethod
-    def __scm_init(
-        directory: dagger.Directory,
-        init_context_directory_scm: SDKModuleInitContextDirectoryScm,
-        scm: SCMType,
-    ) -> dagger.Directory:
-        """
-        Initialize the directory with the SCM's files and folders.
-
-        Args:
-            directory: A directory to SCM initialize.
-            init_context_directory_scm: SDK module initialization SCM directory context.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
-
-        Returns:
-            Returns a directory with the SCM's initialized.
-        """
-        if len(scm):
-            if SCM.GITHUB in scm:
-                directory = github_init(
-                    directory, init_context_directory_scm.github_actions_workflows
-                )
-            if SCM.GITLAB in scm:
-                directory = gitlab_init(directory, init_context_directory_scm.gitlab_jobs_stages)
-        return directory
-
-    @final
-    @classmethod
-    def _readme_md_template_file(cls) -> TemplateFile:
-        """
-        README.md template file.
-
-        Returns:
-            The README.md template file.
-        """
-        return TemplateFile(Path("README.md"))
-
-    @final
-    @classmethod
-    def _readme_md_template(cls, project_name: ProjectNameType) -> Template:
-        """
-        README.md template.
-
-        Returns:
-            The README.md template.
-        """
-        readme_md_template_mapping: Mapping = {"project_name": project_name.capitalize()}
-        return Template(
-            COMMON_JINJA_ENVIRONMENT, cls._readme_md_template_file(), readme_md_template_mapping
-        )
-
-    @classmethod
-    async def _init_directory(
-        cls,
-        init_directory: dagger.Directory,
-        init_context_directory: SDKModuleInitContextDirectoryType,
-        project_metadata: ProjectMetadata,
-        scm: SCMType,
-        platform: PlatformType,
-    ) -> dagger.Directory:
-        """
-        Build the initialization directory.
-
-        Args:
-            init_directory: The dagger directory to initialize.
-            init_context_directory: SDK module initialization directory context.
-            project_metadata: Project metadata.
-            scm: Project Source Code Management (SCM) list to be targeted or configured.
-            platform: The container platform used for initialization.
-
-        Returns:
-            The initialization directory.
-        """
-        directory = init_directory
-        directory = await cls.__vcs_init(
-            project_metadata.authors, init_context_directory.vcs, directory, platform
-        )
-        # README.md
-        readme_md_template = cls._readme_md_template(project_metadata.name)
-        directory = directory_with_new_file(directory, readme_md_template)
-        # CHANGELOG.md
-        changelog_md_template_mapping: Mapping = {}
-        changelog_md_template = Template(
-            COMMON_JINJA_ENVIRONMENT,
-            TemplateFile(Path("CHANGELOG.md")),
-            changelog_md_template_mapping,
-        )
-        directory = directory_with_new_file(directory, changelog_md_template)
-        directory = cls.__scm_init(directory, init_context_directory.scm, scm)
-        return directory
-
     @final
     @classmethod
     async def __is_vcs_init(
@@ -510,13 +527,14 @@ class SDKModule[
         )
         # TODO: When init() for all modules is done this can be moved to _init()
         # Build the initialization context directory.
-        init_context_directory = self._create_init_context_directory()
-        init_context_directory = self._init_context_directory(
+        initializer_cls = self._initializer_cls()
+        init_context_directory = initializer_cls._create_init_context_directory()
+        init_context_directory = initializer_cls._init_context_directory(
             init_context_directory, shiryu_metadata, project_metadata
         )
         # Build initialized directory.
         init_directory = dagger.dag.directory()
-        init_directory = await self._init_directory(
+        init_directory = await initializer_cls._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
         # Create the initialize directory.
@@ -626,44 +644,23 @@ def get_sdk_language(
         A SDK Language class.
     """
     sdk_module_options_dict: dict[str, type[SDKModule]] = {}
+    sdk_module_initializer_classes: list[type[SDKModuleInitializer]] = []
     for sdk_module_module in sdk_module_modules:
+        sdk_module_initializer_classes.insert(0, sdk_module_module._initializer_cls())
         sdk_module_options_dict[sdk_module_module.name().upper()] = sdk_module_module
 
-    @dagger.function
-    async def init(  # noqa: PLR0913
-        self: SDKModule,
-        project_directory: ProjectDirectoryDaggerType,
-        project_name: ProjectNameDaggerType = PROJECT_NAME_DAGGER_DEFAULT,
-        is_update: IsUpdateDaggerType = IS_UPDATE_DAGGER_DEFAULT,
-        scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Directory:
-        """SDK module initializer."""
-        # Gather metadata.
-        shiryu_metadata, project_metadata = await self._get_metadata(
-            project_directory, project_name, platform
-        )
-        # TODO: When init() for all modules is done this can be moved to _init()
-        # Build the initialization context directory.
-        # Build initialized directory.
-        init_context_directory = self._create_init_context_directory()
-        init_context_directory = self._init_context_directory(
-            init_context_directory, shiryu_metadata, project_metadata
-        )
-        init_directory = await self._init_directory(
-            dagger.dag.directory(), init_context_directory, project_metadata, scm, platform
-        )
-        for sdk_module_module in sdk_module_modules:
-            init_context_directory = sdk_module_module._init_context_directory(
-                init_context_directory, shiryu_metadata, project_metadata
-            )
-            init_directory = await sdk_module_module._init_directory(
-                init_directory, init_context_directory, project_metadata, scm, platform
-            )
-        # Create the initialize directory.
-        return await self._init(
-            init_directory, project_directory, project_metadata, is_update, scm, platform
-        )
+    init_initializer = type(
+        "InitInitializer", (*sdk_module_initializer_classes, SDKModuleInitializer), {}
+    )
+
+    def _initializer_cls() -> type[SDKModuleInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return init_initializer
 
     SDKModuleOptions = final(  # noqa: N806
         unique(Enum("SDKModuleOptions", sdk_module_options_dict))  # type: ignore[type-var]
@@ -674,7 +671,7 @@ def get_sdk_language(
         final(
             # mypy bug: https://github.com/python/mypy/issues/17147
             add_enum_values_as_methods(SDKModuleOptions)(  # type: ignore[arg-type]
-                type(sdk_module_name, (sdk_module,), {"init": final(init)})
+                type(sdk_module_name, (sdk_module,), {"_initializer_cls": _initializer_cls()})
             )
         )
     )

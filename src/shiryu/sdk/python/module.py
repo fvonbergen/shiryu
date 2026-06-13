@@ -19,6 +19,7 @@ from ..common.module import (
     ProjectMetadata,
     SCMType,
     SDKModule,
+    SDKModuleInitializer,
 )
 from ..common.utils import PROJECT_SOURCE_CODE_FOLDER
 from .context import PythonModuleInitContextDirectory
@@ -36,64 +37,8 @@ class ExecutionMode(Enum):
     MODULE = auto()
 
 
-class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitContextDirectory]):
-    """PythonModule class."""
-
-    @final
-    @staticmethod
-    def _sdk_name() -> str:
-        """
-        Get the SDK name.
-
-        Returns the SDK name.
-        """
-        return SDK_MODULE_NAME
-
-    @final
-    @classmethod
-    async def _get_project_metadata(
-        cls, project_directory: ProjectDirectoryType, platform: PlatformType
-    ) -> ProjectMetadata:
-        """
-        Get project metadata.
-
-        Args:
-            project_directory: Project directory.
-            platform: The container platform.
-
-        Returns:
-            The project metadata.
-        """
-        project_metadata = await super()._get_project_metadata(project_directory, platform)
-        project_container = container_uv(dagger.dag, platform, {"git"}).with_directory(
-            ".", project_directory
-        )
-        try:
-            pyproject_toml_file_contents = await project_container.file(
-                str(cls._pyproject_toml_template_file().output_path)
-            ).contents()
-            pyproject_toml = tomllib.loads(pyproject_toml_file_contents)
-            pyproject_toml_project = pyproject_toml["project"]
-            project_metadata = replace(
-                project_metadata,
-                name=pyproject_toml_project["name"],
-                authors=frozenset(
-                    {
-                        ProjectAuthor(name=project_author["name"], email=project_author["email"])
-                        for project_author in pyproject_toml_project["authors"]
-                    }
-                ),
-            )
-        except dagger.QueryError:
-            ...
-        try:
-            project_version = (
-                await project_container.with_exec(["uvx", "hatch", "version"]).stdout()
-            ).strip()
-            project_metadata = replace(project_metadata, version=project_version)
-        except dagger.QueryError:
-            ...
-        return project_metadata
+class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirectory]):
+    """PythonModuleInitializer class."""
 
     @final
     @classmethod
@@ -181,7 +126,9 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
             "dependency_groups": init_context_directory.dependency_groups,
         }
         pyproject_toml_template = Template(
-            PYTHON_JINJA_ENVIRONMENT, pyproject_toml_template_file, pyproject_toml_template_mapping
+            PYTHON_JINJA_ENVIRONMENT,
+            pyproject_toml_template_file,
+            pyproject_toml_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, pyproject_toml_template)
         # py.typed
@@ -189,7 +136,8 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
         py_typed_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("py.typed"), PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical
+                Path("py.typed"),
+                PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical,
             ),
             py_typed_template_mapping,
         )
@@ -213,6 +161,67 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
             .with_exec(["uv", "lock"])
             .directory(".")
         )
+
+
+class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContainer]):
+    """PythonModule class."""
+
+    @final
+    @staticmethod
+    def _sdk_name() -> str:
+        """
+        Get the SDK name.
+
+        Returns the SDK name.
+        """
+        return SDK_MODULE_NAME
+
+    @final
+    @classmethod
+    async def _get_project_metadata(
+        cls, project_directory: ProjectDirectoryType, platform: PlatformType
+    ) -> ProjectMetadata:
+        """
+        Get project metadata.
+
+        Args:
+            project_directory: Project directory.
+            platform: The container platform.
+
+        Returns:
+            The project metadata.
+        """
+        initializer = cls._initializer_cls()
+        project_metadata = await super()._get_project_metadata(project_directory, platform)
+        project_container = container_uv(dagger.dag, platform, {"git"}).with_directory(
+            ".", project_directory
+        )
+        try:
+            pyproject_toml_file_contents = await project_container.file(
+                str(initializer._pyproject_toml_template_file().output_path)
+            ).contents()
+            pyproject_toml = tomllib.loads(pyproject_toml_file_contents)
+            pyproject_toml_project = pyproject_toml["project"]
+            project_metadata = replace(
+                project_metadata,
+                name=pyproject_toml_project["name"],
+                authors=frozenset(
+                    {
+                        ProjectAuthor(name=project_author["name"], email=project_author["email"])
+                        for project_author in pyproject_toml_project["authors"]
+                    }
+                ),
+            )
+        except dagger.QueryError:
+            ...
+        try:
+            project_version = (
+                await project_container.with_exec(["uvx", "hatch", "version"]).stdout()
+            ).strip()
+            project_metadata = replace(project_metadata, version=project_version)
+        except dagger.QueryError:
+            ...
+        return project_metadata
 
     @final
     @classmethod

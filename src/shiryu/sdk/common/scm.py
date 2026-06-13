@@ -32,7 +32,7 @@ class SDKModuleFunctionParameter:
 
 SDKModuleFunctionParameters = tuple[SDKModuleFunctionParameter, ...]
 
-SDKModuleFunction = Callable[[Any], Awaitable[Any]]
+SDKModuleFunction = Callable[..., Awaitable[Any]]
 
 
 def get_sdk_module_function_parameters(

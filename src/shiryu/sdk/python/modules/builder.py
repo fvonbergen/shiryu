@@ -23,7 +23,7 @@ from ...common.scm import (
     build_gitlab_stage_job,
 )
 from ..context import PythonModuleInitContextDirectory
-from ..module import PythonModule
+from ..module import PythonModule, PythonModuleInitializer
 
 RepositoryUrlDaggerType = Annotated[str, dagger.Doc("Repository to push distributable")]
 RepositoryUserDaggerType = Annotated[str, dagger.Doc("Repository user")]
@@ -32,9 +32,8 @@ RepositoryPasswordDaggerType = Annotated[dagger.Secret, dagger.Doc("Repository p
 PROJECT_DISTRIBUTABLE_FOLDER: Final = "dist"
 
 
-@dagger.object_type
-class Builder(PythonModule):
-    """Python SDK builder."""
+class BuilderInitializer(PythonModuleInitializer):
+    """Builderinitializer class."""
 
     @classmethod
     def _init_context_directory(
@@ -59,12 +58,13 @@ class Builder(PythonModule):
         )
         dagger_version = shiryu_metadata.dagger_version
         shiryu_version = shiryu_metadata.git_tag_or_branch
-        sdk_language = cls._sdk_name()
-        sdk_module_name = cls.name()
+        sdk_module_cls = Builder
+        sdk_language = sdk_module_cls._sdk_name()
+        sdk_module_name = sdk_module_cls.name()
         github_action_builder_deploy = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=cls.deploy,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_cls.deploy,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -72,7 +72,7 @@ class Builder(PythonModule):
         github_action_builder_test = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=cls.test,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_cls.test,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -80,7 +80,7 @@ class Builder(PythonModule):
         gitlab_job_builder_deploy = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=cls.deploy,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_cls.deploy,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,
@@ -90,7 +90,7 @@ class Builder(PythonModule):
         gitlab_job_builder_test = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=cls.test,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_cls.test,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,
@@ -148,6 +148,21 @@ class Builder(PythonModule):
                 sdk_module_name, {"hatch"}
             ),
         )
+
+
+@dagger.object_type
+class Builder(PythonModule):
+    """Python SDK builder."""
+
+    @staticmethod
+    def _initializer_cls() -> type[BuilderInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return BuilderInitializer
 
     @final
     @classmethod

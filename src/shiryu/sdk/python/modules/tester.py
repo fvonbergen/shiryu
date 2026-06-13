@@ -27,7 +27,7 @@ from ...common.scm import (
 )
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER, PROJECT_TESTS_FOLDER
 from ..context import DependencyGroups, PythonModuleInitContextDirectory
-from ..module import PythonModule
+from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 from .checker import Checker
 
@@ -42,12 +42,9 @@ PRIVILEGED_NESTING_DAGGER_DEFAULT: Final = False
 
 TESTS_UNIT_FOLDER: Final = "unit"
 
-TESTS_CODE_DEPENDENCIES: Final = {"pytest", "pytest-asyncio"}
 
-
-@dagger.object_type
-class Tester(PythonModule):
-    """Python SDK tester."""
+class TesterInitializer(PythonModuleInitializer):
+    """SDKModule initializer class."""
 
     @final
     @staticmethod
@@ -73,7 +70,7 @@ class Tester(PythonModule):
 
     @final
     @classmethod
-    def __tests_unit_path(cls) -> PurePosixPath:
+    def _tests_unit_path(cls) -> PurePosixPath:
         """
         Get the tests unit path.
 
@@ -149,13 +146,14 @@ class Tester(PythonModule):
         )
         dagger_version = shiryu_metadata.dagger_version
         shiryu_version = shiryu_metadata.git_tag_or_branch
-        sdk_language = cls._sdk_name()
-        sdk_module_name = cls.name()
-        sdk_module_function = cls.unit
+        sdk_module_cls = Tester
+        sdk_language = sdk_module_cls._sdk_name()
+        sdk_module_name = sdk_module_cls.name()
+        sdk_module_function = sdk_module_cls.unit
         github_action = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -163,13 +161,14 @@ class Tester(PythonModule):
         gitlab_job = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,
             post_script=(),
             artifacts=None,
         )
+        tests_code_dependencies = {"pytest", "pytest-asyncio"}
         return init_context_directory.evolve(
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -198,8 +197,8 @@ class Tester(PythonModule):
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
-                TESTS_CODE_DEPENDENCIES | {"pytest-cov", "pytest-xdist[psutil]"},
-            ).merge(DependencyGroups({Checker.name(): TESTS_CODE_DEPENDENCIES})),
+                tests_code_dependencies | {"pytest-cov", "pytest-xdist[psutil]"},
+            ).merge(DependencyGroups({Checker.name(): tests_code_dependencies})),
             source_code_files_folders=init_context_directory.source_code_files_folders
             | {PROJECT_TESTS_FOLDER},
         )
@@ -229,7 +228,7 @@ class Tester(PythonModule):
         init_directory = await super()._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
-        tests_unit_path_str = str(cls.__tests_unit_path())
+        tests_unit_path_str = str(cls._tests_unit_path())
         # pytest.unit.ini
         pytest_unit_init_template_mapping: Mapping = {
             "project_coveragerc_path": str(cls._coveragerc_template_file().output_file_name),
@@ -248,12 +247,29 @@ class Tester(PythonModule):
             "coverage_file_path": cls._coverage_file_name(),
         }
         _coveragerc_template = Template(
-            PYTHON_JINJA_ENVIRONMENT, cls._coveragerc_template_file(), _coveragerc_template_mapping
+            PYTHON_JINJA_ENVIRONMENT,
+            cls._coveragerc_template_file(),
+            _coveragerc_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, _coveragerc_template)
         # <tests>/<tests unit>/
         init_directory = init_directory.with_directory(tests_unit_path_str, dagger.dag.directory())
         return init_directory
+
+
+@dagger.object_type
+class Tester(PythonModule):
+    """Python SDK tester."""
+
+    @staticmethod
+    def _initializer_cls() -> type[TesterInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return TesterInitializer
 
     @final
     @classmethod
@@ -274,15 +290,16 @@ class Tester(PythonModule):
         Returns:
             A container with the project test command executed.
         """
+        initializer = cls._initializer_cls()
         # Check that there is at last one test file.
         config = ConfigParser()
-        pytest_unit_ini_output_path = cls._pytest_unit_ini_template_file().output_path
+        pytest_unit_ini_output_path = initializer._pytest_unit_ini_template_file().output_path
         pytest_unit_ini_file_contents = await container.file(
             str(pytest_unit_ini_output_path)
         ).contents()
         config.read_string(pytest_unit_ini_file_contents)
         tests_unit_extension = config["pytest"]["python_files"]
-        tests_unit_files = await container.directory(str(cls.__tests_unit_path())).glob(
+        tests_unit_files = await container.directory(str(initializer._tests_unit_path())).glob(
             tests_unit_extension
         )
         is_tests_unit_files = len(tests_unit_files) != 0

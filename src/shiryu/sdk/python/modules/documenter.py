@@ -30,7 +30,7 @@ from ...common.scm import (
 )
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
-from ..module import ExecutionMode, PythonModule
+from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 from ..utils import get_package_name_canonical
 
@@ -41,9 +41,8 @@ GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
 PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
 
 
-@dagger.object_type
-class Documenter(PythonModule):
-    """Python SDK documenter."""
+class DocumenterInitializer(PythonModuleInitializer):
+    """DocumenterInitializer class."""
 
     @classmethod
     def _init_context_directory(
@@ -68,12 +67,14 @@ class Documenter(PythonModule):
         )
         dagger_version = shiryu_metadata.dagger_version
         shiryu_version = shiryu_metadata.git_tag_or_branch
-        sdk_language = cls._sdk_name()
-        sdk_module_name = cls.name()
+        sdk_module_cls = Documenter
+        sdk_language = sdk_module_cls._sdk_name()
+        sdk_module_name = sdk_module_cls.name()
+        sdk_module_function = sdk_module_cls.document
         github_action = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=cls.document,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=PurePosixPath(PROJECT_DOCUMENTATION_FOLDER),
@@ -82,7 +83,7 @@ class Documenter(PythonModule):
         gitlab_job = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=cls.document,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=PurePosixPath(PROJECT_DOCUMENTATION_FOLDER),
@@ -200,7 +201,9 @@ class Documenter(PythonModule):
             Path("conf.py.jinja"), project_documentation_shiryu_templates_path
         )
         conf_py_jinja_template = Template(
-            PYTHON_JINJA_ENVIRONMENT, conf_py_jinja_template_file, conf_py_jinja_template_mapping
+            PYTHON_JINJA_ENVIRONMENT,
+            conf_py_jinja_template_file,
+            conf_py_jinja_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, conf_py_jinja_template)
         # <documentation>/source/{explanation/, how_to/, reference/, tutorials/,}
@@ -220,11 +223,14 @@ class Documenter(PythonModule):
                 str(project_documentation_path / "source" / "tutorials"), empty_directory
             )
         )
-        # <documentation>/{Makefile, build/, source/_static/, source/_templates/, source/conf.py,
-        # source/index.rst}
+        # <documentation>/{Makefile, build/, source/_static/, source/_templates/,
+        # source/conf.py, source/index.rst}
+        sdk_module_cls = Documenter
         init_directory = (
-            cls._base_container(
-                cls._init_context_container(SDKModuleInitContextContainer.create_default()),
+            sdk_module_cls._base_container(
+                sdk_module_cls._init_context_container(
+                    SDKModuleInitContextContainer.create_default()
+                ),
                 platform,
             )
             .with_directory(".", init_directory)
@@ -273,6 +279,21 @@ class Documenter(PythonModule):
             .directory(".")
         )
         return init_directory
+
+
+@dagger.object_type
+class Documenter(PythonModule):
+    """Python SDK documenter."""
+
+    @staticmethod
+    def _initializer_cls() -> type[DocumenterInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return DocumenterInitializer
 
     @classmethod
     def _init_context_container(

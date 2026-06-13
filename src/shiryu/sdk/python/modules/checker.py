@@ -26,13 +26,12 @@ from ...common.scm import (
 )
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
-from ..module import PythonModule
+from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 
-@dagger.object_type
-class Checker(PythonModule):
-    """Python SDK checker."""
+class CheckerInitializer(PythonModuleInitializer):
+    """CheckerInitializer class."""
 
     @final
     @classmethod
@@ -68,13 +67,14 @@ class Checker(PythonModule):
         )
         dagger_version = shiryu_metadata.dagger_version
         shiryu_version = shiryu_metadata.git_tag_or_branch
-        sdk_language = cls._sdk_name()
-        sdk_module_name = cls.name()
-        sdk_module_function = cls.check
+        sdk_module_cls = Checker
+        sdk_language = sdk_module_cls._sdk_name()
+        sdk_module_name = sdk_module_cls.name()
+        sdk_module_function = sdk_module_cls.check
         github_action = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -155,6 +155,21 @@ class Checker(PythonModule):
         )
         return directory_with_new_file(init_directory, mypy_ini_template)
 
+
+@dagger.object_type
+class Checker(PythonModule):
+    """Python SDK checker."""
+
+    @staticmethod
+    def _initializer_cls() -> type[CheckerInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return CheckerInitializer
+
     @final
     @classmethod
     async def __check(cls, container: dagger.Container) -> None:
@@ -164,8 +179,9 @@ class Checker(PythonModule):
         Args:
             container: Project container.
         """
+        initializer = cls._initializer_cls()
         mypy_command = cls._build_uv_run_command(
-            ["mypy", f"--config-file={cls._mypy_ini_template_file().file_name}"]
+            ["mypy", f"--config-file={initializer._mypy_ini_template_file().file_name}"]
         )
         await container.with_exec(mypy_command).sync()
 

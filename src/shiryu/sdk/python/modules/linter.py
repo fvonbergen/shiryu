@@ -25,17 +25,16 @@ from ...common.scm import (
     build_gitlab_stage_job,
 )
 from ..context import PythonModuleInitContextDirectory
-from ..module import PythonModule
+from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 
-@dagger.object_type
-class Linter(PythonModule):
-    """Python SDK linter."""
+class LinterInitializer(PythonModuleInitializer):
+    """LinterInitializer class."""
 
     @final
     @staticmethod
-    def __cache_folder() -> str:
+    def _cache_folder() -> str:
         """
         Get the linter cache folder.
 
@@ -67,13 +66,14 @@ class Linter(PythonModule):
         )
         dagger_version = shiryu_metadata.dagger_version
         shiryu_version = shiryu_metadata.git_tag_or_branch
-        sdk_language = cls._sdk_name()
-        sdk_module_name = cls.name()
-        sdk_module_function = cls.lint
+        sdk_module_cls = Linter
+        sdk_language = sdk_module_cls._sdk_name()
+        sdk_module_name = sdk_module_cls.name()
+        sdk_module_function = sdk_module_cls.lint
         github_action = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -81,7 +81,7 @@ class Linter(PythonModule):
         gitlab_job = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
+            sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,
@@ -91,7 +91,7 @@ class Linter(PythonModule):
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
-                | {f"/{cls.__cache_folder()}/"}
+                | {f"/{cls._cache_folder()}/"}
             ),
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -160,11 +160,26 @@ class Linter(PythonModule):
             init_directory, init_context_directory, project_metadata, scm, platform
         )
         # ruff.toml
-        ruff_toml_template_mapping: Mapping = {"cache_folder": cls.__cache_folder()}
+        ruff_toml_template_mapping: Mapping = {"cache_folder": cls._cache_folder()}
         ruff_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT, cls._ruff_toml_template_file(), ruff_toml_template_mapping
         )
         return directory_with_new_file(init_directory, ruff_toml_template)
+
+
+@dagger.object_type
+class Linter(PythonModule):
+    """Python SDK linter."""
+
+    @staticmethod
+    def _initializer_cls() -> type[LinterInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
+        return LinterInitializer
 
     @final
     @classmethod
@@ -179,10 +194,11 @@ class Linter(PythonModule):
         Returns:
             Modified files between the project directory before and after running commands.
         """
+        initializer = cls._initializer_cls()
         container = container.with_mounted_cache(
-            cls.__cache_folder(), dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim")
+            initializer._cache_folder(), dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim")
         )
-        ruff_toml_file_name = cls._ruff_toml_template_file().file_name
+        ruff_toml_file_name = initializer._ruff_toml_template_file().file_name
         ruff_check_command = cls._build_uv_run_command(
             ["ruff", "check", "--show-fixes", f"--config={ruff_toml_file_name}", "."]
         )
@@ -201,7 +217,7 @@ class Linter(PythonModule):
             ruff_format_command
         )
         modified_dir = executed_container.directory(".").filter(
-            exclude=[f"{cls.__cache_folder()}/"]
+            exclude=[f"{initializer._cache_folder()}/"]
         )
         return await initial_dir.diff(modified_dir).sync()
 
