@@ -26,9 +26,10 @@ from ...common.scm import (
     build_gitlab_stage_job,
 )
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER, PROJECT_TESTS_FOLDER
-from ..context import PythonModuleInitContextDirectory
+from ..context import DependencyGroups, PythonModuleInitContextDirectory
 from ..module import PythonModule
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+from .checker import Checker
 
 OptionalKeywordDaggerType = Annotated[
     str | None, dagger.Doc("Run tests that match substring expression")
@@ -198,7 +199,7 @@ class Tester(PythonModule):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 TESTS_CODE_DEPENDENCIES | {"pytest-cov", "pytest-xdist[psutil]"},
-            ),
+            ).merge(DependencyGroups({Checker.name(): TESTS_CODE_DEPENDENCIES})),
             source_code_files_folders=init_context_directory.source_code_files_folders
             | {PROJECT_TESTS_FOLDER},
         )

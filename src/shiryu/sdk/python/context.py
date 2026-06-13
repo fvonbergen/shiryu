@@ -6,8 +6,8 @@ manages structural immutability for dependency groups and specializes core SDK d
 initialization contexts.
 """
 
-from collections.abc import ItemsView, Set
-from dataclasses import dataclass, field, replace
+from collections.abc import ItemsView, Mapping, Set
+from dataclasses import InitVar, dataclass, field, replace
 from types import MappingProxyType
 from typing import Self, final
 
@@ -32,13 +32,30 @@ class DependencyGroups:
 
     Wraps a mapping proxy containing mappings of group names to sets of package requirements.
 
+    Args:
+        dependency_groups_input: Initial mapping of group names to their package requirements.
+
     Attributes:
-        _dependency_groups: Internal group-to-packages mapping.
+        _dependency_groups: Internal read-only group-to-packages mapping proxy.
     """
 
     _dependency_groups: MappingProxyType[str, DistributionPackages] = field(
-        default_factory=lambda: MappingProxyType({})
+        init=False, default_factory=lambda: MappingProxyType({})
     )
+    dependency_groups_input: InitVar[Mapping[str, Set[str] | DistributionPackages] | None] = None
+
+    def __post_init__(self, dependency_groups_input: Mapping[str, Set[str]] | None) -> None:
+        """Process the input dictionary into immutable structures post-initialization.
+
+        Args:
+            dependency_groups_input: Raw dictionary input passed via construction.
+        """
+        if dependency_groups_input is not None:
+            immutable_data = {
+                group_name: frozenset(packages)
+                for group_name, packages in dependency_groups_input.items()
+            }
+            object.__setattr__(self, "_dependency_groups", MappingProxyType(immutable_data))
 
     def add(self, group_name: str, packages: Set[str]) -> "DependencyGroups":
         """

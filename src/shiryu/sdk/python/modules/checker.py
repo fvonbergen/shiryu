@@ -28,7 +28,6 @@ from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule
 from ..templates import PYTHON_JINJA_ENVIRONMENT
-from .tester import TESTS_CODE_DEPENDENCIES
 
 
 @dagger.object_type
@@ -117,7 +116,7 @@ class Checker(PythonModule):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"mypy"} | TESTS_CODE_DEPENDENCIES
+                sdk_module_name, {"mypy"}
             ),
         )
 
