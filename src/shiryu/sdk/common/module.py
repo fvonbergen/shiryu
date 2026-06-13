@@ -114,17 +114,6 @@ class SDKModule[
         ...
 
     @final
-    @staticmethod
-    def _container_project_path() -> PurePosixPath:
-        """
-        Get the container project path.
-
-        Returns:
-            The container project path.
-        """
-        return PurePosixPath("/project")
-
-    @final
     @classmethod
     async def __get_shiryu_metadata(cls, platform: PlatformType) -> DaggerModuleMetadata:
         """
@@ -167,9 +156,7 @@ class SDKModule[
         # Use a hard coded version
         dagger_version = DAGGER_VERSION
         # Get module exact git tag. Falls back to the branch name if the commit is not tagged.
-        container = container_git(
-            dagger.dag, platform, cls._container_project_path()
-        ).with_directory(".", module_source)
+        container = container_git(dagger.dag, platform).with_directory(".", module_source)
         try:
             module_tag = (
                 await container.with_exec(["git", "describe", "--tags", "--exact-match"]).stdout()
@@ -213,9 +200,9 @@ class SDKModule[
             The project metadata.
         """
         project_author = ProjectAuthor()
-        project_container = container_git(
-            dagger.dag, platform, cls._container_project_path()
-        ).with_directory(".", project_directory)
+        project_container = container_git(dagger.dag, platform).with_directory(
+            ".", project_directory
+        )
         try:
             project_author_name = (
                 await project_container.with_exec(["git", "config", "user.name"]).stdout()
@@ -334,13 +321,10 @@ class SDKModule[
         """
         _project_authors = sorted(project_authors, key=lambda author: author.name)
         project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
-        container_project_path = cls._container_project_path()
-        container = container_git(dagger.dag, platform, container_project_path)
+        container = container_git(dagger.dag, platform)
         _directory = (
             container.with_directory(".", directory)
-            .with_exec(
-                ["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH, str(container_project_path)]
-            )
+            .with_exec(["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH])
             .with_exec(["git", "config", "user.name", project_author.name])
             .with_exec(["git", "config", "user.email", project_author.email])
             .directory(".")
@@ -464,7 +448,7 @@ class SDKModule[
         is_vcs_init: bool
         try:
             await (
-                container_git(dagger.dag, platform, cls._container_project_path())
+                container_git(dagger.dag, platform)
                 .with_directory(".", project_directory)
                 .with_exec(["git", "rev-parse", "--is-inside-work-tree"])
                 .sync()
@@ -571,17 +555,13 @@ class SDKModule[
     @classmethod
     @abstractmethod
     def _base_container(
-        cls,
-        init_context_container: SDKModuleInitContextContainerType,
-        container_project_path: PurePosixPath,
-        platform: PlatformType,
+        cls, init_context_container: SDKModuleInitContextContainerType, platform: PlatformType
     ) -> dagger.Container:
         """
         Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
-            container_project_path: The container project path.
             platform: The container platform.
 
         Returns:
@@ -608,9 +588,9 @@ class SDKModule[
         Returns:
             An initialized directory for the SDK module.
         """
-        return cls._base_container(
-            init_context_container, cls._container_project_path(), platform
-        ).with_directory(".", project_directory)
+        return cls._base_container(init_context_container, platform).with_directory(
+            ".", project_directory
+        )
 
     @final
     @classmethod

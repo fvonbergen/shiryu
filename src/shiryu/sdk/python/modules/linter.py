@@ -180,8 +180,7 @@ class Linter(PythonModule):
             Modified files between the project directory before and after running commands.
         """
         container = container.with_mounted_cache(
-            str(cls._container_project_path() / cls.__cache_folder()),
-            dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim"),
+            cls.__cache_folder(), dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim")
         )
         ruff_toml_file_name = cls._ruff_toml_template_file().file_name
         ruff_check_command = cls._build_uv_run_command(

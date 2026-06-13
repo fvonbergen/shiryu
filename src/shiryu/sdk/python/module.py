@@ -65,9 +65,9 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
             The project metadata.
         """
         project_metadata = await super()._get_project_metadata(project_directory, platform)
-        project_container = container_uv(
-            dagger.dag, platform, cls._container_project_path(), {"git"}
-        ).with_directory(".", project_directory)
+        project_container = container_uv(dagger.dag, platform, {"git"}).with_directory(
+            ".", project_directory
+        )
         try:
             pyproject_toml_file_contents = await project_container.file(
                 str(cls._pyproject_toml_template_file().output_path)
@@ -208,7 +208,7 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
         )
         init_directory = directory_with_new_file(init_directory, __init___py_template)
         return (
-            container_uv(dagger.dag, platform, cls._container_project_path())
+            container_uv(dagger.dag, platform)
             .with_directory(".", init_directory)
             .with_exec(["uv", "lock"])
             .directory(".")
@@ -228,25 +228,19 @@ class PythonModule(SDKModule[SDKModuleInitContextContainer, PythonModuleInitCont
     @final
     @classmethod
     def _base_container(
-        cls,
-        init_context_container: SDKModuleInitContextContainer,
-        container_project_path: PurePosixPath,
-        platform: PlatformType,
+        cls, init_context_container: SDKModuleInitContextContainer, platform: PlatformType
     ) -> dagger.Container:
         """
         Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
-            container_project_path: The container project path.
             platform: The container platform.
 
         Returns:
             A base container.
         """
-        return container_uv(
-            dagger.dag, platform, container_project_path, init_context_container.apt_packages
-        )
+        return container_uv(dagger.dag, platform, init_context_container.apt_packages)
 
     @final
     @classmethod

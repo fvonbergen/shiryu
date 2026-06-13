@@ -179,7 +179,7 @@ class Jupyter(PythonModule):
         export_path_str = "/export"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
         return (
-            container_debian(dagger.dag, platform, self._container_project_path())
+            container_debian(dagger.dag, platform)
             .with_mounted_cache(jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME)
             .with_exec(
                 ["cp", "--archive", f"{jupyter_notebooks_cache_folder}/.", f"{export_path_str}/"]

@@ -2,16 +2,18 @@
 
 from collections.abc import Set
 from pathlib import PurePosixPath
+from typing import Final
 
 import dagger
 
 APT_PACKAGES = Set[str]
 
+WORKDIR_PATH: Final = PurePosixPath("/workspace")
+
 
 def container_debian(
     dagger_client: dagger.Client,
     platform: dagger.Platform,
-    workdir: PurePosixPath | None = None,
     apt_packages: APT_PACKAGES = frozenset(),
 ) -> dagger.Container:
     """
@@ -20,7 +22,6 @@ def container_debian(
     Args:
         dagger_client: The dagger client.
         platform: The container platform.
-        workdir: Workdir path.
         apt_packages: The container APT packages.
 
     Returns:
@@ -58,30 +59,26 @@ def container_debian(
             .with_exec(["apt-get", "update"])
             .with_exec([*apt_install])
         )
-    return container.with_workdir(str(workdir)) if workdir is not None else container
+    return container.with_workdir(str(WORKDIR_PATH))
 
 
-def container_git(
-    dagger_client: dagger.Client, platform: dagger.Platform, workdir: PurePosixPath | None = None
-) -> dagger.Container:
+def container_git(dagger_client: dagger.Client, platform: dagger.Platform) -> dagger.Container:
     """
     A git container.
 
     Args:
         dagger_client: The dagger client.
         platform: The container platform.
-        workdir: Workdir path.
 
     Returns:
         A container with git.
     """
-    return container_debian(dagger_client, platform, workdir, {"git"})
+    return container_debian(dagger_client, platform, {"git"})
 
 
 def container_uv(
     dagger_client: dagger.Client,
     platform: dagger.Platform,
-    workdir: PurePosixPath | None = None,
     apt_packages: APT_PACKAGES = frozenset(),
 ) -> dagger.Container:
     """
@@ -90,13 +87,12 @@ def container_uv(
     Args:
         dagger_client: The dagger client.
         platform: The container platform.
-        workdir: Workdir path.
         apt_packages: The container APT packages.
 
     Returns:
         A container with uv.
     """
-    container = container_debian(dagger_client, platform, workdir, {"pipx", *apt_packages})
+    container = container_debian(dagger_client, platform, {"pipx", *apt_packages})
     venv_path_str = "/opt/.venv"
     return (
         container.with_mounted_cache(

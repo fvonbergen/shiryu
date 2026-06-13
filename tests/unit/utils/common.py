@@ -91,7 +91,7 @@ final_paths = files_list + list(empty_directories)
 
 print(json.dumps(final_paths))
 """
-    container_project_path_str = "/project"
+    workdir_path_str = "/workspace"
     output_json = await (
         dagger.dag.container(platform=dagger.Platform("linux/amd64"))
         .from_("public.ecr.aws/debian/debian:trixie-slim")
@@ -117,8 +117,8 @@ print(json.dumps(final_paths))
         )
         .with_exec(["apt-get", "update"])
         .with_exec(["apt-get", "install", "--assume-yes", "--no-install-recommends", "python3"])
-        .with_mounted_directory(container_project_path_str, dir_)
-        .with_workdir(container_project_path_str)
+        .with_mounted_directory(workdir_path_str, dir_)
+        .with_workdir(workdir_path_str)
         .with_exec(["python3", "-c", python_script])
         .stdout()
     )

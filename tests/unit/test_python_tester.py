@@ -7,6 +7,7 @@ import pytest
 
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
+from shiryu.utils.dagger.client import WORKDIR_PATH
 
 from .utils.common import Paths, get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
@@ -95,7 +96,7 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
         r"^============================= test session starts ==============================\n"
         r"platform linux -- Python (?P<python_major_version>\d+)\.\d+\.\d+, pytest-\d+\.\d+\.\d+, pluggy-\d+\.\d+\.\d+ -- /opt/.venv/bin/python(?P=python_major_version)\n"  # noqa: E501
         r"cachedir: \.pytest_cache\n"
-        r"rootdir: /project\n"
+        rf"rootdir: {WORKDIR_PATH}\n"
         r"configfile: pytest\.unit\.ini\n"
         r"testpaths: tests/unit\n"
         # r"plugins: asyncio-\d+\.\d+\.\d+, cov-\d+\.\d+\.\d+, xdist-\d+\.\d+\.\d+\n"

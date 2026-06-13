@@ -84,14 +84,14 @@ class Tester(PythonModule):
 
     # @final
     # @classmethod
-    # def _container_project_coverage_badge_file_path(cls) -> Path:
+    # def _coverage_badge_file_path(cls) -> Path:
     #     """
     #     Get the container project coverage badge file path.
 
     #     Returns:
     #         The container project coverage badge file path.
     #     """
-    #     return cls._container_project_path() / cls._coverage_badge_file_name()
+    #     return PurePosixPath() / cls._coverage_badge_file_name()
 
     @final
     @classmethod
@@ -327,24 +327,11 @@ class Tester(PythonModule):
     #                 "genbadge",
     #                 "coverage",
     #                 f"--input-file={self._coverage_file_name()}",
-    #                 f"--output-file={self._container_project_coverage_badge_file_path()}",
+    #                 f"--output-file={self._coverage_badge_file_path()}",
     #             ]
     #         )
-    #         .directory(str(self._container_project_path()))
-    #         .filter(
-    #             include=[
-    #                 str(
-    #                     self._container_project_coverage_file_path().relative_to(
-    #                         self._container_project_path()
-    #                     )
-    #                 ),
-    #                 str(
-    #                     self._container_project_coverage_badge_file_path().relative_to(
-    #                         self._container_project_path()
-    #                     )
-    #                 ),
-    #             ]
-    #         )
+    #         .directory(".")
+    #         .filter(include=[str(self._coverage_file_path())])
     #     )
 
 

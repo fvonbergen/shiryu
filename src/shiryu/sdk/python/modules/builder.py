@@ -266,7 +266,7 @@ class Builder(PythonModule):
         package_name = project_metadata.name
         package_name_version = f"{package_name}=={project_metadata.version}"
         await (
-            container_uv(dagger.dag, platform, self._container_project_path())
+            container_uv(dagger.dag, platform)
             .with_directory(".", directory)
             .with_exec(["uv", "venv"])
             .with_exec(
