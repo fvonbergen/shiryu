@@ -5,6 +5,7 @@ import pytest
 
 from shiryu.main import Shiryu
 
+from .test_python_auditor import python_auditor_init_paths
 from .test_python_builder import python_builder_init_paths
 from .test_python_checker import python_checker_init_paths
 from .test_python_documenter import python_documenter_init_paths
@@ -16,7 +17,7 @@ from .utils.python_init import TestCaseInit, build_test_cases_init
 
 TEST_CASES = build_test_cases_init(
     (
-        python_tester_init_paths,
+        python_auditor_init_paths,
         python_builder_init_paths,
         python_checker_init_paths,
         python_documenter_init_paths,

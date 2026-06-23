@@ -147,11 +147,11 @@ python3 -m venv .venv
 pip install uv
 
 # Install base project dependencies exactly as locked
-uv sync --locked --no-install-project
+UV_MALWARE_CHECK=1 uv sync --locked --no-install-project
 # Install ALL extras
-uv sync --locked --no-install-project --all-groups
+UV_MALWARE_CHECK=1 uv sync --locked --no-install-project --all-groups
 # Install a specific extra
-uv sync --locked --no-install-project --group=<group_section>
+UV_MALWARE_CHECK=1 uv sync --locked --no-install-project --group=<group_section>
 ```
 
 #### Update lockfile
@@ -161,10 +161,10 @@ prerequisite for both Shiryu and the Python Dagger SDK client.
 
 To regenerate or update the lockfile after modifying dependencies:
 ```bash
-uv lock
+UV_MALWARE_CHECK=1 uv lock --upgrade
 ```
 
 To synchronize your local `.venv` exactly with the existing `uv.lock` file:
 ```bash
-uv sync --no-install-project
+UV_MALWARE_CHECK=1 uv sync --no-install-project
 ```

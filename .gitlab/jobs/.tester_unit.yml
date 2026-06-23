@@ -6,8 +6,8 @@ include:
   variables:
     SHIRYU_VERSION: "feat-add-python-sdk"
     SDK_LANGUAGE: "python"
-    PRIVILEGED_NESTING: "true"
     PLATFORM: "linux/amd64"
+    PRIVILEGED_NESTING: "True"
     PROJECT_DIRECTORY: "."
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --privileged-nesting="${PRIVILEGED_NESTING}" --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --platform="${PLATFORM}" --privileged-nesting="${PRIVILEGED_NESTING}" --project-directory="${PROJECT_DIRECTORY}"

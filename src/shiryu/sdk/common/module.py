@@ -23,9 +23,9 @@ from .context import (
     SDKModuleInitContextDirectoryVcs,
 )
 from .scm import (
-    _PROJECT_DIRECTORY_ANNOTATION,
     GITLAB_FOLDER,
     GITLAB_JOBS_FOLDER,
+    PROJECT_DIRECTORY_DAGGER_TYPE_DOC,
     SCM,
     GitLabJob,
     github_init,
@@ -34,7 +34,7 @@ from .scm import (
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAULT
 
-DAGGER_VERSION = "0.21.3"
+DAGGER_VERSION = "0.21.7"
 
 
 def warning(message: str) -> None:
@@ -62,9 +62,7 @@ PlatformDaggerType = Annotated[
 ]
 PLATFORM_DAGGER_DEFAULT: Final = dagger.Platform("linux/amd64")
 ProjectDirectoryType = dagger.Directory
-ProjectDirectoryDaggerType = Annotated[
-    ProjectDirectoryType, dagger.Doc(_PROJECT_DIRECTORY_ANNOTATION)
-]
+ProjectDirectoryDaggerType = Annotated[ProjectDirectoryType, PROJECT_DIRECTORY_DAGGER_TYPE_DOC]
 IsUpdateType = bool
 IsUpdateDaggerType = Annotated[IsUpdateType, dagger.Doc("Whether to update project files or not.")]
 IS_UPDATE_DAGGER_DEFAULT: Final = False
@@ -184,9 +182,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             "exclude": sorted(init_context_vcs.exclude_files_folders)
         }
         _gitignore_template = Template(
-            COMMON_JINJA_ENVIRONMENT,
-            TemplateFile(Path(".gitignore")),
-            _gitignore_template_mapping,
+            COMMON_JINJA_ENVIRONMENT, TemplateFile(Path(".gitignore")), _gitignore_template_mapping
         )
         return directory_with_new_file(_directory, _gitignore_template)
 

@@ -34,7 +34,7 @@ class LinterInitializer(PythonModuleInitializer):
 
     @final
     @staticmethod
-    def _cache_folder() -> str:
+    def _ruff_cache_folder() -> str:
         """
         Get the linter cache folder.
 
@@ -91,7 +91,7 @@ class LinterInitializer(PythonModuleInitializer):
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
-                | {f"/{cls._cache_folder()}/"}
+                | {f"/{cls._ruff_cache_folder()}/"}
             ),
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -160,7 +160,7 @@ class LinterInitializer(PythonModuleInitializer):
             init_directory, init_context_directory, project_metadata, scm, platform
         )
         # ruff.toml
-        ruff_toml_template_mapping: Mapping = {"cache_folder": cls._cache_folder()}
+        ruff_toml_template_mapping: Mapping = {"cache_folder": cls._ruff_cache_folder()}
         ruff_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT, cls._ruff_toml_template_file(), ruff_toml_template_mapping
         )
@@ -195,8 +195,9 @@ class Linter(PythonModule):
             Modified files between the project directory before and after running commands.
         """
         initializer = cls._initializer_cls()
+        ruff_cache_folder = initializer._ruff_cache_folder()
         container = container.with_mounted_cache(
-            initializer._cache_folder(), dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim")
+            ruff_cache_folder, dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim")
         )
         ruff_toml_file_name = initializer._ruff_toml_template_file().file_name
         ruff_check_command = cls._build_uv_run_command(
@@ -216,9 +217,7 @@ class Linter(PythonModule):
         executed_container = container.with_exec(ruff_check_command, expect=expect_check).with_exec(
             ruff_format_command
         )
-        modified_dir = executed_container.directory(".").filter(
-            exclude=[f"{initializer._cache_folder()}/"]
-        )
+        modified_dir = executed_container.directory(".").filter(exclude=[f"{ruff_cache_folder}/"])
         return await initial_dir.diff(modified_dir).sync()
 
     @final

@@ -5,6 +5,22 @@ env:
   DO_NOT_TRACK: "1"
 
 jobs:
+  auditor_audit:
+    name: Auditor audit
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v6
+      - id: auditor_audit
+        name: Auditor audit
+        uses: "./.github/actions/auditor_audit"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat-add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
   builder_test:
     name: Builder test
     runs-on: ubuntu-latest
@@ -83,6 +99,6 @@ jobs:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
           shiryu_version: "feat-add-python-sdk"
           sdk_language: "python"
-          privileged_nesting: "true"
           platform: "linux/amd64"
+          privileged_nesting: "True"
           project_directory: "."

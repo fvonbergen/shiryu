@@ -37,7 +37,9 @@ jobs:
         uses: {{ step.uses }}
         {%- if step.with_|length != 0 %}
         with:
-          {{ step.with_.name }}: {{ step.with_.value }}
+          {%- for step_with_ in step.with_ %}
+          {{ step_with_.name }}: {{ step_with_.value }}
+          {%- endfor %}
         {%- endif %}
       {%- endfor %}
   {%- endfor %}

@@ -41,6 +41,7 @@ PrivilegedNestingDaggerType = Annotated[
 PRIVILEGED_NESTING_DAGGER_DEFAULT: Final = False
 
 TESTS_UNIT_FOLDER: Final = "unit"
+TESTS_UNIT_PATH: Final = PurePosixPath(PROJECT_TESTS_FOLDER) / TESTS_UNIT_FOLDER
 
 
 class TesterInitializer(PythonModuleInitializer):
@@ -68,17 +69,6 @@ class TesterInitializer(PythonModuleInitializer):
     #     """
     #     return "coverage-badge.svg"
 
-    @final
-    @classmethod
-    def _tests_unit_path(cls) -> PurePosixPath:
-        """
-        Get the tests unit path.
-
-        Returns:
-            The tests unit path.
-        """
-        return PurePosixPath(PROJECT_TESTS_FOLDER) / TESTS_UNIT_FOLDER
-
     # @final
     # @classmethod
     # def _coverage_badge_file_path(cls) -> Path:
@@ -100,17 +90,6 @@ class TesterInitializer(PythonModuleInitializer):
             The pytest.ini template file.
         """
         return TemplateFile(Path("pytest.ini"), None, PurePosixPath("pytest.unit.ini"))
-
-    @final
-    @classmethod
-    def _coveragerc_template_file(cls) -> TemplateFile:
-        """
-        .coveragerc template file.
-
-        Returns:
-            The .coveragerc template file.
-        """
-        return TemplateFile(Path(".coveragerc"))
 
     #     @classmethod
     #     def _sdk_source_code_python_packages(cls) -> set[str]:
@@ -228,10 +207,11 @@ class TesterInitializer(PythonModuleInitializer):
         init_directory = await super()._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
-        tests_unit_path_str = str(cls._tests_unit_path())
+        tests_unit_path_str = str(TESTS_UNIT_PATH)
+        _coveragerc_template_file = TemplateFile(Path(".coveragerc"))
         # pytest.unit.ini
         pytest_unit_init_template_mapping: Mapping = {
-            "project_coveragerc_path": str(cls._coveragerc_template_file().output_file_name),
+            "project_coveragerc_path": str(_coveragerc_template_file.output_file_name),
             "project_source_path": PROJECT_SOURCE_CODE_FOLDER,
             "project_tests_path": tests_unit_path_str,
         }
@@ -247,9 +227,7 @@ class TesterInitializer(PythonModuleInitializer):
             "coverage_file_path": cls._coverage_file_name(),
         }
         _coveragerc_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            cls._coveragerc_template_file(),
-            _coveragerc_template_mapping,
+            PYTHON_JINJA_ENVIRONMENT, _coveragerc_template_file, _coveragerc_template_mapping
         )
         init_directory = directory_with_new_file(init_directory, _coveragerc_template)
         # <tests>/<tests unit>/
@@ -299,7 +277,7 @@ class Tester(PythonModule):
         ).contents()
         config.read_string(pytest_unit_ini_file_contents)
         tests_unit_extension = config["pytest"]["python_files"]
-        tests_unit_files = await container.directory(str(initializer._tests_unit_path())).glob(
+        tests_unit_files = await container.directory(str(TESTS_UNIT_PATH)).glob(
             tests_unit_extension
         )
         is_tests_unit_files = len(tests_unit_files) != 0

@@ -16,7 +16,7 @@ from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH
 
-_PROJECT_DIRECTORY_ANNOTATION: Final = "Project directory path."
+PROJECT_DIRECTORY_DAGGER_TYPE_DOC: Final = dagger.Doc("Project directory path.")
 
 
 @final
@@ -81,7 +81,7 @@ def get_sdk_module_function_parameters(
         # directory parameter which means that the current working directory.
         if (
             parameter_type is dagger.Directory
-            and parameter_annotation_metadata[0] == _PROJECT_DIRECTORY_ANNOTATION
+            and parameter_annotation_metadata[0] == PROJECT_DIRECTORY_DAGGER_TYPE_DOC
             # and isinstance(parameter_annotation_metadata[1], dagger.DefaultPath)
         ):
             # The dagger.Directory has a special default value: https://docs.dagger.io/api/default-paths/
@@ -835,9 +835,8 @@ def build_gitlab_job(  # noqa: PLR0913
             " ".join(
                 [
                     (
-                        "dagger --mod=gitlab.com/fvonbergen1/shiryu@${{SHIRYU_VERSION}} call "
-                        "${{SDK_LANGUAGE}} "
-                        f"{sdk_module_name} {sdk_module_function_name}"
+                        "dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call "
+                        f"${{SDK_LANGUAGE}} {sdk_module_name} {sdk_module_function_name}"
                     ),
                     *[
                         f'{parameter.option}="${{{parameter.name.upper()}}}"'

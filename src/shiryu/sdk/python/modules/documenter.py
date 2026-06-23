@@ -39,6 +39,7 @@ GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
 )
 
 PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
+PROJECT_DOCUMENTATION_PATH: Final = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
 
 
 class DocumenterInitializer(PythonModuleInitializer):
@@ -71,13 +72,14 @@ class DocumenterInitializer(PythonModuleInitializer):
         sdk_language = sdk_module_cls._sdk_name()
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.document
+        export_path = PROJECT_DOCUMENTATION_PATH
         github_action = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
-            export_path=PurePosixPath(PROJECT_DOCUMENTATION_FOLDER),
+            export_path=export_path,
         )
         gitlab_documentation_folder_output = "public"
         gitlab_job = build_gitlab_job(
@@ -86,7 +88,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_version,
             pre_script=(),
-            export_path=PurePosixPath(PROJECT_DOCUMENTATION_FOLDER),
+            export_path=export_path,
             post_script=(
                 f"mkdir {gitlab_documentation_folder_output}",
                 f"cp --recursive {PROJECT_DOCUMENTATION_FOLDER}/build/html/* {gitlab_documentation_folder_output}/",  # noqa: E501
@@ -190,7 +192,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         )
         project_name = project_metadata.name
         project_authors_names = ", ".join([author.name for author in project_metadata.authors])
-        project_documentation_path = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
+        project_documentation_path = PROJECT_DOCUMENTATION_PATH
         # <documentation>/
         conf_py_jinja_template_mapping: Mapping = {}
         project_documentation_shiryu_templates_path = (

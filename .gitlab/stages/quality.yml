@@ -1,9 +1,15 @@
 include:
+  - local: ".gitlab/jobs/.auditor_audit.yml"
   - local: ".gitlab/jobs/.builder_test.yml"
   - local: ".gitlab/jobs/.checker_check.yml"
   - local: ".gitlab/jobs/.documenter_document.yml"
   - local: ".gitlab/jobs/.linter_lint.yml"
   - local: ".gitlab/jobs/.tester_unit.yml"
+quality_auditor_audit:
+  extends: .auditor_audit
+  stage: quality
+  needs:
+    - []
 quality_builder_test:
   extends: .builder_test
   stage: quality

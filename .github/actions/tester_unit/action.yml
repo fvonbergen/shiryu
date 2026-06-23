@@ -12,14 +12,14 @@ inputs:
   sdk_language:
     description: "SDK programming language"
     default: "python"
-  privileged_nesting:
-    description: "Whether to allow container dagger client to connect to the dagger engine."
-    default: "false"
   platform:
     description: "Platform config OS and architecture in a Container."
     default: "linux/amd64"
+  privileged_nesting:
+    description: "Whether to allow container dagger client to connect to the dagger engine."
+    default: "False"
   project_directory:
-    description: "Project directory path"
+    description: "Project directory path."
     default: "."
 
 runs:
@@ -29,8 +29,8 @@ runs:
       name: Call Dagger Tester unit
       uses: dagger/dagger-for-github@v8.4.0
       with:
-        version: "v0.21.3"
+        version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} tester unit --privileged-nesting="${{ inputs.privileged_nesting }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
+        args: ${{ inputs.sdk_language }} tester unit --platform="${{ inputs.platform }}" --privileged-nesting="${{ inputs.privileged_nesting }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

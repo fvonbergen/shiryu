@@ -107,4 +107,5 @@ def container_uv(
         .with_env_variable("UV_LINK_MODE", "copy")
         .with_exec(["uv", "venv", venv_path_str])
         .with_env_variable(name="UV_PROJECT_ENVIRONMENT", value=venv_path_str)
+        .with_env_variable(name="UV_MALWARE_CHECK", value="1")
     )

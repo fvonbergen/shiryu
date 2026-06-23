@@ -24,23 +24,13 @@ from ..templates import PYTHON_JINJA_ENVIRONMENT
 PortType = int
 PortDaggerType = Annotated[PortType, dagger.Doc("Jupyter notebooks port")]
 
+PROJECT_NOTEBOOKS_FOLDER: Final = "notebooks"
 PORT_DAGGER_DEFAULT: Final = 8888
 JUPYTER_NOTEBOOKS_CACHE_VOLUME = dagger.dag.cache_volume("shiryu-jupyter-debian-trixie")
 
 
 class JupyterInitializer(PythonModuleInitializer):
     """JupyterInitializer class."""
-
-    @final
-    @staticmethod
-    def _notebooks_folder() -> str:
-        """
-        Get the notebooks folder name.
-
-        Returns:
-            The notebooks folder name.
-        """
-        return "notebooks"
 
     @classmethod
     def _init_context_directory(
@@ -101,7 +91,7 @@ class JupyterInitializer(PythonModuleInitializer):
         playground_ipynb_template_mapping: Mapping = {"project_name": project_metadata.name}
         playground_ipynb_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
-            TemplateFile(Path("playground.ipynb"), PurePosixPath(cls._notebooks_folder())),
+            TemplateFile(Path("playground.ipynb"), PurePosixPath(PROJECT_NOTEBOOKS_FOLDER)),
             playground_ipynb_template_mapping,
         )
         return directory_with_new_file(init_directory, playground_ipynb_template)
@@ -145,7 +135,6 @@ class Jupyter(PythonModule):
         Returns:
             A container with the project jupyter command executed.
         """
-        initializer = cls._initializer_cls()
         jupyter_notebooks_cache_folder = cls.__notebooks_cache_folder()
         container = (
             await container.with_mounted_cache(
@@ -156,7 +145,7 @@ class Jupyter(PythonModule):
                     "cp",
                     "--no-clobber",
                     "--archive",
-                    f"{initializer._notebooks_folder()}/.",
+                    f"{PROJECT_NOTEBOOKS_FOLDER}/.",
                     f"{jupyter_notebooks_cache_folder}/",
                 ]
             )
