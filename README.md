@@ -106,31 +106,10 @@ Assumes the Dagger Cloud token is in a repository CI/CD variable named
 
 ## For developers
 
-The [Dagger Python SDK](https://github.com/dagger/dagger/tree/main/sdk/python)
-loads/installs the Shiryu module inside the dagger engine using a container that
-runs in it. The container has a default base-image, but can be configured to
-pull it from a local container registry.
-
-Shiryu's version is generated dynamically using [git](https://git-scm.com/) and
-[hatch-vcs](https://github.com/ofek/hatch-vcs). If [git](https://git-scm.com/)
-is not installed it will fall back to `0.0.0+unknown`.
-
-Shiryu relies on its version for generating template files. For this reason it
-is useful for development to have Shiryu installed with its correct version.
-
-In order to accomplish it, we need to provide to the
-[Dagger Python SDK](https://github.com/dagger/dagger/tree/main/sdk/python)
-access to a container registry with a container image with [git](https://git-scm.com/).
-
-```bash
-git clone https://github.com/fvonbergen/shiryu.git
-./local_registry.sh
-```
-
 In the [pyproject.toml](pyproject.toml) file:
 
-- Uncomment the lines inside the "XML" tag `<develop>` comment.
-- Comment the lines inside the "XML" tag `<release>` comment.
+- Uncomment the lines inside the `<develop>` tags to link and install your local, editable copy of the [Dagger Python SDK](https://github.com/dagger/dagger/tree/main/sdk/python).
+- Comment out the lines inside the `<release>` tags to disable fetching the published [Dagger Python SDK](https://github.com/dagger/dagger/tree/main/sdk/python) package from PyPI.
 
 ### Local virtual environment
 
