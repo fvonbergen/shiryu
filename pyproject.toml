@@ -68,11 +68,6 @@ tester = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-xdist[psutil]"]
 # "Twitter" = ""
 
 # <develop>
-# [tool.dagger]
-# base-image = "localhost:5000/shiryu/python:3.12-slim-git"
-# </develop>
-
-# <develop>
 # [tool.uv.sources]
 # dagger-io = { path = "sdk", editable = true }
 # </develop>
