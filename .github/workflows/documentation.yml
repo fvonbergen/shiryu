@@ -27,7 +27,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: documenter_document
         name: Documenter document
         uses: ./.github/actions/documenter_document

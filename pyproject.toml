@@ -45,7 +45,7 @@ dependencies = [
 ]
 
 [build-system]
-requires = ["hatchling==1.29.0", "hatch-vcs==0.5.0"]
+requires = ["hatchling==1.31.0", "hatch-vcs==0.5.0"]
 build-backend = "hatchling.build"
 
 # Dependencies that will be installed for the specific module call.
@@ -54,7 +54,10 @@ auditor = []
 builder = ["hatch"]
 checker = ["mypy", "pytest", "pytest-asyncio"]
 documenter = ["sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
-linter = ["ruff"]
+linter = [
+  # >= 0.16.0: New PLR0917 rule
+  "ruff >= 0.16.0",
+]
 tester = ["pytest", "pytest-asyncio", "pytest-cov", "pytest-xdist[psutil]"]
 
 [urls]

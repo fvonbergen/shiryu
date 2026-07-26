@@ -152,7 +152,7 @@ class GitHubWorkflowJobStep:
 
 
 CHECKOUT_JOB_STEP: Final = GitHubWorkflowJobStep(
-    "check_out_code", "Check out code", "actions/checkout@v6", ()
+    "check_out_code", "Check out code", "actions/checkout@v7", ()
 )
 
 
@@ -629,7 +629,7 @@ def gitlab_init(
 GITLAB_JOBS_FOLDER: Final = "jobs"
 
 
-def build_github_action(  # noqa: PLR0913
+def build_github_action(  # noqa: PLR0913, PLR0917
     sdk_language: str,
     sdk_module_name: str,
     sdk_module_function: SDKModuleFunction,
@@ -774,7 +774,7 @@ def build_github_workflow_job(
     return GitHubWorkflowJob(id_, name, job_environment, (*pre_steps, action_step, *post_steps))
 
 
-def build_gitlab_job(  # noqa: PLR0913
+def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_language: str,
     sdk_module_name: str,
     sdk_module_function: SDKModuleFunction,

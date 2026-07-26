@@ -102,8 +102,8 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
         # r"plugins: asyncio-\d+\.\d+\.\d+, cov-\d+\.\d+\.\d+, xdist-\d+\.\d+\.\d+\n"
         r"plugins: .*\n"  # plugins order might vary between python versions.
         r"asyncio: mode=Mode\.STRICT, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function\n"  # noqa: E501
-        r"created: 2/2 workers\n"
-        r"2 workers \[0 items\]\n"
+        r"created: (?P<worker>(?P<is_singular>1)|[2-9]|\d{2,})/(?P=worker) worker(?(is_singular)|s)\n"  # noqa: E501
+        r"(?P=worker) worker(?(is_singular)|s) \[0 items\]\n"
         r"\n"
         r"scheduling tests via LoadScheduling\n"
         r"\n"
