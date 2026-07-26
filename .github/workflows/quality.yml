@@ -11,7 +11,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: auditor_audit
         name: Auditor audit
         uses: "./.github/actions/auditor_audit"
@@ -27,7 +27,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: builder_test
         name: Builder test
         uses: "./.github/actions/builder_test"
@@ -43,7 +43,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: checker_check
         name: Checker check
         uses: "./.github/actions/checker_check"
@@ -59,7 +59,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: documenter_document
         name: Documenter document
         uses: "./.github/actions/documenter_document"
@@ -75,7 +75,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: linter_lint
         name: Linter lint
         uses: "./.github/actions/linter_lint"
@@ -91,7 +91,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       - id: tester_unit
         name: Tester unit
         uses: "./.github/actions/tester_unit"

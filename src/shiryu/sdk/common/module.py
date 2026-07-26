@@ -473,7 +473,7 @@ class SDKModule[
 
     @final
     @classmethod
-    async def _init(  # noqa: PLR0913
+    async def _init(  # noqa: PLR0913, PLR0917
         cls,
         init_directory: dagger.Directory,
         project_directory: ProjectDirectoryDaggerType,
