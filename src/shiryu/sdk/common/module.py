@@ -64,14 +64,15 @@ PLATFORM_DAGGER_DEFAULT: Final = dagger.Platform("linux/amd64")
 ProjectDirectoryType = dagger.Directory
 ProjectDirectoryDaggerType = Annotated[ProjectDirectoryType, PROJECT_DIRECTORY_DAGGER_TYPE_DOC]
 IsUpdateType = bool
-IsUpdateDaggerType = Annotated[IsUpdateType, dagger.Doc("Whether to update project files or not.")]
+IsUpdateDaggerType = Annotated[
+    IsUpdateType, dagger.Doc("Whether to update project directory files or not.")
+]
 IS_UPDATE_DAGGER_DEFAULT: Final = False
 
 
 SCMType = list[SCM]
 SCMDaggerType = Annotated[
-    SCMType,
-    dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured."),
+    SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured.")
 ]
 SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 
@@ -473,28 +474,57 @@ class SDKModule[
 
     @final
     @classmethod
-    async def _init(  # noqa: PLR0913, PLR0917
+    async def __build_init_directory(
         cls,
-        init_directory: dagger.Directory,
-        project_directory: ProjectDirectoryDaggerType,
+        shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
-        is_update: IsUpdateType,
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
         """
-        Helper function to return an initialized directory for the SDK module.
+        Returns a SDK module initialized directory.
 
         Args:
-            init_directory: SDK module initialization directory.
-            project_directory: Project directory.
+            shiryu_metadata: Shiryu metadata.
             project_metadata: Project metadata.
-            is_update: Whether to update project files or not.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform.
 
         Returns:
-            An initialized directory for the SDK module.
+            A SDK module initialized directory.
+        """
+        # Build the initialization context directory.
+        initializer_cls = cls._initializer_cls()
+        init_context_directory = initializer_cls._create_init_context_directory()
+        init_context_directory = initializer_cls._init_context_directory(
+            init_context_directory, shiryu_metadata, project_metadata
+        )
+        # Build initialized directory.
+        init_directory = dagger.dag.directory()
+        return await initializer_cls._init_directory(
+            init_directory, init_context_directory, project_metadata, scm, platform
+        )
+
+    @final
+    @classmethod
+    async def __build_project_directory(
+        cls,
+        init_directory: dagger.Directory,
+        project_directory: ProjectDirectoryDaggerType,
+        is_update: IsUpdateType,
+        platform: PlatformType,
+    ) -> dagger.Directory:
+        """
+        Returns a project directory merged with the SDK module initialized directory.
+
+        Args:
+            init_directory: SDK module initialization directory.
+            project_directory: Project directory.
+            is_update: Whether to update project directory files or not.
+            platform: The container platform.
+
+        Returns:
+            A project directory merged with the SDK module initialized directory.
         """
         # Check if project is git initialized.
         is_vcs_init = await cls.__is_vcs_init(project_directory, platform)
@@ -516,26 +546,18 @@ class SDKModule[
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
-        """Returns an initialized directory for the SDK module."""
+        """Returns a project directory with the SDK module initialized directory."""
         # Gather metadata.
         shiryu_metadata, project_metadata = await self._get_metadata(
             project_directory, project_name, platform
         )
-        # TODO: When init() for all modules is done this can be moved to _init()
-        # Build the initialization context directory.
-        initializer_cls = self._initializer_cls()
-        init_context_directory = initializer_cls._create_init_context_directory()
-        init_context_directory = initializer_cls._init_context_directory(
-            init_context_directory, shiryu_metadata, project_metadata
+        # Build an initialized directory.
+        init_directory = await self.__build_init_directory(
+            shiryu_metadata, project_metadata, scm, platform
         )
-        # Build initialized directory.
-        init_directory = dagger.dag.directory()
-        init_directory = await initializer_cls._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform
-        )
-        # Create the initialize directory.
-        return await self._init(
-            init_directory, project_directory, project_metadata, is_update, scm, platform
+        # Merge the SDK module initialized directory with the project directory.
+        return await self.__build_project_directory(
+            init_directory, project_directory, is_update, platform
         )
 
     @classmethod
