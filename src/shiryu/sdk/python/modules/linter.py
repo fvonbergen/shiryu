@@ -119,7 +119,10 @@ class LinterInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"ruff"}
+                # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
+                # >= 0.1.2: New ruff format command
+                sdk_module_name,
+                {"ruff >= 0.1.2"},
             ),
         )
 

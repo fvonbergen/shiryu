@@ -147,7 +147,9 @@ class TesterInitializer(PythonModuleInitializer):
             post_script=(),
             artifacts=None,
         )
-        tests_code_dependencies = {"pytest", "pytest-asyncio"}
+        # https://docs.pytest.org/en/stable/changelog.html#pytest-7-4-0-2023-06-23
+        # >= 7.4.0: Enhanced the CLI flag for -c to now include --config-file.
+        tests_code_dependencies = {"pytest >= 7.4.0", "pytest-asyncio"}
         return init_context_directory.evolve(
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
