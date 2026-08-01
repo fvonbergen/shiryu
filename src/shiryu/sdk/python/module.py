@@ -136,8 +136,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         py_typed_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("py.typed"),
-                PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical,
+                Path("py.typed"), PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical
             ),
             py_typed_template_mapping,
         )

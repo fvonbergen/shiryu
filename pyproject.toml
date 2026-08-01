@@ -21,13 +21,19 @@ classifiers = [
   "Typing :: Typed",
 ]
 # linked to [tool.uv] environments
-# python3.9: we are using the | operator for dictionaries
-# python3.9: we are using the dict, list, set, tuple, type types
-# python3.9: we are using typing.Annotated
-# python3.10: dagger-io requires-python = ">=3.10"
-# python3.11: use tomllib, StrEnum
-# python3.12: we are using Path().walk()
-# python3.12: new generics syntax (https://docs.python.org/3/whatsnew/3.12.html#pep-695-type-parameter-syntax)
+# python3.9 - https://docs.python.org/3/whatsnew/3.9.html
+# - | operator in dict
+# - type hinting generics in standard collections (dict, list, set, tuple, type)
+# - flexible function and variable annotations (typing.Annotated)
+# python3.10
+# - dagger-io minimum python support - https://pypi.org/project/dagger-io/0.1.1/
+# python3.11 - https://docs.python.org/3/whatsnew/3.11.html
+# - tomllib: Support for Parsing TOML in the Standard Library
+# - Added StrEnum
+# python3.12 - https://docs.python.org/3/whatsnew/3.12.html
+# - Add pathlib.Path.walk()
+# python3.12 - https://docs.python.org/3/whatsnew/3.12.html
+# - New type parameter syntax
 requires-python = ">=3.12"
 # Dagger module developments ends up using uv.lock to install module dependencies.
 dependencies = [
@@ -50,9 +56,9 @@ build-backend = "hatchling.build"
 
 # Dependencies that will be installed for the specific module call.
 [dependency-groups]
-auditor = []
+auditor = ["uv >= 0.11.0"]
 builder = ["hatch"]
-checker = ["mypy", "pytest", "pytest-asyncio"]
+checker = ["mypy", "pytest >= 7.4.0", "pytest-asyncio"]
 documenter = ["sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
 linter = [
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160

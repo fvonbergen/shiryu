@@ -8,9 +8,14 @@ authors = [
   { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
   {%- endfor %}
 ]
-# uv does not work with Python versions prior to 3.6
-# https://docs.astral.sh/uv/reference/policies/python/#python-versions
-requires-python = ">=3.6"
+# linked to [tool.uv] environments
+# python3.6
+# - uv minium python support - https://docs.astral.sh/uv/reference/policies/python/#python-versions
+# python3.7
+# - pytest >= 7.1.0 (tester) - https://docs.pytest.org/en/stable/changelog.html#pytest-7-1-0-2022-03-13
+# python3.8
+# - uv >= 0.7 (auditor) - https://github.com/astral-sh/uv/blob/main/changelogs/0.7.x.md
+requires-python = ">=3.8"
 dependencies = []
 
 # Dependencies that will be installed for the specific module call.
@@ -30,8 +35,20 @@ dependencies = []
 # "Twitter" = ""
 
 [build-system]
-requires = ["hatchling==1.27.0", "hatch-vcs==0.4.0"]
+requires = ["hatchling==1.31.0", "hatch-vcs==0.5.0"]
 build-backend = "hatchling.build"
+
+[tool.uv]
+# linked to [project] requires-python
+environments = [
+  "python_version == '3.8'",
+  "python_version == '3.9'",
+  "python_version == '3.10'",
+  "python_version == '3.11'",
+  "python_version == '3.12'",
+  "python_version == '3.13'",
+  "python_version == '3.14'",
+]
 
 [tool.hatch.version]
 source = "vcs"

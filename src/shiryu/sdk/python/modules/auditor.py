@@ -85,6 +85,12 @@ class AuditorInitializer(PythonModuleInitializer):
                     ),
                 ),
             ),
+            dependency_groups=init_context_directory.dependency_groups.add(
+                # https://github.com/astral-sh/uv/releases/tag/0.11.0
+                # >= 0.11.0: New uv audit command
+                sdk_module_name,
+                {"uv >= 0.11.0"},
+            ),
         )
 
 
@@ -105,7 +111,8 @@ class Auditor(PythonModule):
     ) -> str:
         """Run security audit analysis in the project."""
         container = await self._exec_container(project_directory, platform)
-        await container.with_exec(["uv", "audit"]).sync()
+        uv_audit_command = self._build_uv_run_command(["uv", "audit"])
+        await container.with_exec(uv_audit_command).sync()
         return "Security audit successful"
 
 

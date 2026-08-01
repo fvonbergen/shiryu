@@ -177,8 +177,7 @@ class TesterInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name,
-                tests_code_dependencies | {"pytest-cov", "pytest-xdist[psutil]"},
+                sdk_module_name, tests_code_dependencies | {"pytest-cov", "pytest-xdist[psutil]"}
             ).merge(DependencyGroups({Checker.name(): tests_code_dependencies})),
             source_code_files_folders=init_context_directory.source_code_files_folders
             | {PROJECT_TESTS_FOLDER},
