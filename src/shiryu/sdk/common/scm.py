@@ -350,9 +350,9 @@ class GitHubActionsWorkflows:
 
 
 # https://docs.gitlab.com/ci/inputs/#array-type
-GitLabArrayElementType = str
-GitLabArrayType = tuple[GitLabArrayElementType, ...]
-GitLabScript = GitLabArrayType
+type GitLabArrayElementType = str
+type GitLabArrayType = tuple[GitLabArrayElementType, ...]
+type GitLabScript = GitLabArrayType
 
 
 @final
@@ -363,9 +363,9 @@ class GitLabArtifacts:
     paths: GitLabArrayType
 
 
-GitLabStageRules = GitLabArrayType
+type GitLabStageRules = GitLabArrayType
 
-GitLabStageName = str
+type GitLabStageName = str
 
 
 @final
@@ -653,7 +653,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
 
     Raises:
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
-        not `dagger.Directory`.
+            not `dagger.Directory`.
     """
     sdk_module_name_title = sdk_module_name.title()
     sdk_module_function_name = sdk_module_function.__name__
@@ -802,7 +802,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
 
     Raises:
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
-        not `dagger.Directory`.
+            not `dagger.Directory`.
     """
     sdk_module_function_name = sdk_module_function.__name__
     id_ = camel_case_to_snake_case(

@@ -4,9 +4,10 @@ include:
 .builder_test:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat-add-python-sdk"
+    SHIRYU_VERSION: "feat-add-python-sdk-zensical"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
   script:
     - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} builder test --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"
+

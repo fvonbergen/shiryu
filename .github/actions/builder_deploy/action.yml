@@ -8,7 +8,7 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat-add-python-sdk"
+    default: "feat-add-python-sdk-zensical"
   sdk_language:
     description: "SDK programming language"
     default: "python"
@@ -37,3 +37,4 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password="${{ inputs.repository_password }}" --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+

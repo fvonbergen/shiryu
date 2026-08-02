@@ -33,6 +33,17 @@ class AuditorInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
+        """
+        Initialization directory context used in the SDK module directory initialization.
+
+        Args:
+            init_context_directory: SDK module initialization directory context.
+            shiryu_metadata: Shiryu metadata.
+            project_metadata: Project metadata.
+
+        Returns:
+            The updated SDK module initialization directory context.
+        """
         init_context_directory = super()._init_context_directory(
             init_context_directory, shiryu_metadata, project_metadata
         )

@@ -7,8 +7,8 @@ from typing import final
 import dagger
 
 # Generic class type.
-ClassType = type
-EnumValueType = type
+type ClassType = type
+type EnumValueType = type
 
 
 def add_enum_values_as_methods(

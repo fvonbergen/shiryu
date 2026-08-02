@@ -33,7 +33,7 @@ classifiers = [
 # python3.12 - https://docs.python.org/3/whatsnew/3.12.html
 # - Add pathlib.Path.walk()
 # python3.12 - https://docs.python.org/3/whatsnew/3.12.html
-# - New type parameter syntax
+# - New type parameter syntax and the type statement
 requires-python = ">=3.12"
 # Dagger module developments ends up using uv.lock to install module dependencies.
 dependencies = [
@@ -59,7 +59,7 @@ build-backend = "hatchling.build"
 auditor = ["uv >= 0.11.0"]
 builder = ["hatch"]
 checker = ["mypy", "pytest >= 7.4.0", "pytest-asyncio"]
-documenter = ["sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"]
+documenter = ["mkdocs-autorefs", "mkdocstrings[python]", "zensical"]
 linter = [
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160
   # >= 0.16.0: New PLR0917 rule

@@ -7,7 +7,7 @@ import dagger
 
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
-from ...common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
+from ...common.context import DaggerModuleMetadata
 from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
@@ -28,11 +28,9 @@ from ...common.scm import (
     build_gitlab_job,
     build_gitlab_stage_job,
 )
-from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
-from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
+from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
-from ..utils import get_package_name_canonical
 
 GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
     "github-pages", "${{ steps.deployment.outputs.page_url }}"
@@ -40,6 +38,7 @@ GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
 
 PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
 PROJECT_DOCUMENTATION_PATH: Final = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
+PROJECT_SITE_FOLDER: Final = "site"
 
 
 class DocumenterInitializer(PythonModuleInitializer):
@@ -91,18 +90,14 @@ class DocumenterInitializer(PythonModuleInitializer):
             export_path=export_path,
             post_script=(
                 f"mkdir {gitlab_documentation_folder_output}",
-                f"cp --recursive {PROJECT_DOCUMENTATION_FOLDER}/build/html/* {gitlab_documentation_folder_output}/",  # noqa: E501
+                f"cp --recursive {PROJECT_SITE_FOLDER}/* {gitlab_documentation_folder_output}/",
             ),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
-                | {
-                    f"/{PROJECT_DOCUMENTATION_FOLDER}/build/",
-                    rf"/{PROJECT_DOCUMENTATION_FOLDER}/source/reference/modules\.rst",
-                    rf"/{PROJECT_DOCUMENTATION_FOLDER}/source/reference/{project_metadata.name}\.*\.rst",
-                }
+                | {f"/{PROJECT_SITE_FOLDER}/"}
             ),
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -122,7 +117,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                                     "actions/upload-pages-artifact@v5",
                                     (
                                         GitHubWorkflowStepInputParameter(
-                                            "path", f"{PROJECT_DOCUMENTATION_FOLDER}/build/html"
+                                            "path", f"{PROJECT_SITE_FOLDER}"
                                         ),
                                     ),
                                 ),
@@ -161,9 +156,20 @@ class DocumenterInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"sphinx", "sphinx-autodoc-typehints", "sphinx_rtd_theme"}
+                sdk_module_name, {"mkdocs-autorefs", "mkdocstrings[python]", "zensical"}
             ),
         )
+
+    @final
+    @classmethod
+    def _zensical_toml_template_file(cls) -> TemplateFile:
+        """
+        zensical.toml template file.
+
+        Returns:
+            The zensical.toml template file.
+        """
+        return TemplateFile(Path("zensical.toml"))
 
     @classmethod
     async def _init_directory(
@@ -193,92 +199,28 @@ class DocumenterInitializer(PythonModuleInitializer):
         project_name = project_metadata.name
         project_authors_names = ", ".join([author.name for author in project_metadata.authors])
         project_documentation_path = PROJECT_DOCUMENTATION_PATH
-        # <documentation>/
-        conf_py_jinja_template_mapping: Mapping = {}
-        project_documentation_shiryu_templates_path = (
-            project_documentation_path / "shiryu-templates"
-        )
-        # <documentation>/shiryu-templates/conf.py.jinja
-        conf_py_jinja_template_file = TemplateFile(
-            Path("conf.py.jinja"), project_documentation_shiryu_templates_path
-        )
-        conf_py_jinja_template = Template(
+        # zensical.toml
+        zensical_toml_template_mapping: Mapping = {
+            "project_name": project_name,
+            "project_authors_names": project_authors_names,
+        }
+        zensical_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
-            conf_py_jinja_template_file,
-            conf_py_jinja_template_mapping,
+            cls._zensical_toml_template_file(),
+            zensical_toml_template_mapping,
         )
-        init_directory = directory_with_new_file(init_directory, conf_py_jinja_template)
-        # <documentation>/source/{explanation/, how_to/, reference/, tutorials/,}
-        # TODO: add docs/source/index.rst file
-        # TODO: add diátaxis index.rst files:
-        # docs/source/{explanation, how_to, reference, tutorials}/index.rst
+        init_directory = directory_with_new_file(init_directory, zensical_toml_template)
+        # <documentation>/{explanation/, how_to/, reference/, tutorials/,}
+        # TODO: add docs/index.md
+        # docs/{explanation, how_to, reference, tutorials}/index.rst
         empty_directory = dagger.dag.directory()
         init_directory = (
             init_directory.with_directory(
-                str(project_documentation_path / "source" / "explanation"), empty_directory
+                str(project_documentation_path / "explanation"), empty_directory
             )
-            .with_directory(str(project_documentation_path / "source" / "how_to"), empty_directory)
-            .with_directory(
-                str(project_documentation_path / "source" / "reference"), empty_directory
-            )
-            .with_directory(
-                str(project_documentation_path / "source" / "tutorials"), empty_directory
-            )
-        )
-        # <documentation>/{Makefile, build/, source/_static/, source/_templates/,
-        # source/conf.py, source/index.rst}
-        sdk_module_cls = Documenter
-        init_directory = (
-            sdk_module_cls._base_container(
-                sdk_module_cls._init_context_container(
-                    SDKModuleInitContextContainer.create_default()
-                ),
-                platform,
-            )
-            .with_directory(".", init_directory)
-            .with_exec(
-                [
-                    "uvx",
-                    "--from",
-                    "sphinx",
-                    "sphinx-quickstart",
-                    "--sep",
-                    f"--project={project_name}",
-                    f"--author='{project_authors_names}'",
-                    "--language=en",
-                    "--release=",
-                    "--ext-autodoc",
-                    "--ext-doctest",
-                    "--ext-intersphinx",
-                    "--ext-todo",
-                    "--ext-coverage",
-                    "--ext-imgmath",
-                    "--ext-mathjax",
-                    "--ext-ifconfig",
-                    "--ext-viewcode",
-                    "--ext-githubpages",
-                    "--extensions=sphinx.ext.napoleon,sphinx_autodoc_typehints",
-                    "--no-batchfile",
-                    f"--templatedir={project_documentation_shiryu_templates_path}",
-                    # "-d=append_syspath=true",
-                    # f"-d=module_path=os.path.abspath('../../{cls._source_folder()}')",
-                    str(project_documentation_path),
-                ]
-            )
-            .with_exec(
-                [
-                    "sed",
-                    "--in-place",
-                    "--regexp-extended",
-                    r"--expression=s/^   sphinx-quickstart on [a-zA-Z]{3} [a-zA-Z]{3} [0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} [0-9]{4}\.$/   sphinx-quickstart on --- --- -- --:--:-- ----./",  # noqa: E501
-                    r"--expression=/^Add your content using ``reStructuredText`` syntax\. See the$/d",  # noqa: E501
-                    r"--expression=\|^`reStructuredText <https://www\.sphinx-doc\.org/en/master/usage/restructuredtext/index\.html>`_$|d",
-                    r"--expression=/^documentation for details\.$/d",
-                    r"--expression=/^   :caption: Contents:$/a\ \n   modules\n\n\nIndices and tables\n==================\n\n* :ref:`genindex`\n* :ref:`modindex`\n* :ref:`search`",  # noqa: E501
-                    f"{project_documentation_path / 'source' / 'index.rst'}",
-                ]
-            )
-            .directory(".")
+            .with_directory(str(project_documentation_path / "how_to"), empty_directory)
+            .with_directory(str(project_documentation_path / "reference"), empty_directory)
+            .with_directory(str(project_documentation_path / "tutorials"), empty_directory)
         )
         return init_directory
 
@@ -297,55 +239,27 @@ class Documenter(PythonModule):
         """
         return DocumenterInitializer
 
-    @classmethod
-    def _init_context_container(
-        cls, init_context_container: SDKModuleInitContextContainer
-    ) -> SDKModuleInitContextContainer:
-        """
-        Initialization container context used in the SDK module container initialization.
-
-        Args:
-            init_context_container: SDK module initialization container context.
-
-        Returns:
-            The updated SDK module initialization container context.
-        """
-        return init_context_container.evolve(
-            apt_packages=init_context_container.apt_packages | {"make"}
-        )
-
     @final
     @classmethod
-    def __document(
-        cls, container: dagger.Container, project_metadata: ProjectMetadata
-    ) -> dagger.Directory:
+    def __document(cls, container: dagger.Container) -> dagger.Directory:
         """
         Document pipeline.
 
         Args:
             container: Project container.
-            project_metadata: Project metadata.
 
         Returns:
             The directory with the documentation files.
         """
-        package_name_canonical = get_package_name_canonical(project_metadata.name)
-        sphinx_command = cls._build_uv_run_command(
-            [
-                "sphinx-apidoc",
-                "--implicit-namespaces",
-                f"-o={PurePosixPath(PROJECT_DOCUMENTATION_FOLDER) / 'source' / 'reference'}",
-                str(PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical),
-            ],
-            ExecutionMode.SCRIPT,
-        )
-        make_command = cls._build_uv_run_command(
-            ["make", f"--directory={PROJECT_DOCUMENTATION_FOLDER}", "html"], ExecutionMode.SCRIPT
+        initializer = cls._initializer_cls()
+        zensical_toml_file_name = initializer._zensical_toml_template_file().file_name
+        zensical_command = cls._build_uv_run_command(
+            ["zensical", "build", f"--config-file={zensical_toml_file_name}"]
         )
         return (
-            container.with_exec(sphinx_command)
-            .with_exec(make_command)
-            .directory(PROJECT_DOCUMENTATION_FOLDER)
+            container.with_exec(["python3", "scripts/gen_ref_pages.py"])
+            .with_exec(zensical_command)
+            .directory(PROJECT_SITE_FOLDER)
         )
 
     @final
@@ -356,9 +270,8 @@ class Documenter(PythonModule):
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Run documenter document in the project of the provided source Directory."""
-        project_metadata = await self._get_project_metadata(project_directory, platform)
         container = await self._exec_container(project_directory, platform)
-        return self.__document(container, project_metadata)
+        return self.__document(container)
 
 
 sdk_module: Final = Documenter

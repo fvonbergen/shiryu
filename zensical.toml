@@ -1,0 +1,93 @@
+[project]
+site_name = "shiryu"
+site_description = "A SDK for programming languages."
+site_author = "von Bergen, Federico"
+site_dir = "site"
+# site_url = "https://your-domain.com/"
+
+nav = [
+  { "Home" = "index.md" },
+  { "Tutorials" = [
+    { "Getting Started" = "tutorials/getting-started.md" },
+  ] },
+  { "How-To Guides" = [
+    { "Installation" = "how-to/installation.md" },
+    { "Custom Plugins" = "how-to/custom-plugins.md" },
+  ] },
+  { "Reference" = "reference/index.md" },
+  { "Explanation" = [
+    { "Architecture Overview" = "explanation/architecture.md" },
+  ] },
+]
+
+[theme]
+name = "material"
+# Custom branding
+# logo = "docs/assets/logo.png"
+# favicon = "docs/assets/favicon.png"
+
+features = [
+  # Navigation & Layout
+  "navigation.instant",     # Fast SPA-like page transitions
+  "navigation.tracking",    # URL updates as you scroll
+  "navigation.tabs",        # Top-bar tabs navigation
+  "navigation.tabs.sticky", # Keep tabs visible on scroll
+  "navigation.sections",    # Neatly group sidebar sections
+  "navigation.indexes",     # Direct links on section headers
+  "navigation.top",         # "Back to top" smooth button
+  "navigation.path",        # Breadcrumbs at the top of pages
+
+  # Content & Code Polish
+  "toc.integrate",         # Embed TOC directly into left sidebar
+  "content.code.copy",     # One-click code copy button
+  "content.code.annotate", # Enables code comment callouts
+  "content.action.edit",   # "Edit this page" button link
+]
+
+# Fonts (Google Fonts integration)
+[theme.font]
+text = "Inter"
+code = "Fira Code"
+
+# Dark / Light Mode Automatic Switcher
+[[theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "indigo"
+accent = "indigo"
+[theme.palette.toggle]
+icon = "material/brightness-7"
+name = "Switch to dark mode"
+
+[project.plugins.autorefs]
+
+[project.plugins.mkdocstrings.handlers.python]
+inventories = [
+  "https://docs.python.org/3/objects.inv",
+  "https://dagger-io.readthedocs.io/en/latest/objects.inv",
+]
+paths = ["src"]
+
+[project.plugins.mkdocstrings.handlers.python.options]
+docstring_style = "google"
+inherited_members = true
+show_source = true
+show_root_heading = true
+show_symbol_type_heading = true
+show_symbol_type_toc = true
+separate_signature = true
+line_length = 100               # Connect with tuff.toml
+# Cross-linking options for internal module types
+signature_crossrefs = true        # Turn type hints into cross-module links
+show_signature_annotations = true # Display type annotations in method signatures
+unwrap_annotated = true           # Unwraps Annotated[T, ...] to link to T
+members_order = "source"
+
+# Recommended PyMdown Extensions for rich Markdown components
+[markdown_extensions]
+"pymdownx.superfences" = {}                                                                                                    # Enables nested code blocks and diagrams
+"pymdownx.highlight" = { anchor_linenums = true, line_spans = "line", pygments_lang_class = true }
+"pymdownx.inlinehilite" = {}
+"pymdownx.tabbed" = { alternate_style = true }                                                                                 # Tabbed content blocks
+"pymdownx.emoji" = { emoji_index = "material/extensions/emoji.twemoji", emoji_generator = "material/extensions/emoji.to_svg" }
+"pymdownx.details" = {}                                                                                                        # Collapsible callout boxes

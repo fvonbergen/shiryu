@@ -137,9 +137,6 @@ class Template:
         """
         Get file contents.
 
-        Args:
-            mapping: Template mapping.
-
         Returns:
             File contents.
         """

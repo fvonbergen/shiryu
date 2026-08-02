@@ -69,8 +69,8 @@ IsUpdateDaggerType = Annotated[
 ]
 IS_UPDATE_DAGGER_DEFAULT: Final = False
 
-
 SCMType = list[SCM]
+"""A list of Source Control Management (SCM) configurations."""
 SCMDaggerType = Annotated[
     SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured.")
 ]

@@ -1,0 +1,42 @@
+[project]
+site_name = "{{ project_name }}"
+site_description = ""
+site_author = "{{ project_authors_names }}"
+
+# Diátaxis Navigation Structure
+nav = [
+  { "Home" = "index.md" },
+  { "Tutorials" = [
+    { "Getting Started" = "tutorials/getting-started.md" },
+  ] },
+  { "How-To Guides" = [
+    { "Installation" = "how-to/installation.md" },
+    { "Custom Plugins" = "how-to/custom-plugins.md" },
+  ] },
+  { "Reference" = [
+    { "API Reference" = "reference/api.md" },
+    { "CLI Commands" = "reference/cli.md" },
+  ] },
+  { "Explanation" = [
+    { "Architecture Overview" = "explanation/architecture.md" },
+  ] },
+]
+
+[theme]
+name = "material"
+
+features = [
+  "navigation.tabs",     # Visual top-bar tabs for the 4 quadrants
+  "navigation.sections", # Group sidebar sections neatly
+  "navigation.top",      # Back to top button
+  "toc.integrate",       # Integrate page headers into sidebar
+]
+
+[theme.palette]
+scheme = "default"
+primary = "indigo"
+
+# Automatic API Reference generation (Reference Quadrant)
+[plugins.mkdocstrings.handlers.python.options]
+show_source = true
+docstring_style = "google"
