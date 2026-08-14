@@ -3,7 +3,7 @@
 /.ruff_cache/
 /.venv/
 /dist/
-/docs/reference/
+/docs/reference/api-reference/
 /sdk/
 /site/
 __pycache__/

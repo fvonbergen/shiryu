@@ -1,42 +1,117 @@
+# Project metadata & navigation
 [project]
 site_name = "{{ project_name }}"
 site_description = ""
 site_author = "{{ project_authors_names }}"
+site_dir = "{{ project_site_path }}"
+# site_url = "https://your-domain.com/" # Canonical URL for SEO and social preview cards
+docs_dir = "{{ project_docs_path }}"
 
-# Diátaxis Navigation Structure
-nav = [
-  { "Home" = "index.md" },
-  { "Tutorials" = [
-    { "Getting Started" = "tutorials/getting-started.md" },
-  ] },
-  { "How-To Guides" = [
-    { "Installation" = "how-to/installation.md" },
-    { "Custom Plugins" = "how-to/custom-plugins.md" },
-  ] },
-  { "Reference" = [
-    { "API Reference" = "reference/api.md" },
-    { "CLI Commands" = "reference/cli.md" },
-  ] },
-  { "Explanation" = [
-    { "Architecture Overview" = "explanation/architecture.md" },
-  ] },
-]
+# Navigation structure following the Diátaxis documentation framework
+# TODO: missing plugin literate-nav, awesome-nav (https://zensical.org/compatibility/plugins/)
+# Navigation sorted is not working as expected.
+# We would like to have sections sorted as:
+# - Tutorials
+# - How-To Guides
+# - Reference
+# - Explanation
 
+# Theme & appearance (Material for MkDocs)
 [theme]
 name = "material"
+# logo = "docs/assets/logo.png"       # Path to logo displayed in header
+# favicon = "docs/assets/favicon.png" # Browser tab icon
 
 features = [
-  "navigation.tabs",     # Visual top-bar tabs for the 4 quadrants
-  "navigation.sections", # Group sidebar sections neatly
-  "navigation.top",      # Back to top button
-  "toc.integrate",       # Integrate page headers into sidebar
+  # Navigation & Layout
+  "navigation.instant",     # Enable SPA-like fast page loads without full refreshes
+  "navigation.tracking",    # Update browser URL bar based on active heading while scrolling
+  "navigation.tabs",        # Move main section links to top navigation bar
+  "navigation.tabs.sticky", # Keep top navigation tabs fixed when scrolling down
+  "navigation.sections",    # Group sidebar items under visible section headers
+  "navigation.indexes",     # Allow clicking section titles directly to go to index page
+  "navigation.top",         # Show "Back to top" floating button on long pages
+  "navigation.path",        # Render breadcrumb paths at the top of pages
+  # Content & Interactive Elements
+  "toc.integrate",         # Embed Table of Contents directly into left sidebar
+  "content.code.copy",     # Add a one-click copy button to all code blocks
+  "content.code.annotate", # Allow inline comment callouts inside code blocks
+  "content.action.edit",   # Show "Edit this page" link pointing to your repository
 ]
 
-[theme.palette]
-scheme = "default"
-primary = "indigo"
+# Google Fonts integration
+[theme.font]
+text = "Inter"     # Main body font
+code = "Fira Code" # Monospace font for code snippets and signatures
 
-# Automatic API Reference generation (Reference Quadrant)
-[plugins.mkdocstrings.handlers.python.options]
-show_source = true
-docstring_style = "google"
+# Automatic Light / Dark Mode Toggle based on OS preferences
+[[theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+
+[[theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+
+# Global plugins
+[project.plugins]
+autorefs = {} # Automatically cross-links Markdown references, e.g. [MyClass][]
+
+# Python documentation generator (mkdocstrings)
+[project.plugins.mkdocstrings.handlers.python]
+# Load inventory files to enable cross-linking to external documentation
+inventories = [
+  "https://docs.python.org/3/objects.inv",
+]
+paths = ["{{ project_src_path }}"] # Root directory containing Python source packages
+
+[project.plugins.mkdocstrings.handlers.python.options]
+# Style and formatting
+docstring_style = "google"   # Parse Google-style docstrings (Args, Returns, etc.)
+line_length = 100            # Target line length for formatted signatures
+members_order = "source"     # Order API members as they appear in source code
+merge_init_into_class = true # Combine __init__ docstrings with class-level docstrings
+# Display switches
+show_source = true              # Add a dropdown button showing raw source code
+inherited_members = true        # Show methods/attributes inherited from base classes
+show_root_heading = true        # Render heading for the root module/class being documented
+show_symbol_type_heading = true # Add badge indicating type (e.g., class, function, method)
+show_symbol_type_toc = true     # Display symbol type indicator in Table of Contents
+separate_signature = true       # Render function signature on a separate line from heading
+# Cross-linking and type annotations
+signature_crossrefs = true        # Convert type hint names in signatures into active links
+show_signature_annotations = true # Keep type annotations visible in function signatures
+unwrap_annotated = true           # Unwraps Annotated[T, ...] to link directly to T
+
+# Markdown extensions (PyMdown)
+[markdown_extensions]
+
+# Nested code blocks, tabs, callouts, and diagrams
+[markdown_extensions."pymdownx.superfences"]
+
+# Code block highlighting configuration
+[markdown_extensions."pymdownx.highlight"]
+anchor_linenums = true     # Clickable line numbers with anchor tags
+line_spans = "line"        # Wrap lines in spans to allow highlighting individual lines
+pygments_lang_class = true # Add CSS class for language name on code blocks
+
+# Inline code highlighting (e.g., `python import sys`{: .language-python})
+[markdown_extensions."pymdownx.inlinehilite"]
+
+# Tabbed content blocks (`=== "Tab Title"`)
+[markdown_extensions."pymdownx.tabbed"]
+alternate_style = true # Modern tabbed UI style provided by Material theme
+
+# Material design icons and Twemoji support (`:smile:`)
+[markdown_extensions."pymdownx.emoji"]
+emoji_index = "material/extensions/emoji.twemoji"
+emoji_generator = "material/extensions/emoji.to_svg"
+
+# Collapsible callouts (`??? note "Click to open"`)
+[markdown_extensions."pymdownx.details"]
+
+# File embedding/snippets (`--8<-- "includes/header.md"`)
+[markdown_extensions."pymdownx.snippets"]
+
+# Keyboard shortcut formatting (`++ctrl+alt+del++`)
+[markdown_extensions."pymdownx.keys"]

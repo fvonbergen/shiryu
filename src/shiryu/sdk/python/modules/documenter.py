@@ -5,6 +5,8 @@ from typing import Final, final
 
 import dagger
 
+from shiryu.sdk.common.utils import PROJECT_SOURCE_CODE_FOLDER
+
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
@@ -28,6 +30,7 @@ from ...common.scm import (
     build_gitlab_job,
     build_gitlab_stage_job,
 )
+from ...common.templates import COMMON_JINJA_ENVIRONMENT
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
@@ -38,6 +41,7 @@ GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
 
 PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
 PROJECT_DOCUMENTATION_PATH: Final = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
+PROJECT_DOCUMENTATION_REFERENCE_FOLDER: Final = "reference"
 PROJECT_SITE_FOLDER: Final = "site"
 
 
@@ -94,10 +98,13 @@ class DocumenterInitializer(PythonModuleInitializer):
             ),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
+        documentation_api_reference_path = (
+            PROJECT_DOCUMENTATION_PATH / PROJECT_DOCUMENTATION_REFERENCE_FOLDER / "api-reference"
+        )
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
-                | {f"/{PROJECT_SITE_FOLDER}/"}
+                | {f"/{PROJECT_SITE_FOLDER}/", f"/{documentation_api_reference_path}"}
             ),
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -203,6 +210,9 @@ class DocumenterInitializer(PythonModuleInitializer):
         zensical_toml_template_mapping: Mapping = {
             "project_name": project_name,
             "project_authors_names": project_authors_names,
+            "project_site_path": PROJECT_SITE_FOLDER,
+            "project_docs_path": PROJECT_DOCUMENTATION_FOLDER,
+            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
         }
         zensical_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
@@ -210,18 +220,64 @@ class DocumenterInitializer(PythonModuleInitializer):
             zensical_toml_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, zensical_toml_template)
-        # <documentation>/{explanation/, how_to/, reference/, tutorials/,}
-        # TODO: add docs/index.md
-        # docs/{explanation, how_to, reference, tutorials}/index.rst
-        empty_directory = dagger.dag.directory()
-        init_directory = (
-            init_directory.with_directory(
-                str(project_documentation_path / "explanation"), empty_directory
-            )
-            .with_directory(str(project_documentation_path / "how_to"), empty_directory)
-            .with_directory(str(project_documentation_path / "reference"), empty_directory)
-            .with_directory(str(project_documentation_path / "tutorials"), empty_directory)
+        # <documentation>/**/index.md
+        index_md_file_path = PurePosixPath("index.md")
+        # <documentation>/index.md
+        docs_md_template_mapping: Mapping = {}
+        docs_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(Path("explanation.md"), project_documentation_path, index_md_file_path),
+            docs_md_template_mapping,
         )
+        init_directory = directory_with_new_file(init_directory, docs_md_template)
+        # <documentation>/explanation/index.md
+        explanation_md_template_mapping: Mapping = {}
+        explanation_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(
+                Path("explanation.md"),
+                project_documentation_path / PurePosixPath("explanation"),
+                index_md_file_path,
+            ),
+            explanation_md_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, explanation_md_template)
+        # <documentation>/how-to-guides/index.md
+        how_to_guides_md_template_mapping: Mapping = {}
+        how_to_guides_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(
+                Path("how_to_guides.md"),
+                project_documentation_path / PurePosixPath("how-to-guides"),
+                index_md_file_path,
+            ),
+            how_to_guides_md_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, how_to_guides_md_template)
+        # <documentation>/reference/index.md
+        reference_md_template_mapping: Mapping = {}
+        reference_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(
+                Path("reference.md"),
+                project_documentation_path / PurePosixPath(PROJECT_DOCUMENTATION_REFERENCE_FOLDER),
+                index_md_file_path,
+            ),
+            reference_md_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, reference_md_template)
+        # <documentation>/tutorials/index.md
+        tutorials_md_template_mapping: Mapping = {}
+        tutorials_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(
+                Path("tutorials.md"),
+                project_documentation_path / PurePosixPath("tutorials"),
+                index_md_file_path,
+            ),
+            tutorials_md_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, tutorials_md_template)
         return init_directory
 
 

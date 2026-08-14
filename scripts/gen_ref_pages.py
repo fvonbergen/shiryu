@@ -10,6 +10,7 @@ from pathlib import Path
 
 SRC_DIR = Path("src")
 REF_DIR = Path("docs/reference")
+API_REF_DIR = Path("api-reference")
 
 
 def should_skip(path: Path) -> bool:
@@ -44,13 +45,14 @@ def _process_single_file(
 
     doc_parts = parts[1:] if len(parts) > 1 else parts
 
+    # ALWAYS map generated files inside api-reference/
     if is_init:
         doc_parts = doc_parts[:-1]
-        target_rel_path = (
-            Path("modules/index.md") if not doc_parts else Path("modules", *doc_parts) / "index.md"
+        target_rel_path = API_REF_DIR / (
+            Path("index.md") if not doc_parts else Path(*doc_parts) / "index.md"
         )
     else:
-        target_rel_path = Path("modules", *doc_parts).with_suffix(".md")
+        target_rel_path = API_REF_DIR / Path(*doc_parts).with_suffix(".md")
 
     doc_file = ref_dir / target_rel_path
     content = f"# {module_import_path}\n\n::: {module_import_path}\n"
@@ -66,21 +68,21 @@ def _process_single_file(
 
 
 def _write_reference_index(generated_modules: dict[str, str], ref_dir: Path, dry_run: bool) -> None:
-    """Generate the main API Reference Index Page."""
+    """Generate the main API Reference Index Page inside reference/api-reference/index.md."""
     if not generated_modules:
         return
 
-    index_file = ref_dir / "index.md"
-    index_lines = [
-        "# API Reference Overview\n",
-        "Auto-generated module references:\n",
-    ]
+    index_file = ref_dir / API_REF_DIR / "index.md"
+    index_lines = ["# API Modules Overview\n", "Auto-generated module references:\n"]
 
     for mod, rel_link in sorted(generated_modules.items()):
+        # Strip leading 'api-reference/' so markdown links work relative to api-reference/index.md
+        clean_link = rel_link.removeprefix(f"{API_REF_DIR}/")
         indent = "  " * (mod.count("."))
-        index_lines.append(f"{indent}* [`{mod}`]({rel_link})")
+        index_lines.append(f"{indent}* [`{mod}`]({clean_link})")
 
     if not dry_run:
+        index_file.parent.mkdir(parents=True, exist_ok=True)
         index_file.write_text("\n".join(index_lines) + "\n", encoding="utf-8")
 
 
@@ -90,7 +92,7 @@ def generate_reference_docs(
     dry_run: bool = False,
     verbose: bool = False,
 ) -> None:
-    """Scan `src/` for Python modules and generate API Markdown files under modules/."""
+    """Scan `src/` for Python modules and generate API Markdown files under api-reference/."""
     if not src_dir.exists():
         print(f"Error: Directory '{src_dir}' does not exist.")
         return
@@ -99,10 +101,11 @@ def generate_reference_docs(
         path for path in sorted(src_dir.rglob("*.py")) if not should_skip(path.relative_to(src_dir))
     ]
 
+    api_ref_dir = ref_dir / API_REF_DIR
     if not dry_run:
-        if ref_dir.exists():
-            shutil.rmtree(ref_dir)
-        ref_dir.mkdir(parents=True, exist_ok=True)
+        if api_ref_dir.exists():
+            shutil.rmtree(api_ref_dir)
+        api_ref_dir.mkdir(parents=True, exist_ok=True)
 
     generated_modules: dict[str, str] = {}
 
