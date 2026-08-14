@@ -4,7 +4,7 @@ import dagger
 import pytest
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
+from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
 
 from .utils.common import Paths, get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
@@ -41,17 +41,13 @@ def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) ->
             else ()
         ),
         *(
-            "docs/Makefile",
-            "docs/build/",
-            "docs/shiryu-templates/conf.py.jinja",
-            "docs/source/_static/",
-            "docs/source/_templates/",
-            "docs/source/conf.py",
-            "docs/source/explanation/",
-            "docs/source/how_to/",
-            "docs/source/index.rst",
-            "docs/source/reference/",
-            "docs/source/tutorials/",
+            "docs/explanation/index.md",
+            "docs/how-to-guides/index.md",
+            "docs/reference/index.md",
+            "docs/tutorials/index.md",
+            "docs/index.md",
+            "scripts/gen_ref_pages.py",
+            "zensical.toml",
         ),
     )
 
@@ -86,3 +82,47 @@ async def test_python_documenter_init(
     )
 
     assert await get_all_paths(directory) == test_case.output.paths
+
+
+@pytest.mark.asyncio
+async def test_python_documenter_document(dagger_client: dagger.Client) -> None:
+    """
+    Test python documenter document function module.
+
+    Args:
+        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+    """
+    project_name = PROJECT_NAME_DEFAULT
+    project_directory = dagger.dag.directory()
+    platform = dagger.Platform("linux/amd64")
+
+    project_directory = (
+        await Shiryu.python()  # type: ignore[attr-defined]
+        .documenter()()
+        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+    )
+    directory = (
+        await Shiryu.python()  # type: ignore[attr-defined]
+        .documenter()()
+        .document(project_directory=project_directory, platform=platform)
+    )
+    assert await get_all_paths(directory) == (
+        "404.html",
+        "assets/images/favicon.png",
+        "assets/javascripts/LICENSE",
+        "assets/javascripts/bundle.e886cdf1.min.js",
+        "assets/javascripts/workers/search.7d14d953.min.js",
+        "assets/stylesheets/classic/main.39e53929.min.css",
+        "assets/stylesheets/classic/palette.7dc9a0ad.min.css",
+        "assets/stylesheets/modern/main.20815dad.min.css",
+        "assets/stylesheets/modern/palette.dfe2e883.min.css",
+        "explanation/index.html",
+        "how-to-guides/index.html",
+        "index.html",
+        "objects.inv",
+        "reference/api-reference/index.html",
+        "reference/index.html",
+        "search.json",
+        "sitemap.xml",
+        "tutorials/index.html",
+    )

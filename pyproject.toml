@@ -59,7 +59,7 @@ build-backend = "hatchling.build"
 auditor = ["uv >= 0.11.0"]
 builder = ["hatch"]
 checker = ["mypy", "pytest >= 7.4.0", "pytest-asyncio"]
-documenter = ["mkdocs-autorefs", "mkdocstrings[python]", "zensical"]
+documenter = ["mkdocs-autorefs", "mkdocstrings[python]", "zensical >= 0.0.22"]
 linter = [
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160
   # >= 0.16.0: New PLR0917 rule

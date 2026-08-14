@@ -9,6 +9,7 @@ from ..shiryu import SHIRYU_PACKAGE_NAME, SHIRYU_PACKAGE_PATH
 
 PACKAGE_NAME: Final = "shiryu"
 PACKAGE_TEMPLATES_PATH: Final = Path("templates")
+TEMPLATE_FILE_SUFFIX: Final = "jinja2"
 
 
 def get_jinja_environment(file_path: Path) -> jinja2.Environment:
@@ -141,6 +142,6 @@ class Template:
             File contents.
         """
         jinja_template = self.__jinja_environment.get_template(
-            f"{self.template_file.file_name}.template"
+            f"{self.template_file.file_name}.{TEMPLATE_FILE_SUFFIX}"
         )
         return jinja_template.render(**(self.__mapping))
