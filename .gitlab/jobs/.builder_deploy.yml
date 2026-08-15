@@ -4,7 +4,7 @@ include:
 .builder_deploy:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat-add-python-sdk-zensical"
+    SHIRYU_VERSION: "feat-add-python-sdk"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
@@ -13,4 +13,3 @@ include:
     REPOSITORY_USER: ${REPOSITORY_USER}
   script:
     - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} builder deploy --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}" --repository-password="${REPOSITORY_PASSWORD}" --repository-url="${REPOSITORY_URL}" --repository-user="${REPOSITORY_USER}"
-

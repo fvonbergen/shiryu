@@ -4,10 +4,9 @@ include:
 .checker_check:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat-add-python-sdk-zensical"
+    SHIRYU_VERSION: "feat-add-python-sdk"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
   script:
     - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} checker check --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"
-
