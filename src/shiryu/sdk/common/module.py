@@ -231,6 +231,9 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         """
         README.md template.
 
+        Args:
+            project_name: Project name.
+
         Returns:
             The README.md template.
         """
@@ -292,7 +295,8 @@ class SDKModule[
         """
         Get the SDK name.
 
-        Returns the SDK name.
+        Returns:
+            The SDK name.
         """
         ...
 
@@ -316,7 +320,7 @@ class SDKModule[
         Args:
             platform: The container platform used for initialization.
 
-        Return:
+        Returns:
             Shiryu metadata.
         """
         module_source = dagger.dag.current_module().source()
@@ -425,11 +429,11 @@ class SDKModule[
         platform: PlatformType,
     ) -> tuple[DaggerModuleMetadata, ProjectMetadata]:
         """
-        Helper function to return an initialized directory for the SDK module.
+        Helper function to return metadata for the SDK module and project.
 
         Args:
             project_directory: Project directory.
-            project_name: Project name,
+            project_name: Project name.
             platform: The container platform.
 
         Returns:
@@ -622,7 +626,7 @@ class SDKModule[
             platform: The container platform.
 
         Returns:
-            An initialized directory for the SDK module.
+            An initialized container for the SDK module.
         """
         return cls._base_container(init_context_container, platform).with_directory(
             ".", project_directory
@@ -641,7 +645,7 @@ class SDKModule[
             platform: The container platform.
 
         Returns:
-            An initialized directory for the SDK module.
+            An initialized container for the SDK module.
         """
         init_context_container = cls._create_init_context_container()
         init_context_container = cls._init_context_container(init_context_container)

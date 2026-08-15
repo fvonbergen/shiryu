@@ -102,8 +102,8 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
 
         Args:
             init_directory: The dagger directory to initialize.
-            project_metadata: Project metadata.
             init_context_directory: SDK module initialization directory context.
+            project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
 
@@ -171,7 +171,8 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         """
         Get the SDK name.
 
-        Returns the SDK name.
+        Returns:
+            The SDK name.
         """
         return SDK_MODULE_NAME
 

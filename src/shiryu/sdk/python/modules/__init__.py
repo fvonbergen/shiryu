@@ -11,18 +11,21 @@ from ...common.module import SDKModule
 
 def get_files(directory: Path, ignore: list[str] | None = None) -> list[Path]:
     """
-    Get directories in directory.
+    Get files in directory.
 
     Args:
         directory: Root directory.
         ignore: Files to ignore.
 
     Returns:
-        A list of nested directories from root directory.
+        A list of files in root directory.
+
+    Raises:
+        NotADirectoryError: If the provided directory path does not exist or is not a directory.
     """
     if not directory.is_dir():
         exception_message = f"Invalid directory: {directory}"
-        raise Exception(exception_message)
+        raise NotADirectoryError(exception_message)
     for _, _, sdk_files in directory.walk():
         return [
             Path(sdk_file) for sdk_file in sdk_files if ignore is None or sdk_file not in ignore

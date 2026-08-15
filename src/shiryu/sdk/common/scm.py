@@ -22,7 +22,7 @@ PROJECT_DIRECTORY_DAGGER_TYPE_DOC: Final = dagger.Doc("Project directory path.")
 @final
 @dataclass(frozen=True, slots=True)
 class SDKModuleFunctionParameter:
-    """GitHubActionFunctionParameter class."""
+    """SDKModuleFunctionParameter class."""
 
     name: str
     option: str
@@ -46,6 +46,11 @@ def get_sdk_module_function_parameters(
 
     Returns:
         The SDK module function parameters.
+
+    Raises:
+        ValueError: If a parameter lacks a type annotation or description metadata.
+        TypeError: If parameter metadata is not of type dagger.Doc, or if sdk_module_function is not
+            a valid callable.
     """
     sdk_module_function_parameters = set()
     for parameter in signature(sdk_module_function).parameters.values():
@@ -57,7 +62,7 @@ def get_sdk_module_function_parameters(
             exception_message = (
                 f"Parameter {parameter_name} of function {sdk_module_function} has no annotations."
             )
-            raise Exception(exception_message)
+            raise ValueError(exception_message)
         parameter_type = parameter_annotation.__origin__
         parameter_annotation_metadata = parameter_annotation.__metadata__
         parameter_annotation_metadata_len = len(parameter_annotation_metadata)
@@ -67,13 +72,13 @@ def get_sdk_module_function_parameters(
                 f"Parameter {parameter_name} of function {sdk_module_function} must contain "
                 "annotation metadata description"
             )
-            raise Exception(exception_message)
+            raise ValueError(exception_message)
         if not isinstance(parameter_annotation_metadata[0], dagger.Doc):
             exception_message = (
                 f"Parameter {parameter_name} of function {sdk_module_function} must contain "
                 f"annotation metadata description of type {dagger.Doc}"
             )
-            raise Exception(exception_message)
+            raise TypeError(exception_message)
         parameter_description = parameter_annotation_metadata[0].documentation
         parameter_default: str | None
         # TODO: dagger.DefaultPath doesn't work as expected. It defaults to the module directory

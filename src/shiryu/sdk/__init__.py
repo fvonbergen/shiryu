@@ -20,6 +20,9 @@ def get_sub_directories(directory: Path, ignore: set[str] | None = None) -> set[
 
     Returns:
         A set of sub-directories from root directory.
+
+    Raises:
+        NotADirectoryError: If the provided directory path does not exist or is not a directory.
     """
     if not directory.is_dir():
         exception_message = f"Invalid directory: {directory}"

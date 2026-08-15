@@ -115,7 +115,8 @@ class SDKModuleInitContextDirectory:
         vcs: SDKModuleInitContextDirectoryVcs | None = None,
         scm: SDKModuleInitContextDirectoryScm | None = None,
     ) -> Self:
-        """Pure assignment evolution. No 'if' clauses to forget.
+        """
+        Pure assignment evolution. No 'if' clauses to forget.
 
         If an argument is passed, it uses it; otherwise, it keeps the current one.
 
@@ -130,7 +131,12 @@ class SDKModuleInitContextDirectory:
 
     @classmethod
     def _create_default(cls) -> Self:
-        """Internal hook to build the default directory layout."""
+        """
+        Creates a default initialized instance safely without ignores.
+
+        Returns:
+            A default container context directory instance.
+        """
         return cls(
             vcs=SDKModuleInitContextDirectoryVcs(exclude_files_folders=frozenset()),
             scm=SDKModuleInitContextDirectoryScm(
@@ -153,7 +159,8 @@ class SDKModuleInitContextContainer:
     apt_packages: frozenset[str]
 
     def evolve(self, apt_packages: frozenset[str] | None = None) -> Self:
-        """Type-safe leaf evolution. Falls back to current value if None.
+        """
+        Type-safe leaf evolution. Falls back to current value if None.
 
         Args:
             apt_packages: Optional new frozen set of system package targets.
@@ -168,5 +175,10 @@ class SDKModuleInitContextContainer:
 
     @classmethod
     def create_default(cls) -> Self:
-        """Creates a default initialized instance safely without ignores."""
+        """
+        Creates a default initialized instance safely without ignores.
+
+        Returns:
+            A default container context instance.
+        """
         return cls(apt_packages=frozenset())

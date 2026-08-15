@@ -111,6 +111,12 @@ class Auditor(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[AuditorInitializer]:
+        """
+        Initializer class.
+
+        Returns:
+            The initializer class.
+        """
         return AuditorInitializer
 
     @final

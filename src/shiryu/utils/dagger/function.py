@@ -52,9 +52,6 @@ def add_enum_values_as_methods(
                 """
                 Enum value method.
 
-                Args:
-                    self: Class object.
-
                 Returns:
                     Enum value class.
                 """

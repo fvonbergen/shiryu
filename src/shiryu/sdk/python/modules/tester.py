@@ -45,7 +45,7 @@ TESTS_UNIT_PATH: Final = PurePosixPath(PROJECT_TESTS_FOLDER) / TESTS_UNIT_FOLDER
 
 
 class TesterInitializer(PythonModuleInitializer):
-    """SDKModule initializer class."""
+    """TesterInitializer class."""
 
     @final
     @staticmethod

@@ -48,7 +48,7 @@ class BuilderInitializer(PythonModuleInitializer):
         Args:
             init_context_directory: SDK module initialization directory context.
             shiryu_metadata: Shiryu metadata.
-            project_metadata: ProjectMetadata,
+            project_metadata: Project metadata.
 
         Returns:
             The updated SDK module initialization directory context.

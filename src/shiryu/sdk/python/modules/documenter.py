@@ -239,13 +239,13 @@ class DocumenterInitializer(PythonModuleInitializer):
         # <documentation>/**/index.md
         index_md_file_path = PurePosixPath("index.md")
         # <documentation>/index.md
-        docs_md_template_mapping: Mapping = {}
-        docs_md_template = Template(
+        documentation_md_template_mapping: Mapping = {}
+        documentation_md_template = Template(
             COMMON_JINJA_ENVIRONMENT,
-            TemplateFile(Path("explanation.md"), project_documentation_path, index_md_file_path),
-            docs_md_template_mapping,
+            TemplateFile(Path("documentation.md"), project_documentation_path, index_md_file_path),
+            documentation_md_template_mapping,
         )
-        init_directory = directory_with_new_file(init_directory, docs_md_template)
+        init_directory = directory_with_new_file(init_directory, documentation_md_template)
         # <documentation>/explanation/index.md
         explanation_md_template_mapping: Mapping = {}
         explanation_md_template = Template(
@@ -354,6 +354,51 @@ class Documenter(PythonModule):
         """Run documenter document in the project of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
         return self.__document(container)
+
+    @final
+    @dagger.function
+    async def audit(
+        self,
+        project_directory: ProjectDirectoryDaggerType,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> str | None:
+        """Audit source code docstrings."""
+        workspace = await self._exec_container(project_directory, platform)
+
+        # 1. Extract source code context before calling LLM (0 LLM requests)
+        source_code_dump = await workspace.with_exec(
+            [
+                "sh",
+                "-c",
+                f"find {PROJECT_SOURCE_CODE_FOLDER} -name '*.py' -exec echo '=== FILE: {{}} ===' \\; -exec cat {{}} \\;",  # noqa: E501
+            ]
+        ).stdout()
+
+        # 2. Define environment with string output target
+        environment = dagger.dag.env().with_string_output(
+            "audit_report",
+            "Strictly raw JSON audit report matching the required schema.",
+        )
+        documenter_audit_propmpt_txt_template_mapping: Mapping = {
+            "source_code_dump": source_code_dump,
+            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
+        }
+        documenter_audit_prompt_txt_template = Template(
+            PYTHON_JINJA_ENVIRONMENT,
+            TemplateFile(Path("documenter_audit_prompt.txt")),
+            documenter_audit_propmpt_txt_template_mapping,
+        )
+        # 4. Execute single-pass LLM job (No .loop() means exactly 1 request)
+        # llm providers: https://docs.dagger.io/reference/configuration/llm
+        audit_job = (
+            dagger.dag.llm(model="gemini-3.6-flash")
+            .with_env(environment)
+            .with_prompt(documenter_audit_prompt_txt_template.contents)
+        )
+
+        # 5. Retrieve output string
+        report = await audit_job.env().output("audit_report").as_string()
+        return report
 
 
 sdk_module: Final = Documenter

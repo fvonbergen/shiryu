@@ -21,11 +21,17 @@ def get_jinja_environment(file_path: Path) -> jinja2.Environment:
 
     Returns:
         A jinja environment positioned on the current file path.
+
+    Raises:
+        NotADirectoryError: If the parent directory of file_path does not exist or is not a
+            directory.
+        ValueError: If templates_file_path is not located within SHIRYU_PACKAGE_PATH.
+        jinja2.TemplateError: If Jinja fail to initialize the environment or PackageLoader.
     """
     templates_file_path = file_path.parent
     if not templates_file_path.is_dir():
         exception_message = f"Inexistent templates file path: {templates_file_path}"
-        raise Exception(exception_message)
+        raise NotADirectoryError(exception_message)
     return jinja2.Environment(
         loader=jinja2.PackageLoader(
             SHIRYU_PACKAGE_NAME,
@@ -128,7 +134,7 @@ class Template:
         """
         Get template file.
 
-        Rerurns:
+        Returns:
             The template file.
         """
         return self.__template_file
