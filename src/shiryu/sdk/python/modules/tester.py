@@ -91,17 +91,6 @@ class TesterInitializer(PythonModuleInitializer):
         """
         return TemplateFile(Path("pytest.ini"), output_file_name=PurePosixPath("pytest.unit.ini"))
 
-    #     @classmethod
-    #     def _sdk_source_code_python_packages(cls) -> set[str]:
-    #         """
-    #         Python packages used in modules source code.
-    #
-    #         Returns:
-    #             Python packages used in modules source code.
-    #         """
-    #         python_packages = super()._sdk_source_code_python_packages()
-    #         return {*python_packages, "pytest", "pytest-asyncio"}
-
     @classmethod
     def _init_context_directory(
         cls,
@@ -147,9 +136,15 @@ class TesterInitializer(PythonModuleInitializer):
             post_script=(),
             artifacts=None,
         )
-        # https://docs.pytest.org/en/stable/changelog.html#pytest-7-4-0-2023-06-23
-        # >= 7.4.0: Enhanced the CLI flag for -c to now include --config-file.
-        tests_code_dependencies = {"pytest >= 7.4.0", "pytest-asyncio"}
+        tests_code_dependencies = {
+            # https://docs.pytest.org/en/stable/changelog.html#pytest-7-4-0-2023-06-23
+            # >= 7.4.0: Enhanced the CLI flag for -c to now include --config-file.
+            "pytest >= 7.4.0",
+            # https://github.com/pytest-dev/pytest-asyncio/releases/tag/v0.24.0
+            # https://pytest-asyncio.readthedocs.io/en/stable/reference/changelog.html#id67
+            # >= 0.24.0: Added the asyncio_default_fixture_loop_scope configuration option
+            "pytest-asyncio >= 0.24.0",
+        }
         return init_context_directory.evolve(
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -177,7 +172,15 @@ class TesterInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, tests_code_dependencies | {"pytest-cov", "pytest-xdist[psutil]"}
+                sdk_module_name,
+                tests_code_dependencies
+                | {
+                    # https://pytest-cov.readthedocs.io/en/latest/changelog.html#id141
+                    # >= 2.3.0: Add support for specifying output location for html, xml, and
+                    #   annotate report.
+                    "pytest-cov >= 2.3.0",
+                    "pytest-xdist[psutil]",
+                },
             ).merge(DependencyGroups({Checker.name(): tests_code_dependencies})),
             source_code_files_folders=init_context_directory.source_code_files_folders
             | {PROJECT_TESTS_FOLDER},

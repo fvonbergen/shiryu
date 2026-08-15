@@ -1752,7 +1752,7 @@ auditor = [{ name = "uv", specifier = ">=0.11.0" }]
 builder = [{ name = "hatch" }]
 checker = [
     { name = "pytest", specifier = ">=7.4.0" },
-    { name = "pytest-asyncio" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
     { name = "ty" },
 ]
 documenter = [
@@ -1763,8 +1763,8 @@ documenter = [
 linter = [{ name = "ruff", specifier = ">=0.16.0" }]
 tester = [
     { name = "pytest", specifier = ">=7.4.0" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
+    { name = "pytest-asyncio", specifier = ">=0.24.0" },
+    { name = "pytest-cov", specifier = ">=2.3.0" },
     { name = "pytest-xdist", extras = ["psutil"] },
 ]
 
