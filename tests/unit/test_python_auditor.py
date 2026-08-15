@@ -57,7 +57,7 @@ async def test_python_auditor_init(dagger_client: dagger.Client, test_case: Test
     inputs = test_case.inputs
 
     directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .auditor()()
         .init(
             project_name=inputs.project_name,

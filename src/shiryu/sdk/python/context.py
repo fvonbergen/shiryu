@@ -42,7 +42,7 @@ class DependencyGroups:
     _dependency_groups: MappingProxyType[str, DistributionPackages] = field(
         init=False, default_factory=lambda: MappingProxyType({})
     )
-    dependency_groups_input: InitVar[Mapping[str, Set[str] | DistributionPackages] | None] = None
+    dependency_groups_input: InitVar[Mapping[str, set[str] | DistributionPackages] | None] = None
 
     def __post_init__(self, dependency_groups_input: Mapping[str, Set[str]] | None) -> None:
         """Process the input dictionary into immutable structures post-initialization.
@@ -105,6 +105,7 @@ class DependencyGroups:
 
     def evolve(
         self,
+        *,
         dependency_groups: MappingProxyType[str, DistributionPackages] | None = None,
     ) -> "DependencyGroups":
         """
@@ -142,6 +143,7 @@ class PythonModuleInitContextDirectory(SDKModuleInitContextDirectory):
 
     def evolve(
         self,
+        *,
         vcs: SDKModuleInitContextDirectoryVcs | None = None,
         scm: SDKModuleInitContextDirectoryScm | None = None,
         dependency_groups: DependencyGroups | None = None,

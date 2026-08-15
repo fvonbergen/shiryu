@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 from enum import Enum
-from typing import final
+from types import FunctionType
 
 import dagger
 
@@ -11,9 +11,7 @@ type ClassType = type
 type EnumValueType = type
 
 
-def add_enum_values_as_methods(
-    enum_options: type[Enum],
-) -> Callable[[ClassType], ClassType]:
+def add_enum_values_as_methods(enum_options: type[Enum]) -> Callable[[ClassType], ClassType]:
     """
     Add enum values as dagger class methods to class decorator wrapper.
 
@@ -35,9 +33,7 @@ def add_enum_values_as_methods(
             Decorated class.
         """
 
-        def lambda_enum_value_template(
-            enum_option: Enum,
-        ) -> Callable[[], EnumValueType]:
+        def lambda_enum_value_template(enum_option: Enum) -> FunctionType:
             """
             Lambda enum value template.
 
@@ -67,7 +63,7 @@ def add_enum_values_as_methods(
             setattr(
                 cls,
                 enum_value_template.__name__,
-                final(staticmethod(dagger.function(enum_value_template))),
+                staticmethod(dagger.function(enum_value_template)),
             )
 
         return cls

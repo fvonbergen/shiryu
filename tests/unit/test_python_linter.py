@@ -59,7 +59,7 @@ async def test_python_linter_init(dagger_client: dagger.Client, test_case: TestC
     inputs = test_case.inputs
 
     directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(
             project_name=inputs.project_name,
@@ -96,7 +96,7 @@ async def test_python_linter_lint_success(
     platform = dagger.Platform("linux/amd64")
 
     project_directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
@@ -105,7 +105,7 @@ async def test_python_linter_lint_success(
             path=str(file.path), contents=file.contents
         )
     stdout = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .lint(project_directory=project_directory, platform=platform)
     )
@@ -136,7 +136,7 @@ async def test_python_linter_lint_failure(
     platform = dagger.Platform("linux/amd64")
 
     project_directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
@@ -146,7 +146,7 @@ async def test_python_linter_lint_failure(
         )
     with pytest.raises(dagger.ExecError) as exc_info:
         await (
-            Shiryu.python()  # type: ignore[attr-defined]
+            Shiryu.python()  # ty: ignore[unresolved-attribute]
             .linter()()
             .lint(project_directory=project_directory, platform=platform)
         )
@@ -177,7 +177,7 @@ async def test_python_linter_fix_success(
     platform = dagger.Platform("linux/amd64")
 
     project_directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
@@ -186,7 +186,7 @@ async def test_python_linter_fix_success(
             path=str(file.path), contents=file.contents
         )
     directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .fix(project_directory=project_directory, platform=platform)
     )

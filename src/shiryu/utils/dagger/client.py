@@ -14,6 +14,7 @@ WORKDIR_PATH: Final = PurePosixPath("/workspace")
 def container_debian(
     dagger_client: dagger.Client,
     platform: dagger.Platform,
+    *,
     apt_packages: APT_PACKAGES = frozenset(),
 ) -> dagger.Container:
     """
@@ -73,12 +74,13 @@ def container_git(dagger_client: dagger.Client, platform: dagger.Platform) -> da
     Returns:
         A container with git.
     """
-    return container_debian(dagger_client, platform, {"git"})
+    return container_debian(dagger_client, platform, apt_packages={"git"})
 
 
 def container_uv(
     dagger_client: dagger.Client,
     platform: dagger.Platform,
+    *,
     apt_packages: APT_PACKAGES = frozenset(),
 ) -> dagger.Container:
     """
@@ -92,7 +94,7 @@ def container_uv(
     Returns:
         A container with uv.
     """
-    container = container_debian(dagger_client, platform, {"pipx", *apt_packages})
+    container = container_debian(dagger_client, platform, apt_packages={"pipx", *apt_packages})
     venv_path_str = "/opt/.venv"
     return (
         container.with_mounted_cache(

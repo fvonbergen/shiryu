@@ -35,14 +35,14 @@ class CheckerInitializer(PythonModuleInitializer):
 
     @final
     @classmethod
-    def _mypy_ini_template_file(cls) -> TemplateFile:
+    def _ty_toml_template_file(cls) -> TemplateFile:
         """
-        Get the mypy.ini template file.
+        Get the ty.toml template file.
 
         Returns:
-            The mypy.ini template file.
+            The ty.toml template file.
         """
-        return TemplateFile(Path("mypy.ini"))
+        return TemplateFile(Path("ty.toml"))
 
     @classmethod
     def _init_context_directory(
@@ -115,9 +115,7 @@ class CheckerInitializer(PythonModuleInitializer):
                     ),
                 ),
             ),
-            dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"mypy"}
-            ),
+            dependency_groups=init_context_directory.dependency_groups.add(sdk_module_name, {"ty"}),
         )
 
     @classmethod
@@ -145,15 +143,15 @@ class CheckerInitializer(PythonModuleInitializer):
         init_directory = await super()._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
-        # mypy.ini
-        mypy_init_template_mapping: Mapping = {
+        # ty.toml
+        ty_toml_template_mapping: Mapping = {
             "project_source_path": PROJECT_SOURCE_CODE_FOLDER,
             "source_code_files_folders": init_context_directory.source_code_files_folders,
         }
-        mypy_ini_template = Template(
-            PYTHON_JINJA_ENVIRONMENT, cls._mypy_ini_template_file(), mypy_init_template_mapping
+        ty_toml_template = Template(
+            PYTHON_JINJA_ENVIRONMENT, cls._ty_toml_template_file(), ty_toml_template_mapping
         )
-        return directory_with_new_file(init_directory, mypy_ini_template)
+        return directory_with_new_file(init_directory, ty_toml_template)
 
 
 @dagger.object_type
@@ -180,10 +178,10 @@ class Checker(PythonModule):
             container: Project container.
         """
         initializer = cls._initializer_cls()
-        mypy_command = cls._build_uv_run_command(
-            ["mypy", f"--config-file={initializer._mypy_ini_template_file().file_name}"]
+        ty_command = cls._build_uv_run_command(
+            ["ty", "check", f"--config-file={initializer._ty_toml_template_file().file_name}"]
         )
-        await container.with_exec(mypy_command).sync()
+        await container.with_exec(ty_command).sync()
 
     @final
     @dagger.function

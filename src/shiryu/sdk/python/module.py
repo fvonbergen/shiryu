@@ -131,12 +131,15 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             pyproject_toml_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, pyproject_toml_template)
+        source_code_package_name_canonical_path = (
+            PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical
+        )
         # py.typed
         py_typed_template_mapping: Mapping = {}
         py_typed_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("py.typed"), PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical
+                Path("py.typed"), output_directory=source_code_package_name_canonical_path
             ),
             py_typed_template_mapping,
         )
@@ -148,8 +151,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         __init___py_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("__init__.py"),
-                PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical,
+                Path("__init__.py"), output_directory=source_code_package_name_canonical_path
             ),
             __init___py_template_mapping,
         )
@@ -193,7 +195,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         """
         initializer = cls._initializer_cls()
         project_metadata = await super()._get_project_metadata(project_directory, platform)
-        project_container = container_uv(dagger.dag, platform, {"git"}).with_directory(
+        project_container = container_uv(dagger.dag, platform, apt_packages={"git"}).with_directory(
             ".", project_directory
         )
         try:
@@ -249,12 +251,12 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         Returns:
             A base container.
         """
-        return container_uv(dagger.dag, platform, init_context_container.apt_packages)
+        return container_uv(dagger.dag, platform, apt_packages=init_context_container.apt_packages)
 
     @final
     @classmethod
     def _build_uv_run_command(
-        cls, command: list[str], execution_mode: ExecutionMode = ExecutionMode.MODULE
+        cls, command: list[str], *, execution_mode: ExecutionMode = ExecutionMode.MODULE
     ) -> list[str]:
         """
         Builds the uv run command.

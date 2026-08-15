@@ -55,7 +55,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 auditor = ["uv >= 0.11.0"]
 builder = ["hatch"]
-checker = ["mypy", "pytest >= 7.4.0", "pytest-asyncio"]
+checker = ["pytest >= 7.4.0", "pytest-asyncio", "ty"]
 documenter = ["mkdocs-autorefs", "mkdocstrings[python]", "zensical >= 0.0.22"]
 linter = [
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160

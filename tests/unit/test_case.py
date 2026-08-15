@@ -128,17 +128,17 @@ def test_snake_case_to_camel_case() -> None:
     for test_example in __snake_or_dash_case_to_camel_case_test_examples(
         snake_case_separator, camel_case
     ):
-        assert snake_case_to_camel_case(test_example[0], camel_case) == test_example[1], (
-            f"Test example: {test_example}"
-        )
+        assert (
+            snake_case_to_camel_case(test_example[0], camel_case=camel_case) == test_example[1]
+        ), f"Test example: {test_example}"
 
     camel_case = CamelCase.UPPER
     for test_example in __snake_or_dash_case_to_camel_case_test_examples(
         snake_case_separator, camel_case
     ):
-        assert snake_case_to_camel_case(test_example[0], camel_case) == test_example[1], (
-            f"Test example: {test_example}"
-        )
+        assert (
+            snake_case_to_camel_case(test_example[0], camel_case=camel_case) == test_example[1]
+        ), f"Test example: {test_example}"
 
 
 def test_snake_case_to_dash_case() -> None:

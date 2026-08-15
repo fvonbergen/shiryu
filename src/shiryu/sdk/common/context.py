@@ -42,7 +42,7 @@ class SDKModuleInitContextDirectoryVcs:
 
     exclude_files_folders: VCSExcludeFilesAndFolders = field(default_factory=frozenset)
 
-    def evolve(self, exclude_files_folders: VCSExcludeFilesAndFolders | None = None) -> Self:
+    def evolve(self, *, exclude_files_folders: VCSExcludeFilesAndFolders | None = None) -> Self:
         """Type-safe leaf evolution. Falls back to current value if None.
 
         Args:
@@ -77,6 +77,7 @@ class SDKModuleInitContextDirectoryScm:
 
     def evolve(
         self,
+        *,
         github_actions_workflows: GitHubActionsWorkflows | None = None,
         gitlab_jobs_stages: GitLabJobsStages | None = None,
     ) -> Self:
@@ -112,6 +113,7 @@ class SDKModuleInitContextDirectory:
 
     def evolve(
         self,
+        *,
         vcs: SDKModuleInitContextDirectoryVcs | None = None,
         scm: SDKModuleInitContextDirectoryScm | None = None,
     ) -> Self:
@@ -158,7 +160,7 @@ class SDKModuleInitContextContainer:
 
     apt_packages: frozenset[str]
 
-    def evolve(self, apt_packages: frozenset[str] | None = None) -> Self:
+    def evolve(self, *, apt_packages: frozenset[str] | None = None) -> Self:
         """
         Type-safe leaf evolution. Falls back to current value if None.
 

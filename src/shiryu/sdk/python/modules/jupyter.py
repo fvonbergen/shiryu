@@ -91,7 +91,9 @@ class JupyterInitializer(PythonModuleInitializer):
         playground_ipynb_template_mapping: Mapping = {"project_name": project_metadata.name}
         playground_ipynb_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
-            TemplateFile(Path("playground.ipynb"), PurePosixPath(PROJECT_NOTEBOOKS_FOLDER)),
+            TemplateFile(
+                Path("playground.ipynb"), output_directory=PurePosixPath(PROJECT_NOTEBOOKS_FOLDER)
+            ),
             playground_ipynb_template_mapping,
         )
         return directory_with_new_file(init_directory, playground_ipynb_template)
@@ -169,6 +171,7 @@ class Jupyter(PythonModule):
     async def service(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         backend_port: PortDaggerType = PORT_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Service:
@@ -178,7 +181,9 @@ class Jupyter(PythonModule):
 
     @final
     @dagger.function
-    def notebooks(self, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> dagger.Directory:
+    def notebooks(
+        self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
+    ) -> dagger.Directory:
         """Returns jupyter notebooks Directory."""
         jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
         export_path_str = "/export"

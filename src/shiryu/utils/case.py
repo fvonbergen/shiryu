@@ -52,7 +52,7 @@ class CamelCase(Enum):
     UPPER = auto()
 
 
-def snake_case_to_camel_case(string: str, camel_case: CamelCase = CamelCase.UPPER) -> str:
+def snake_case_to_camel_case(string: str, *, camel_case: CamelCase = CamelCase.UPPER) -> str:
     """
     Convert a snake case string to a camel case string.
 

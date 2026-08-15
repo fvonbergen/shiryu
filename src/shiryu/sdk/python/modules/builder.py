@@ -246,6 +246,7 @@ class Builder(PythonModule):
     async def build(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Build project distributable of the provided source Directory."""
@@ -259,6 +260,7 @@ class Builder(PythonModule):
         repository_url: RepositoryUrlDaggerType,
         repository_user: RepositoryUserDaggerType,
         repository_password: RepositoryPasswordDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Build and deploy project distributable of the provided source Directory."""
@@ -272,6 +274,7 @@ class Builder(PythonModule):
     async def test(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Test the project installation process for the provided source Directory."""

@@ -9,7 +9,7 @@ from ....utils.module import path_to_module_str
 from ...common.module import SDKModule
 
 
-def get_files(directory: Path, ignore: list[str] | None = None) -> list[Path]:
+def get_files(directory: Path, *, ignore: list[str] | None = None) -> list[Path]:
     """
     Get files in directory.
 
@@ -42,13 +42,13 @@ def __get_sdk_module_modules() -> set[type[SDKModule]]:
     """
     file = Path(__file__)
     root_directory = file.parent
-    sdk_module_modules_paths = get_files(file.parent, [file.name])
+    sdk_module_modules_paths = get_files(file.parent, ignore=[file.name])
     sdk_module_modules: set[type[SDKModule]] = set()
     for sdk_module_module_path in sdk_module_modules_paths:
         sdk_module_module = import_module(
             path_to_module_str(sdk_module_module_path),
             package=path_to_module_str(
-                root_directory.relative_to(SHIRYU_PACKAGE_PATH.parent), False
+                root_directory.relative_to(SHIRYU_PACKAGE_PATH.parent), is_package=False
             ),
         )
         sdk_module_modules.add(sdk_module_module.sdk_module)

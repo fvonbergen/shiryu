@@ -51,6 +51,7 @@ class TemplateFile:
     def __init__(
         self,
         file_name: Path,
+        *,
         output_directory: PurePosixPath | None = None,
         output_file_name: PurePosixPath | None = None,
     ) -> None:

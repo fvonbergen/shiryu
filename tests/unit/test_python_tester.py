@@ -56,7 +56,7 @@ async def test_python_tester_init(dagger_client: dagger.Client, test_case: TestC
     inputs = test_case.inputs
 
     directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .tester()()
         .init(
             project_name=inputs.project_name,
@@ -83,12 +83,12 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
     platform = dagger.Platform("linux/amd64")
 
     project_directory = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .tester()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
     stdout = (
-        await Shiryu.python()  # type: ignore[attr-defined]
+        await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .tester()()
         .unit(project_directory=project_directory, platform=platform)
     )

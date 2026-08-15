@@ -4,7 +4,6 @@ import asyncio
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
-from enum import Enum, unique
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
@@ -14,6 +13,7 @@ from ...utils.class_name import ClassName
 from ...utils.dagger.client import container_git
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.dagger.function import add_enum_values_as_methods
+from ...utils.enum import create_enum
 from ...utils.template import Mapping, Template, TemplateFile
 from .context import (
     DaggerModuleMetadata,
@@ -134,7 +134,8 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         dagger_yml_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path(f"{job_name}.yml"), PurePosixPath(GITLAB_FOLDER) / GITLAB_JOBS_FOLDER
+                Path(f"{job_name}.yml"),
+                output_directory=PurePosixPath(GITLAB_FOLDER) / GITLAB_JOBS_FOLDER,
             ),
             dagger_yml_template_mapping,
         )
@@ -371,8 +372,7 @@ class SDKModule[
                     await container.with_exec(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout()
                 ).strip()
                 return DaggerModuleMetadata(
-                    dagger_version=dagger_version,
-                    git_tag_or_branch=module_branch.strip(),
+                    dagger_version=dagger_version, git_tag_or_branch=module_branch.strip()
                 )
             except dagger.QueryError:
                 git_tag_or_branch = "undefined"
@@ -545,6 +545,7 @@ class SDKModule[
     async def init(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         project_name: ProjectNameDaggerType = PROJECT_NAME_DAGGER_DEFAULT,
         is_update: IsUpdateDaggerType = IS_UPDATE_DAGGER_DEFAULT,
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
@@ -684,18 +685,13 @@ def get_sdk_language(
         """
         return init_initializer
 
-    SDKModuleOptions = final(  # noqa: N806
-        unique(Enum("SDKModuleOptions", sdk_module_options_dict))  # type: ignore[type-var]
-    )
-    SDKModuleOptions.__doc__ = """SDKModule options."""
+    sdk_module_options = create_enum("SDKModuleOptions", sdk_module_options_dict, is_unique=True)
+    sdk_module_options.__doc__ = """SDKModule options."""
     sdk_module_name = sdk_module.name()
-    sdk_language = dagger.object_type(
-        final(
-            # mypy bug: https://github.com/python/mypy/issues/17147
-            add_enum_values_as_methods(SDKModuleOptions)(  # type: ignore[arg-type]
-                type(sdk_module_name, (sdk_module,), {"_initializer_cls": _initializer_cls()})
-            )
+    sdk_language: Any = dagger.object_type(
+        add_enum_values_as_methods(sdk_module_options)(
+            type(sdk_module_name, (sdk_module,), {"_initializer_cls": _initializer_cls()})
         )
     )
 
-    return sdk_language
+    return sdk_language  # ty: ignore[invalid-return-type]

@@ -1,12 +1,12 @@
 """scm module."""
 
-from collections.abc import Awaitable, Callable, ItemsView, KeysView, ValuesView
+from collections.abc import ItemsView, KeysView, ValuesView
 from dataclasses import asdict, dataclass, field, replace
 from enum import Enum, StrEnum, unique
 from inspect import Parameter, signature
 from pathlib import Path, PurePosixPath
-from types import MappingProxyType
-from typing import Any, Final, Self, final
+from types import FunctionType, MappingProxyType
+from typing import Final, Self, final
 
 import dagger
 
@@ -32,11 +32,9 @@ class SDKModuleFunctionParameter:
 
 SDKModuleFunctionParameters = tuple[SDKModuleFunctionParameter, ...]
 
-SDKModuleFunction = Callable[..., Awaitable[Any]]
-
 
 def get_sdk_module_function_parameters(
-    sdk_module_function: SDKModuleFunction,
+    sdk_module_function: FunctionType,
 ) -> SDKModuleFunctionParameters:
     """
     Get SDK module function parameters.
@@ -304,6 +302,7 @@ class GitHubWorkflows:
 
     def evolve(
         self,
+        *,
         github_workflows: MappingProxyType[GitHubWorkflowId, frozenset[GitHubWorkflowJob]]
         | None = None,
     ) -> "GitHubWorkflows":
@@ -334,6 +333,7 @@ class GitHubActionsWorkflows:
 
     def evolve(
         self,
+        *,
         actions: GitHubActions | None = None,
         workflows: GitHubWorkflows | None = None,
     ) -> Self:
@@ -369,7 +369,6 @@ class GitLabArtifacts:
 
 
 type GitLabStageRules = GitLabArrayType
-
 type GitLabStageName = str
 
 
@@ -480,6 +479,7 @@ class GitLabStages:
 
     def evolve(
         self,
+        *,
         gitlab_stages: MappingProxyType[GitLabStageId, frozenset[GitLabStageJob]] | None = None,
     ) -> "GitLabStages":
         """
@@ -505,7 +505,7 @@ class GitLabJobsStages:
     jobs: GitLabJobs
     stages: GitLabStages
 
-    def evolve(self, jobs: GitLabJobs | None = None, stages: GitLabStages | None = None) -> Self:
+    def evolve(self, *, jobs: GitLabJobs | None = None, stages: GitLabStages | None = None) -> Self:
         """
         Type-safe evolution for GitLab jobs and stages tracking.
 
@@ -569,8 +569,8 @@ def github_init(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("github_workflow.yml"),
-                PurePosixPath(GITHUB_FOLDER) / "workflows",
-                PurePosixPath(workflow_name),
+                output_directory=PurePosixPath(GITHUB_FOLDER) / "workflows",
+                output_file_name=PurePosixPath(workflow_name),
             ),
             github_workflow_yml_template_mapping,
         )
@@ -608,8 +608,8 @@ def gitlab_init(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("gitlab_stage.yml"),
-                PurePosixPath(GITLAB_FOLDER) / "stages",
-                PurePosixPath(gitlab_stage_file_name),
+                output_directory=PurePosixPath(GITLAB_FOLDER) / "stages",
+                output_file_name=PurePosixPath(gitlab_stage_file_name),
             ),
             gitlab_stage_yml_template_mapping,
         )
@@ -637,7 +637,7 @@ GITLAB_JOBS_FOLDER: Final = "jobs"
 def build_github_action(  # noqa: PLR0913, PLR0917
     sdk_language: str,
     sdk_module_name: str,
-    sdk_module_function: SDKModuleFunction,
+    sdk_module_function: FunctionType,
     dagger_version: str,
     shiryu_version: str,
     export_path: PurePosixPath | None,
@@ -724,7 +724,9 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     }
     action_yml_template = Template(
         COMMON_JINJA_ENVIRONMENT,
-        TemplateFile(Path("action.yml"), PurePosixPath(GITHUB_FOLDER) / "actions" / id_),
+        TemplateFile(
+            Path("action.yml"), output_directory=PurePosixPath(GITHUB_FOLDER) / "actions" / id_
+        ),
         action_yml_template_mapping,
     )
     return GitHubAction(id_, name, action_yml_template, sdk_module_function_parameters)
@@ -782,7 +784,7 @@ def build_github_workflow_job(
 def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_language: str,
     sdk_module_name: str,
-    sdk_module_function: SDKModuleFunction,
+    sdk_module_function: FunctionType,
     shiryu_version: str,
     pre_script: GitLabScript,
     export_path: PurePosixPath | None,
@@ -858,8 +860,8 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         COMMON_JINJA_ENVIRONMENT,
         TemplateFile(
             Path("gitlab_job.yml"),
-            PurePosixPath(GITLAB_FOLDER) / GITLAB_JOBS_FOLDER,
-            PurePosixPath(f"{job_name}.yml"),
+            output_directory=PurePosixPath(GITLAB_FOLDER) / GITLAB_JOBS_FOLDER,
+            output_file_name=PurePosixPath(f"{job_name}.yml"),
         ),
         job_yml_template_mapping,
     )

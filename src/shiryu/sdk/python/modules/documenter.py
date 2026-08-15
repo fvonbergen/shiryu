@@ -192,7 +192,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         Returns:
             The gen_ref_pages.py template file.
         """
-        return TemplateFile(Path("gen_ref_pages.py"), PROJECT_SCRIPTS_PATH)
+        return TemplateFile(Path("gen_ref_pages.py"), output_directory=PROJECT_SCRIPTS_PATH)
 
     @classmethod
     async def _init_directory(
@@ -242,7 +242,11 @@ class DocumenterInitializer(PythonModuleInitializer):
         documentation_md_template_mapping: Mapping = {}
         documentation_md_template = Template(
             COMMON_JINJA_ENVIRONMENT,
-            TemplateFile(Path("documentation.md"), project_documentation_path, index_md_file_path),
+            TemplateFile(
+                Path("documentation.md"),
+                output_directory=project_documentation_path,
+                output_file_name=index_md_file_path,
+            ),
             documentation_md_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, documentation_md_template)
@@ -252,8 +256,8 @@ class DocumenterInitializer(PythonModuleInitializer):
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("explanation.md"),
-                project_documentation_path / PurePosixPath("explanation"),
-                index_md_file_path,
+                output_directory=project_documentation_path / PurePosixPath("explanation"),
+                output_file_name=index_md_file_path,
             ),
             explanation_md_template_mapping,
         )
@@ -264,8 +268,8 @@ class DocumenterInitializer(PythonModuleInitializer):
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("how_to_guides.md"),
-                project_documentation_path / PurePosixPath("how-to-guides"),
-                index_md_file_path,
+                output_directory=project_documentation_path / PurePosixPath("how-to-guides"),
+                output_file_name=index_md_file_path,
             ),
             how_to_guides_md_template_mapping,
         )
@@ -276,8 +280,9 @@ class DocumenterInitializer(PythonModuleInitializer):
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("reference.md"),
-                project_documentation_path / PurePosixPath(PROJECT_DOCUMENTATION_REFERENCE_FOLDER),
-                index_md_file_path,
+                output_directory=project_documentation_path
+                / PurePosixPath(PROJECT_DOCUMENTATION_REFERENCE_FOLDER),
+                output_file_name=index_md_file_path,
             ),
             reference_md_template_mapping,
         )
@@ -288,8 +293,8 @@ class DocumenterInitializer(PythonModuleInitializer):
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("tutorials.md"),
-                project_documentation_path / PurePosixPath("tutorials"),
-                index_md_file_path,
+                output_directory=project_documentation_path / PurePosixPath("tutorials"),
+                output_file_name=index_md_file_path,
             ),
             tutorials_md_template_mapping,
         )
@@ -349,6 +354,7 @@ class Documenter(PythonModule):
     async def document(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Run documenter document in the project of the provided source Directory."""
@@ -360,6 +366,7 @@ class Documenter(PythonModule):
     async def audit(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str | None:
         """Audit source code docstrings."""

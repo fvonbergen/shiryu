@@ -40,7 +40,7 @@ async def test_python_init(dagger_client: dagger.Client, test_case: TestCaseInit
     """
     inputs = test_case.inputs
 
-    directory = await Shiryu.python()().init(  # type: ignore[attr-defined]
+    directory = await Shiryu.python()().init(  # ty: ignore[unresolved-attribute]
         project_name=inputs.project_name,
         project_directory=inputs.project_directory,
         is_update=inputs.is_update,

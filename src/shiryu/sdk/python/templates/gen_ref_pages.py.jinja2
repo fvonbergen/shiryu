@@ -90,6 +90,7 @@ def _write_reference_index(generated_modules: dict[str, str], ref_dir: Path, dry
 
 
 def generate_reference_docs(
+    *,
     src_dir: Path = SRC_DIR,
     ref_dir: Path = REF_DIR,
     dry_run: bool = False,

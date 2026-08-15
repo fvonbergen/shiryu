@@ -89,7 +89,7 @@ class TesterInitializer(PythonModuleInitializer):
         Returns:
             The pytest.ini template file.
         """
-        return TemplateFile(Path("pytest.ini"), None, PurePosixPath("pytest.unit.ini"))
+        return TemplateFile(Path("pytest.ini"), output_file_name=PurePosixPath("pytest.unit.ini"))
 
     #     @classmethod
     #     def _sdk_source_code_python_packages(cls) -> set[str]:
@@ -297,6 +297,7 @@ class Tester(PythonModule):
     async def unit(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         keyword: OptionalKeywordDaggerType = OPTIONAL_KEYWORD_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
         privileged_nesting: PrivilegedNestingDaggerType = PRIVILEGED_NESTING_DAGGER_DEFAULT,
@@ -309,7 +310,7 @@ class Tester(PythonModule):
     # @final
     # @dagger.function
     # async def coverage(
-    #     self, project_directory: ProjectDirectoryType, platform: PlatformType = PLATFORM_DEFAULT
+    #     self, project_directory: ProjectDirectoryType, *, platform: PlatformType = PLATFORM_DEFAULT
     # ) -> dagger.Directory:
     #     """Run unit tests in the project of the provided source Directory."""
     #     # TODO: add genbadge[coverage] to cls._base_container_python_packages()

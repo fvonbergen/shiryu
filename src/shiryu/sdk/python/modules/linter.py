@@ -228,6 +228,7 @@ class Linter(PythonModule):
     async def lint(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Run linter analysis in the project of the provided source Directory."""
@@ -240,6 +241,7 @@ class Linter(PythonModule):
     async def fix(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
         """Run linter fixes in the project of the provided source Directory."""

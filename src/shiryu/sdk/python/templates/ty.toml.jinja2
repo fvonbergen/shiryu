@@ -1,0 +1,5 @@
+[src]
+include = ["{{ source_code_files_folders|sort|join('", "') }}"]
+
+[environment]
+root = ["{{ project_source_path }}"]
