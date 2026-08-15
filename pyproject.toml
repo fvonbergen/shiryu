@@ -21,11 +21,8 @@ classifiers = [
   "Typing :: Typed",
 ]
 # linked to [tool.uv] environments
-# python3.9 - https://docs.python.org/3/whatsnew/3.9.html
-# - | operator in dict
-# - type hinting generics in standard collections (dict, list, set, tuple, type)
-# - flexible function and variable annotations (typing.Annotated)
 # python3.10
+# - zensical minimum python support - (documenter) - https://github.com/zensical/zensical/blob/v0.0.3/pyproject.toml#L36
 # - dagger-io minimum python support - https://pypi.org/project/dagger-io/0.1.1/
 # python3.11 - https://docs.python.org/3/whatsnew/3.11.html
 # - tomllib: Support for Parsing TOML in the Standard Library

@@ -15,7 +15,9 @@ authors = [
 # - pytest >= 7.1.0 (tester) - https://docs.pytest.org/en/stable/changelog.html#pytest-7-1-0-2022-03-13
 # python3.8
 # - uv >= 0.7 (auditor) - https://github.com/astral-sh/uv/blob/main/changelogs/0.7.x.md
-requires-python = ">=3.8"
+# python3.10
+# - zensical minimum python support - (documenter) - https://github.com/zensical/zensical/blob/v0.0.3/pyproject.toml#L36
+requires-python = ">=3.10"
 dependencies = []
 
 # Dependencies that will be installed for the specific module call.
@@ -41,8 +43,6 @@ build-backend = "hatchling.build"
 [tool.uv]
 # linked to [project] requires-python
 environments = [
-  "python_version == '3.8'",
-  "python_version == '3.9'",
   "python_version == '3.10'",
   "python_version == '3.11'",
   "python_version == '3.12'",
