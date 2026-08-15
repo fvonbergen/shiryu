@@ -688,7 +688,7 @@ def get_sdk_language(
     sdk_module_options = create_enum("SDKModuleOptions", sdk_module_options_dict, is_unique=True)
     sdk_module_options.__doc__ = """SDKModule options."""
     sdk_module_name = sdk_module.name()
-    sdk_language: Any = dagger.object_type(
+    sdk_language = dagger.object_type(
         add_enum_values_as_methods(sdk_module_options)(
             type(sdk_module_name, (sdk_module,), {"_initializer_cls": _initializer_cls()})
         )

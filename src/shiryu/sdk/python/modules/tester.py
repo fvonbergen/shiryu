@@ -310,7 +310,10 @@ class Tester(PythonModule):
     # @final
     # @dagger.function
     # async def coverage(
-    #     self, project_directory: ProjectDirectoryType, *, platform: PlatformType = PLATFORM_DEFAULT
+    #     self,
+    #     project_directory: ProjectDirectoryType,
+    #     *,
+    #     platform: PlatformType = PLATFORM_DEFAULT
     # ) -> dagger.Directory:
     #     """Run unit tests in the project of the provided source Directory."""
     #     # TODO: add genbadge[coverage] to cls._base_container_python_packages()
