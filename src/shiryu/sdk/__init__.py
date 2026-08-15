@@ -1,6 +1,6 @@
 """sdk subpackage."""
 
-from enum import Enum, unique
+from enum import Enum
 from importlib import import_module
 from pathlib import Path
 from typing import Final

@@ -32,7 +32,7 @@ def python_checker_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
             if SCM.GITHUB in scm
             else ()
         ),
-        *("mypy.ini",),
+        *("ty.toml",),
     )
 
 
