@@ -1,3 +1,5 @@
+# zensical.toml options: https://zensical.org/docs/setup/basics/
+
 # Project metadata & navigation
 [project]
 site_name = "{{ project_name }}"
@@ -17,54 +19,61 @@ docs_dir = "{{ project_docs_path }}"
 # - Explanation
 
 # Theme & appearance (Material for MkDocs)
-[theme]
+[project.theme]
 name = "material"
 # logo = "docs/assets/logo.png"       # Path to logo displayed in header
 # favicon = "docs/assets/favicon.png" # Browser tab icon
-
 features = [
   # Navigation & Layout
-  "navigation.instant",     # Enable SPA-like fast page loads without full refreshes
-  "navigation.tracking",    # Update browser URL bar based on active heading while scrolling
-  "navigation.tabs",        # Move main section links to top navigation bar
-  "navigation.tabs.sticky", # Keep top navigation tabs fixed when scrolling down
-  "navigation.sections",    # Group sidebar items under visible section headers
-  "navigation.indexes",     # Allow clicking section titles directly to go to index page
-  "navigation.top",         # Show "Back to top" floating button on long pages
-  "navigation.path",        # Render breadcrumb paths at the top of pages
+  "navigation.footer",           # Show next/previous page navigation footer links
+  "navigation.indexes",          # Allow clicking section titles directly to view index page
+  "navigation.instant",          # Enable SPA-like fast page loads
+  "navigation.instant.prefetch", # Prefetch pages on link hover for faster loads
+  "navigation.path",             # Render breadcrumb navigation paths at top of page
+  "navigation.sections",         # Display top-level sections
+  "navigation.tracking",         # Update browser URL active heading while scrolling
+  "navigation.tabs",             # Display top-level sections as horizontal tabs
+  # "navigation.tabs.sticky",      # Keep top navigation tabs fixed when scrolling down
+  "navigation.top", # "Back to top" floating button
   # Content & Interactive Elements
-  "toc.integrate",         # Embed Table of Contents directly into left sidebar
-  "content.code.copy",     # Add a one-click copy button to all code blocks
-  "content.code.annotate", # Allow inline comment callouts inside code blocks
-  "content.action.edit",   # Show "Edit this page" link pointing to your repository
+  "content.code.copy",         # One-click copy button on code blocks
+  "content.code.annotate",     # Inline code block comment callouts
+  "content.code.select",       # Select-all button for code blocks
+  "content.tabs.link",         # Sync selected tab language/type across pages
+  "content.tooltips",          # Modern rich tooltips
+  "content.footnote.tooltips", # Display inline preview tooltips for footnotes
+  "content.action.edit",       # Show "Edit this page" repository link
+  # Search & Sidebar Integrations
+  "search.highlight", # Highlight searched terms on target pages
+  "toc.integrate",    # Embed Table of Contents into left sidebar
 ]
-
 # Google Fonts integration
-[theme.font]
+[project.theme.font]
 text = "Inter"     # Main body font
 code = "Fira Code" # Monospace font for code snippets and signatures
-
 # Automatic Light / Dark Mode Toggle based on OS preferences
-[[theme.palette]]
+[[project.theme.palette]]
 media = "(prefers-color-scheme: light)"
 scheme = "default"
-
-[[theme.palette]]
+[[project.theme.palette]]
 media = "(prefers-color-scheme: dark)"
 scheme = "slate"
 
 # Global plugins
 [project.plugins]
-autorefs = {} # Automatically cross-links Markdown references, e.g. [MyClass][]
+# Markdown cross-referencing (autorefs)
+# Automatically cross-links Markdown references, e.g. [MyClass][]
+autorefs = {}
 
 # Python documentation generator (mkdocstrings)
+# Configures the Python handler, source directories, and external documentation inventory links
 [project.plugins.mkdocstrings.handlers.python]
 # Load inventory files to enable cross-linking to external documentation
 inventories = [
   "https://docs.python.org/3/objects.inv",
 ]
 paths = ["{{ project_src_path }}"] # Root directory containing Python source packages
-
+# Global display preferences for extracted docstrings, code signatures, and type annotations
 [project.plugins.mkdocstrings.handlers.python.options]
 # Style and formatting
 docstring_style = "google"   # Parse Google-style docstrings (Args, Returns, etc.)
@@ -84,34 +93,13 @@ show_signature_annotations = true # Keep type annotations visible in function si
 unwrap_annotated = true           # Unwraps Annotated[T, ...] to link directly to T
 
 # Markdown extensions (PyMdown)
-[markdown_extensions]
-
-# Nested code blocks, tabs, callouts, and diagrams
-[markdown_extensions."pymdownx.superfences"]
-
 # Code block highlighting configuration
-[markdown_extensions."pymdownx.highlight"]
+[project.markdown_extensions."pymdownx.highlight"]
 anchor_linenums = true     # Clickable line numbers with anchor tags
 line_spans = "line"        # Wrap lines in spans to allow highlighting individual lines
 pygments_lang_class = true # Add CSS class for language name on code blocks
-
-# Inline code highlighting (e.g., `python import sys`{: .language-python})
-[markdown_extensions."pymdownx.inlinehilite"]
-
+# Enable advanced fenced code blocks (ASCII trees, diagrams, nested code)
+[project.markdown_extensions."pymdownx.superfences"]
 # Tabbed content blocks (`=== "Tab Title"`)
-[markdown_extensions."pymdownx.tabbed"]
+[project.markdown_extensions."pymdownx.tabbed"]
 alternate_style = true # Modern tabbed UI style provided by Material theme
-
-# Material design icons and Twemoji support (`:smile:`)
-[markdown_extensions."pymdownx.emoji"]
-emoji_index = "material/extensions/emoji.twemoji"
-emoji_generator = "material/extensions/emoji.to_svg"
-
-# Collapsible callouts (`??? note "Click to open"`)
-[markdown_extensions."pymdownx.details"]
-
-# File embedding/snippets (`--8<-- "includes/header.md"`)
-[markdown_extensions."pymdownx.snippets"]
-
-# Keyboard shortcut formatting (`++ctrl+alt+del++`)
-[markdown_extensions."pymdownx.keys"]

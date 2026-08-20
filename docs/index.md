@@ -18,27 +18,27 @@ This repository uses the [Diátaxis](https://diataxis.fr/) documentation framewo
 > - Source: [Diátaxis: The Diátaxis map](https://diataxis.fr/start-here/#the-diataxis-map)
 
 ```
-                    PRACTICAL STEPS
-                          │
-         Tutorials        │         How-To Guides
-    (Learning-oriented)   │      (Goal-oriented)
-                          │
-LEARNING ─────────────────┼─────────────── WORK
-(Study)                   │               (Task)
-                          │
-       Explanation        │          Reference
-  (Understanding-oriented)│    (Information-oriented)
-                          │
-                 THEORETICAL KNOWLEDGE
+                      PRACTICAL STEPS
+                            │
+         Tutorials          │         How-To Guides
+    (Learning-oriented)     │      (Goal-oriented)
+                            │
+LEARNING ───────────────────┼─────────────── WORK
+(Study)                     │               (Task)
+                            │
+       Explanation          │          Reference
+  (Understanding-oriented)  │    (Information-oriented)
+                            │
+                    THEORETICAL KNOWLEDGE
 ```
 
 ## Directory Structure & Guidelines
 
 At the core of [Diátaxis](https://diataxis.fr/) are the four different kinds of documentation it identifies.
 
-- [**Tutorials**](./tutorials/index.md.md): Learning-oriented experiences. Examples: guided, hands-on lessons for complete beginners.
-- [**How-To Guides**](./how-to-guides/index.md.md): Goal-oriented directions. Examples: step-by-step recipes to solve specific real-world problems.
-- [**Reference**](./reference/index.md.md): Information-oriented technical description. Examples: factual specifications, API schemas, and technical descriptions for lookup.
-- [**Explanation**](./explanation/index.md.md): Understanding-oriented discussion. Examples: high-level architecture, background context, and design trade-offs.
+- [**Tutorials**](./tutorials/index.md): Learning-oriented experiences. Examples: guided, hands-on lessons for complete beginners.
+- [**How-To Guides**](./how-to-guides/index.md): Goal-oriented directions. Examples: step-by-step recipes to solve specific real-world problems.
+- [**Reference**](./reference/index.md): Information-oriented technical description. Examples: factual specifications, API schemas, and technical descriptions for lookup.
+- [**Explanation**](./explanation/index.md): Understanding-oriented discussion. Examples: high-level architecture, background context, and design trade-offs.
 
 Before adding new documentation, consult the template file in the target directory for writing rules and structural conventions.

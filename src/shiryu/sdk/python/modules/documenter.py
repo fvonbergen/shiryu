@@ -166,9 +166,16 @@ class DocumenterInitializer(PythonModuleInitializer):
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
-                # https://github.com/zensical/zensical/releases/tag/v0.0.22
-                # # >= 0.0.22: Support autorefs plugin
-                {"mkdocs-autorefs", "mkdocstrings[python]", "zensical >= 0.0.22"},
+                {
+                    # All versions supported
+                    "mkdocs-autorefs",
+                    # https://github.com/mkdocstrings/python/releases/tag/1.11.0
+                    # >= 1.11.0: Hook into autorefs to provide context around cross-ref errors
+                    "mkdocstrings-python >= 1.11.0",
+                    # https://github.com/zensical/zensical/releases/tag/v0.0.22
+                    # # >= 0.0.22: Support autorefs plugin
+                    "zensical >= 0.0.22",
+                },
             ),
         )
 

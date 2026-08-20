@@ -29,7 +29,7 @@ Getting Started (Tutorial Document)
 
 Example:
 
-> In this tutorial, you will write your first Python script using the built-in json module to convert a Python dictionary into a JSON file on your computer.
+> In this tutorial, you will write your first Python script using the built-in `json` module to convert a Python dictionary into a JSON file on your computer.
 
 ## 2. Prerequisites
 
@@ -51,31 +51,31 @@ Example:
 Example:
 
 > **Step 1: Write data to a JSON file**
-
+>
 > Create a file named `save_user.py` and add the following code:
-
+>
 > ```python
 > import json
-> 
+>
 > user_data = {"name": "Alice", "age": 30, "is_active": True}
-> 
+>
 > with open("user.json", "w") as file:
 >   json.dump(user_data, file)
-> 
+>
 > print("File created successfully!")
 > ```
-
+>
 > Run the script in your terminal:
-> 
+>
 > ```bash
 > python save_user.py
 > ```
-> 
+>
 > Expected Output:
 > ```
 > File created successfully!
 > ```
-> 
+>
 > *Notice how `user.json` was created in your folder containing `{"name": "Alice", "age": 30, "is_active": true}`—the Python `True` was automatically converted to the JSON `true`.
 
 ## 4. Immediate Next Steps
@@ -87,5 +87,6 @@ Example:
 Example:
 
 > Congratulations! You created your first JSON file using Python.
+>
 > - To learn how to read and update existing files, see our [How-To: Parse and Modify Local JSON Files].
 > - To understand how Python maps types like dictionaries to JSON, read [Explanation: Python to JSON Type Conversions].

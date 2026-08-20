@@ -179,7 +179,9 @@ class TesterInitializer(PythonModuleInitializer):
                     # >= 2.3.0: Add support for specifying output location for html, xml, and
                     #   annotate report.
                     "pytest-cov >= 2.3.0",
-                    "pytest-xdist[psutil]",
+                    # https://pytest-xdist.readthedocs.io/en/latest/changelog.html#pytest-xdist-1-18-0-2017-06-26
+                    # >= 1.18.0: Add long option --numprocesses as alternative for -n.
+                    "pytest-xdist[psutil] >= 1.18.0",
                 },
             ).merge(DependencyGroups({Checker.name(): tests_code_dependencies})),
             source_code_files_folders=init_context_directory.source_code_files_folders

@@ -115,7 +115,14 @@ class CheckerInitializer(PythonModuleInitializer):
                     ),
                 ),
             ),
-            dependency_groups=init_context_directory.dependency_groups.add(sdk_module_name, {"ty"}),
+            dependency_groups=init_context_directory.dependency_groups.add(
+                sdk_module_name,
+                {
+                    # https://github.com/astral-sh/ty/releases/tag/0.0.1-alpha.8
+                    # >= 0.0.1-alpha.8: Add --config-file CLI arg.
+                    "ty >= 0.0.1-alpha.8"
+                },
+            ),
         )
 
     @classmethod

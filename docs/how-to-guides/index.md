@@ -73,7 +73,7 @@ Example:
 Example:
 
 > Run your script. The output string should print across multiple lines with aligned indentation rather than a single compressed line:
-
+>
 > ```json
 > {
 >     "name": "Alice",
@@ -91,5 +91,6 @@ Example:
 **Rule**: Only link to directly related operational tasks.
 
 Example:
+
 > - [How-To: Handle Custom Python Objects in JSON]
 > - [How-To: Read Large JSON Files Safely]

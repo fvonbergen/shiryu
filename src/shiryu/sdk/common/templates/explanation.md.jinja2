@@ -41,6 +41,7 @@ Example:
 Example:
 
 > During serialization, the `json` module walks through a Python data tree and maps types according to a fixed conversion table:
+>
 > - Python `dict` -> JSON `object`
 > - Python `list` / `tuple` -> JSON `array`
 > - Python `True` / `False` -> JSON `true` / `false`

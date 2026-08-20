@@ -56,7 +56,7 @@ Example:
 > |--json-lines     |Flag |No       |False      |Parses each line of input as a separate JSON object. |
 >
 > Minimal Interface Example:
-
+>
 > ```bash
 > echo '{"b": 2, "a": 1}' | python -m json.tool --sort-keys
 > {
@@ -81,7 +81,7 @@ Example:
 > |`json.dumps()` |Function |Serializes object to a JSON formatted `str`.             |
 > |`json.load()`  |Function |Deserializes a JSON file stream to a Python object.    |
 > |`json.loads()` |Function |Deserializes a JSON string or bytes to a Python object.|
-
+>
 > Type Aliases & Definitions:
 > ```python
 > from typing import Union
@@ -100,7 +100,7 @@ Example:
 Example:
 
 > **json.dumps()**
-
+>
 > Signature:
 > ```python
 > json.dumps(
@@ -123,6 +123,7 @@ Example:
 >
 > - Returns: `str` — UTF-8 encoded valid JSON text string.
 > - Raises: `TypeError` — Raised if `obj` contains data types that cannot be serialized.
+
 ## 4. Return Values & Errors
 
 **What it is**: Explicit technical specifications on outputs, return types, exceptions thrown, or status codes returned.
@@ -144,7 +145,7 @@ Example:
 
 > ```python
 > import json
-> 
+>
 > data: json.JSONValue = {"b": 2, "a": 1}
 > output: str = json.dumps(data, indent=2, sort_keys=True)
 > print(output)
