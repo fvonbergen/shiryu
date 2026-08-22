@@ -26,6 +26,7 @@ from ...common.scm import (
     GitLabArtifacts,
     GitLabStageId,
     build_github_action,
+    build_github_workflow_checkout_job,
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
@@ -93,6 +94,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_version,
+            variables=(),
             pre_script=(),
             export_path=export_path,
             post_script=(
@@ -104,6 +106,8 @@ class DocumenterInitializer(PythonModuleInitializer):
         documentation_api_reference_path = (
             PROJECT_DOCUMENTATION_PATH / PROJECT_DOCUMENTATION_REFERENCE_FOLDER / "api-reference"
         )
+        pre_steps = (build_github_workflow_checkout_job(),)
+
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
@@ -120,6 +124,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                             github_action=github_action,
                             shiryu_version=shiryu_version,
                             job_environment=GITHUB_PAGES_ENVIRONMENT,
+                            pre_steps=pre_steps,
                             post_steps=(
                                 GitHubWorkflowJobStep(
                                     "upload_artifact",
@@ -146,6 +151,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                             github_action=github_action,
                             shiryu_version=shiryu_version,
                             job_environment=None,
+                            pre_steps=pre_steps,
                             post_steps=(),
                         ),
                     ),

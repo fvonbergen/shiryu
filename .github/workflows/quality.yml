@@ -92,6 +92,8 @@ jobs:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
       - id: linter_lint_vcs
         name: Linter lint-vcs
         uses: "./.github/actions/linter_lint_vcs"
@@ -117,5 +119,5 @@ jobs:
           shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
-          privileged_nesting: "False"
+          privileged_nesting: "True"
           project_directory: "."

@@ -4,10 +4,8 @@ include:
 {{ name }}:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "{{ shiryu_version.default }}"
-    SDK_LANGUAGE: "{{ sdk_language.default }}"
-    {%- for parameter in parameters %}
-    {{ parameter.name|upper }}:{%- if parameter.default is not none %} "{{ parameter.default }}"{% else %} {{ "${" ~ parameter.name|upper ~ "}" }}{% endif -%}
+    {%- for variable in variables %}
+    {{variable.name}}: "{{variable.value}}"
     {%- endfor %}
   script:
     {%- for script in scripts %}

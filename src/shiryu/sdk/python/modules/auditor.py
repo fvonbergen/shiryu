@@ -15,6 +15,7 @@ from ...common.scm import (
     GitHubWorkflowId,
     GitLabStageId,
     build_github_action,
+    build_github_workflow_checkout_job,
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
@@ -64,11 +65,13 @@ class AuditorInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_metadata.git_tag_or_branch,
+            variables=(),
             pre_script=(),
             export_path=None,
             post_script=(),
             artifacts=None,
         )
+        pre_steps = (build_github_workflow_checkout_job(),)
 
         return init_context_directory.evolve(
             scm=init_context_directory.scm.evolve(
@@ -82,6 +85,7 @@ class AuditorInitializer(PythonModuleInitializer):
                             github_action=github_action,
                             shiryu_version=shiryu_metadata.git_tag_or_branch,
                             job_environment=None,
+                            pre_steps=pre_steps,
                             post_steps=(),
                         ),
                     ),

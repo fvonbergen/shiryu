@@ -21,11 +21,12 @@ from ...common.scm import (
     GitHubWorkflowId,
     GitLabStageId,
     build_github_action,
+    build_github_workflow_checkout_job,
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
 )
-from ...common.utils import PROJECT_SOURCE_CODE_FOLDER, PROJECT_TESTS_FOLDER
+from ...common.utils import PROJECT_SOURCE_CODE_FOLDER, PROJECT_TESTS_FOLDER, TESTS_UNIT_PATH
 from ..context import DependencyGroups, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
@@ -39,9 +40,6 @@ PrivilegedNestingDaggerType = Annotated[
     bool, dagger.Doc("Whether to allow container dagger client to connect to the dagger engine.")
 ]
 PRIVILEGED_NESTING_DAGGER_DEFAULT: Final = False
-
-TESTS_UNIT_FOLDER: Final = "unit"
-TESTS_UNIT_PATH: Final = PurePosixPath(PROJECT_TESTS_FOLDER) / TESTS_UNIT_FOLDER
 
 
 class TesterInitializer(PythonModuleInitializer):
@@ -131,6 +129,7 @@ class TesterInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_version,
+            variables=(),
             pre_script=(),
             export_path=None,
             post_script=(),
@@ -145,6 +144,8 @@ class TesterInitializer(PythonModuleInitializer):
             # >= 0.24.0: Added the asyncio_default_fixture_loop_scope configuration option
             "pytest-asyncio >= 0.24.0",
         }
+        pre_steps = (build_github_workflow_checkout_job(),)
+
         return init_context_directory.evolve(
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -157,6 +158,7 @@ class TesterInitializer(PythonModuleInitializer):
                             github_action=github_action,
                             shiryu_version=shiryu_version,
                             job_environment=None,
+                            pre_steps=pre_steps,
                             post_steps=(),
                         ),
                     ),

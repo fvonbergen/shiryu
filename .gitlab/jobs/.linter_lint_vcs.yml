@@ -6,8 +6,11 @@ include:
   variables:
     SHIRYU_VERSION: "feat/add-python-sdk"
     SDK_LANGUAGE: "python"
+    GIT_STRATEGY: "fetch"
+    GIT_DEPTH: "0"
     BRANCH_HISTORY: "True"
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
   script:
+    - git fetch origin main:refs/remotes/origin/main || true
     - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint-vcs --branch-history="${BRANCH_HISTORY}" --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"

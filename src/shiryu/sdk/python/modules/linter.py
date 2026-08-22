@@ -19,12 +19,16 @@ from ...common.module import (
 )
 from ...common.scm import (
     GitHubWorkflowId,
+    GitHubWorkflowStepInputParameter,
     GitLabStageId,
+    GitLabVariable,
     build_github_action,
+    build_github_workflow_checkout_job,
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
 )
+from ...common.utils import TESTS_UNIT_PATH
 from ...common.vcs import VCS_PRIMARY_BRANCH
 from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
@@ -99,6 +103,7 @@ class LinterInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function_lint_code,
             shiryu_version=shiryu_version,
+            variables=(),
             pre_script=(),
             export_path=None,
             post_script=(),
@@ -109,11 +114,13 @@ class LinterInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function_lint_vcs,
             shiryu_version=shiryu_version,
-            pre_script=(),
+            variables=(GitLabVariable("GIT_STRATEGY", "fetch"), GitLabVariable("GIT_DEPTH", "0")),
+            pre_script=(f"git fetch origin main:refs/remotes/origin/{VCS_PRIMARY_BRANCH} || true",),
             export_path=None,
             post_script=(),
             artifacts=None,
         )
+
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
@@ -130,6 +137,7 @@ class LinterInitializer(PythonModuleInitializer):
                             github_action=github_action_linter_lint_code,
                             shiryu_version=shiryu_version,
                             job_environment=None,
+                            pre_steps=(build_github_workflow_checkout_job(),),
                             post_steps=(),
                         ),
                     ).add(
@@ -139,6 +147,11 @@ class LinterInitializer(PythonModuleInitializer):
                             github_action=github_action_linter_lint_vcs,
                             shiryu_version=shiryu_version,
                             job_environment=None,
+                            pre_steps=(
+                                build_github_workflow_checkout_job(
+                                    (GitHubWorkflowStepInputParameter("fetch-depth", "0"),)
+                                ),
+                            ),
                             post_steps=(),
                         ),
                     ),
@@ -228,7 +241,10 @@ class LinterInitializer(PythonModuleInitializer):
         )
         init_directory = directory_with_new_file(init_directory, cchk_toml_template)
         # ruff.toml
-        ruff_toml_template_mapping: Mapping = {"cache_folder": cls._ruff_cache_folder()}
+        ruff_toml_template_mapping: Mapping = {
+            "cache_folder": cls._ruff_cache_folder(),
+            "tests_unit_path": str(TESTS_UNIT_PATH),
+        }
         ruff_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT, cls._ruff_toml_template_file(), ruff_toml_template_mapping
         )

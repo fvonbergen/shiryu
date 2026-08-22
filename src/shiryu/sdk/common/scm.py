@@ -154,11 +154,6 @@ class GitHubWorkflowJobStep:
     with_: tuple[GitHubWorkflowStepInputParameter, ...]
 
 
-CHECKOUT_JOB_STEP: Final = GitHubWorkflowJobStep(
-    "check_out_code", "Check out code", "actions/checkout@v7", ()
-)
-
-
 @final
 @dataclass(frozen=True, slots=True)
 class GitHubWorkflowTriggerActionPush:
@@ -368,6 +363,15 @@ class GitLabArtifacts:
     paths: GitLabArrayType
 
 
+@final
+@dataclass(frozen=True, slots=True)
+class GitLabVariable:
+    """GitLabVariable class."""
+
+    name: str
+    value: str
+
+
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
 
@@ -380,6 +384,7 @@ class GitLabStageJob:
     path: str
     name: str
     extends: GitLabArrayType
+    variables: tuple[GitLabVariable, ...]
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
@@ -492,8 +497,7 @@ class GitLabStages:
             Anew GitLabStages instance with the modified or current state.
         """
         return replace(
-            self,
-            _gitlab_stages=gitlab_stages if gitlab_stages is not None else self._gitlab_stages,
+            self, _gitlab_stages=gitlab_stages if gitlab_stages is not None else self._gitlab_stages
         )
 
 
@@ -698,8 +702,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
                     GitHubWorkflowStepInputParameter("version", f'"v{dagger_version}"'),
                     GitHubWorkflowStepInputParameter("verb", "call"),
                     GitHubWorkflowStepInputParameter(
-                        "module",
-                        "github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}",
+                        "module", "github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}"
                     ),
                     GitHubWorkflowStepInputParameter(
                         "args",
@@ -732,11 +735,27 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     return GitHubAction(id_, name, action_yml_template, sdk_module_function_parameters)
 
 
-def build_github_workflow_job(
+def build_github_workflow_checkout_job(
+    with_: tuple[GitHubWorkflowStepInputParameter, ...] = tuple(),
+) -> GitHubWorkflowJobStep:
+    """
+    Builds a GitHub Actions workflow job step for checking out code.
+
+    Args:
+        with_: A tuple of input parameters to pass to the checkout action.
+
+    Returns:
+        GitHubWorkflowJobStep: A configured GitHub Actions step object for checking out code.
+    """
+    return GitHubWorkflowJobStep("check_out_code", "Check out code", "actions/checkout@v7", with_)
+
+
+def build_github_workflow_job(  # noqa: PLR0913, PLR0917
     sdk_language: str,
     github_action: GitHubAction,
     shiryu_version: str,
     job_environment: GitHubJobEnvironment | None,
+    pre_steps: tuple[GitHubWorkflowJobStep, ...],
     post_steps: tuple[GitHubWorkflowJobStep, ...],
 ) -> GitHubWorkflowJob:
     """
@@ -747,12 +766,12 @@ def build_github_workflow_job(
         github_action: The GitHub action.
         shiryu_version: Shiryu version.
         job_environment: GitHub job environment.
+        pre_steps: GitHub workflow job pre action job steps.
         post_steps: GitHub workflow job post action job steps.
 
     Returns:
         A GitHub workflow job.
     """
-    pre_steps = (CHECKOUT_JOB_STEP,)
     action_step_input_parameters_generator = (
         GitHubWorkflowStepInputParameter(parameter.name, f'"{parameter.default}"')
         if parameter.default is not None
@@ -786,6 +805,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_module_name: str,
     sdk_module_function: FunctionType,
     shiryu_version: str,
+    variables: tuple[GitLabVariable, ...],
     pre_script: GitLabScript,
     export_path: PurePosixPath | None,
     post_script: GitLabScript,
@@ -799,6 +819,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         sdk_module_name: SDK module name.
         sdk_module_function: SDK module function.
         shiryu_version: Shiryu version.
+        variables: GitLab job variables.
         pre_script: GitLab commands to run before dagger module command in script section.
         export_path: Append export path after dagger call.
         post_script: GitLab commands to run after dagger module command in script section.
@@ -832,28 +853,41 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         # TODO: Check that the return type is of type dagger.
         export_chain.append(f"export --path=./{export_path}")
     job_name = f".{id_}"
+    shiryu_version_gitlab_variable = GitLabVariable("SHIRYU_VERSION", shiryu_version)
+    sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
+    variables = (
+        shiryu_version_gitlab_variable,
+        sdk_language_gitlab_variable,
+        *variables,
+        *tuple(
+            GitLabVariable(
+                sdk_module_function_parameter.name.upper(),
+                sdk_module_function_parameter.default
+                if sdk_module_function_parameter.default is not None
+                else f"${{{sdk_module_function_parameter.name.upper()}}}",
+            )
+            for sdk_module_function_parameter in sdk_module_function_parameters
+        ),
+    )
+    dagger_call_script = " ".join(
+        [
+            (
+                "dagger "
+                f"--mod=gitlab.com/fvonbergen1/shiryu@${{{shiryu_version_gitlab_variable.name}}} "
+                f"call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
+                f"{sdk_module_function_name}"
+            ),
+            *[
+                f'{parameter.option}="${{{parameter.name.upper()}}}"'
+                for parameter in sdk_module_function_parameters
+            ],
+            *export_chain,
+        ],
+    )
     job_yml_template_mapping: Mapping = {
         "name": job_name,
-        "shiryu_version": {"default": shiryu_version},
-        "sdk_language": {"default": sdk_language},
-        "parameters": sdk_module_function_parameters,
-        "scripts": (
-            *pre_script,
-            " ".join(
-                [
-                    (
-                        "dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call "
-                        f"${{SDK_LANGUAGE}} {sdk_module_name} {sdk_module_function_name}"
-                    ),
-                    *[
-                        f'{parameter.option}="${{{parameter.name.upper()}}}"'
-                        for parameter in sdk_module_function_parameters
-                    ],
-                    *export_chain,
-                ],
-            ),
-            *post_script,
-        ),
+        "variables": variables,
+        "scripts": (*pre_script, dagger_call_script, *post_script),
         "artifacts": artifacts,
     }
     job_yml_template = Template(
@@ -884,6 +918,7 @@ def build_gitlab_stage_job(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJob
         str(gitlab_job.template.template_file.output_path),
         f"{gitlab_stage_name}_{gitlab_job.id_}",
         (gitlab_job.name,),
+        (),
         gitlab_stage_name,
         (),
         gitlab_stage_id.value.rules,

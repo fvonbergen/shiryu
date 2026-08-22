@@ -18,6 +18,7 @@ from ...common.scm import (
     GitHubWorkflowId,
     GitLabStageId,
     build_github_action,
+    build_github_workflow_checkout_job,
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
@@ -84,6 +85,7 @@ class BuilderInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function_deploy,
             shiryu_version=shiryu_version,
+            variables=(),
             pre_script=(),
             export_path=None,
             post_script=(),
@@ -94,11 +96,14 @@ class BuilderInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function_test,
             shiryu_version=shiryu_version,
+            variables=(),
             pre_script=(),
             export_path=None,
             post_script=(),
             artifacts=None,
         )
+        pre_steps = (build_github_workflow_checkout_job(),)
+
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
@@ -115,6 +120,7 @@ class BuilderInitializer(PythonModuleInitializer):
                             github_action=github_action_builder_deploy,
                             shiryu_version=shiryu_version,
                             job_environment=None,
+                            pre_steps=pre_steps,
                             post_steps=(),
                         ),
                     ).add(
@@ -124,6 +130,7 @@ class BuilderInitializer(PythonModuleInitializer):
                             github_action=github_action_builder_test,
                             shiryu_version=shiryu_version,
                             job_environment=None,
+                            pre_steps=pre_steps,
                             post_steps=(),
                         ),
                     ),
