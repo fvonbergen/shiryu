@@ -43,6 +43,7 @@ PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
 PROJECT_DOCUMENTATION_PATH: Final = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
 PROJECT_DOCUMENTATION_REFERENCE_FOLDER: Final = "reference"
 PROJECT_SITE_FOLDER: Final = "site"
+PROJECT_SITE_PATH: Final = PurePosixPath(PROJECT_SITE_FOLDER)
 PROJECT_SCRIPTS_FOLDER: Final = "scripts"
 PROJECT_SCRIPTS_PATH: Final = PurePosixPath(PROJECT_SCRIPTS_FOLDER)
 
@@ -77,7 +78,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         sdk_language = sdk_module_cls._sdk_name()
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.document
-        export_path = PROJECT_DOCUMENTATION_PATH
+        export_path = PROJECT_SITE_PATH
         github_action = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
@@ -96,7 +97,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             export_path=export_path,
             post_script=(
                 f"mkdir {gitlab_documentation_folder_output}",
-                f"cp --recursive {PROJECT_SITE_FOLDER}/* {gitlab_documentation_folder_output}/",
+                f"cp --recursive {PROJECT_SITE_PATH}/* {gitlab_documentation_folder_output}/",
             ),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
@@ -106,7 +107,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
-                | {f"/{PROJECT_SITE_FOLDER}/", f"/{documentation_api_reference_path}"}
+                | {f"/{PROJECT_SITE_PATH}/", f"/{documentation_api_reference_path}/"}
             ),
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -126,7 +127,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                                     "actions/upload-pages-artifact@v5",
                                     (
                                         GitHubWorkflowStepInputParameter(
-                                            "path", f"{PROJECT_SITE_FOLDER}"
+                                            "path", f"{PROJECT_SITE_PATH}/"
                                         ),
                                     ),
                                 ),

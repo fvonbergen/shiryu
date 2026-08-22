@@ -3,7 +3,8 @@ include:
   - local: ".gitlab/jobs/.builder_test.yml"
   - local: ".gitlab/jobs/.checker_check.yml"
   - local: ".gitlab/jobs/.documenter_document.yml"
-  - local: ".gitlab/jobs/.linter_lint.yml"
+  - local: ".gitlab/jobs/.linter_lint_code.yml"
+  - local: ".gitlab/jobs/.linter_lint_vcs.yml"
   - local: ".gitlab/jobs/.tester_unit.yml"
 quality_auditor_audit:
   extends: .auditor_audit
@@ -25,8 +26,13 @@ quality_documenter_document:
   stage: quality
   needs:
     - []
-quality_linter_lint:
-  extends: .linter_lint
+quality_linter_lint_code:
+  extends: .linter_lint_code
+  stage: quality
+  needs:
+    - []
+quality_linter_lint_vcs:
+  extends: .linter_lint_vcs
   stage: quality
   needs:
     - []

@@ -10,8 +10,8 @@ from .common import DirectoryOutput, ignore_pytest
 
 
 @final
-class TestCaseLintFixInputFile(NamedTuple):
-    """TestCaseLintFixInputFile class."""
+class TestCaseLintFixCodeInputFile(NamedTuple):
+    """TestCaseLintFixCodeInputFile class."""
 
     path: PurePosixPath
     contents: str
@@ -32,11 +32,11 @@ def __get_source_file_path(project_name: ProjectNameType, file_name: str) -> Pur
     return PurePosixPath("src") / str(package_name_canonical) / file_name
 
 
-def __build_test_case_lint_fix_input_file(
+def __build_test_case_lint_fix_code_input_file(
     project_name: ProjectNameType, file_name: str, contents: str
-) -> TestCaseLintFixInputFile:
+) -> TestCaseLintFixCodeInputFile:
     """
-    Helper to build input file for lint or fix calls test cases.
+    Helper to build input file for lint or fix code calls test cases.
 
     Args:
         project_name: Project name.
@@ -44,18 +44,18 @@ def __build_test_case_lint_fix_input_file(
         contents: File contents.
 
     Returns:
-        The input file for lint or fix calls test cases.
+        The input file for lint or fix code calls test cases.
     """
-    return TestCaseLintFixInputFile(
+    return TestCaseLintFixCodeInputFile(
         path=__get_source_file_path(project_name, file_name), contents=contents
     )
 
 
 @final
-class TestCaseLintFixInputs(NamedTuple):
-    """TestCaseLintFixInputs class."""
+class TestCaseLintFixCodeInputs(NamedTuple):
+    """TestCaseLintFixCodeInputs class."""
 
-    file: TestCaseLintFixInputFile | None
+    file: TestCaseLintFixCodeInputFile | None
 
 
 @final
@@ -67,15 +67,15 @@ class StringOutput(NamedTuple):
 
 @final
 @ignore_pytest
-class TestCaseLint(NamedTuple):
-    """TestCaseLint class."""
+class TestCaseLintCode(NamedTuple):
+    """TestCaseLintCode class."""
 
     name: str
-    inputs: TestCaseLintFixInputs
+    inputs: TestCaseLintFixCodeInputs
     output: StringOutput
 
 
-LINTER_SUCCESS_FILE_CONTENTS = '''"""linter_success_file module."""
+LINTER_LINT_CODE_SUCCESS_FILE_CONTENTS = '''"""linter_lint_code_success_file module."""
 
 
 def main() -> None:
@@ -84,27 +84,27 @@ def main() -> None:
 '''
 
 
-def build_test_cases_linter_lint_success() -> tuple[TestCaseLint, ...]:
+def build_test_cases_linter_lint_code_success() -> tuple[TestCaseLintCode, ...]:
     """
-    Builds the test cases used for testing linter lint successfull calls.
+    Builds the test cases used for testing linter lint_code successfull calls.
 
     Returns:
         The test cases.
     """
     project_name = PROJECT_NAME_DEFAULT
-    stdout_successfull = "Lint successfull"
+    stdout_successfull = "Lint code successfull"
 
     return (
-        TestCaseLint(
+        TestCaseLintCode(
             name="empty_directory",
-            inputs=TestCaseLintFixInputs(None),
+            inputs=TestCaseLintFixCodeInputs(None),
             output=StringOutput(stdout_successfull),
         ),
-        TestCaseLint(
+        TestCaseLintCode(
             name="valid_file",
-            inputs=TestCaseLintFixInputs(
-                __build_test_case_lint_fix_input_file(
-                    project_name, "lint_success.py", LINTER_SUCCESS_FILE_CONTENTS
+            inputs=TestCaseLintFixCodeInputs(
+                __build_test_case_lint_fix_code_input_file(
+                    project_name, "lint_success.py", LINTER_LINT_CODE_SUCCESS_FILE_CONTENTS
                 )
             ),
             output=StringOutput(stdout_successfull),
@@ -112,20 +112,20 @@ def build_test_cases_linter_lint_success() -> tuple[TestCaseLint, ...]:
     )
 
 
-def build_test_cases_linter_lint_failure() -> tuple[TestCaseLint, ...]:
+def build_test_cases_linter_lint_code_failure() -> tuple[TestCaseLintCode, ...]:
     """
-    Builds the test cases used for testing linter lint failure calls.
+    Builds the test cases used for testing linter lint_code failure calls.
 
     Returns:
         The test cases.
     """
     project_name = PROJECT_NAME_DEFAULT
-    source_file_path = __get_source_file_path(project_name, "lint_failure.py")
+    source_file_path = __get_source_file_path(project_name, "lint_code_failure.py")
     return (
-        TestCaseLint(
+        TestCaseLintCode(
             name="invalid_file",
-            inputs=TestCaseLintFixInputs(
-                __build_test_case_lint_fix_input_file(project_name, "lint_failure.py", "")
+            inputs=TestCaseLintFixCodeInputs(
+                __build_test_case_lint_fix_code_input_file(project_name, "lint_code_failure.py", "")
             ),
             output=StringOutput(
                 f"D100 Missing docstring in public module\n--> {source_file_path}:1:1\n\nFound 1 "
@@ -137,17 +137,17 @@ def build_test_cases_linter_lint_failure() -> tuple[TestCaseLint, ...]:
 
 @final
 @ignore_pytest
-class TestCaseFixSuccess(NamedTuple):
-    """TestCaseFixSuccess class."""
+class TestCaseFixCodeSuccess(NamedTuple):
+    """TestCaseFixCodeSuccess class."""
 
     name: str
-    inputs: TestCaseLintFixInputs
+    inputs: TestCaseLintFixCodeInputs
     output: DirectoryOutput
 
 
-def build_test_cases_linter_fix_success() -> tuple[TestCaseFixSuccess, ...]:
+def build_test_cases_linter_fix_code_success() -> tuple[TestCaseFixCodeSuccess, ...]:
     """
-    Builds the test cases used for testing linter fix successfull calls.
+    Builds the test cases used for testing linter fix code successfull calls.
 
     Returns:
         The test cases.
@@ -155,24 +155,26 @@ def build_test_cases_linter_fix_success() -> tuple[TestCaseFixSuccess, ...]:
     project_name = PROJECT_NAME_DEFAULT
 
     return (
-        TestCaseFixSuccess(
+        TestCaseFixCodeSuccess(
             name="empty_directory",
-            inputs=TestCaseLintFixInputs(file=None),
+            inputs=TestCaseLintFixCodeInputs(file=None),
             output=DirectoryOutput(paths=()),
         ),
-        TestCaseFixSuccess(
+        TestCaseFixCodeSuccess(
             name="valid_file",
-            inputs=TestCaseLintFixInputs(
-                file=__build_test_case_lint_fix_input_file(
-                    project_name, "fix_success.py", LINTER_SUCCESS_FILE_CONTENTS
+            inputs=TestCaseLintFixCodeInputs(
+                file=__build_test_case_lint_fix_code_input_file(
+                    project_name, "fix_success.py", LINTER_LINT_CODE_SUCCESS_FILE_CONTENTS
                 )
             ),
             output=DirectoryOutput(paths=()),
         ),
-        TestCaseFixSuccess(
+        TestCaseFixCodeSuccess(
             name="invalid_file",
-            inputs=TestCaseLintFixInputs(
-                file=__build_test_case_lint_fix_input_file(project_name, "fix_failure.py", "")
+            inputs=TestCaseLintFixCodeInputs(
+                file=__build_test_case_lint_fix_code_input_file(
+                    project_name, "fix_code_failure.py", ""
+                )
             ),
             output=DirectoryOutput(paths=()),
         ),

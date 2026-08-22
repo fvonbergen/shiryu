@@ -1,4 +1,4 @@
-# TODO: remove this workflow after feat-add-python-sdk branch merge. It's only used for testing.
+# TODO: remove this workflow after feat/add-python-sdk branch merge. It's only used for testing.
 # TODO: remove deployment branches: https://github.com/fvonbergen/shiryu/settings/environments/6400911654/edit
 name: documentation
 on: push
@@ -34,7 +34,7 @@ jobs:
         uses: ./.github/actions/documenter_document
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."

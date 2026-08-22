@@ -1,5 +1,7 @@
 """test_python_documenter module."""
 
+import re
+
 import dagger
 import pytest
 
@@ -106,23 +108,30 @@ async def test_python_documenter_document(dagger_client: dagger.Client) -> None:
         .documenter()()
         .document(project_directory=project_directory, platform=platform)
     )
-    assert await get_all_paths(directory) == (
-        "404.html",
-        "assets/images/favicon.png",
-        "assets/javascripts/LICENSE",
-        "assets/javascripts/bundle.e886cdf1.min.js",
-        "assets/javascripts/workers/search.7d14d953.min.js",
-        "assets/stylesheets/classic/main.39e53929.min.css",
-        "assets/stylesheets/classic/palette.7dc9a0ad.min.css",
-        "assets/stylesheets/modern/main.20815dad.min.css",
-        "assets/stylesheets/modern/palette.dfe2e883.min.css",
-        "explanation/index.html",
-        "how-to-guides/index.html",
-        "index.html",
-        "objects.inv",
-        "reference/api-reference/index.html",
-        "reference/index.html",
-        "search.json",
-        "sitemap.xml",
-        "tutorials/index.html",
+
+    paths = await get_all_paths(directory)
+    expected = (
+        r"404\.html",
+        r"assets/images/favicon\.png",
+        r"assets/javascripts/LICENSE",
+        r"assets/javascripts/bundle\.[a-f0-9]{8}\.min\.js",
+        r"assets/javascripts/workers/search\.[a-f0-9]{8}\.min\.js",
+        r"assets/stylesheets/classic/main\.[a-f0-9]{8}\.min\.css",
+        r"assets/stylesheets/classic/palette\.[a-f0-9]{8}\.min\.css",
+        r"assets/stylesheets/modern/main\.[a-f0-9]{8}\.min\.css",
+        r"assets/stylesheets/modern/palette\.[a-f0-9]{8}\.min\.css",
+        r"explanation/index\.html",
+        r"how-to-guides/index\.html",
+        r"index\.html",
+        r"objects\.inv",
+        r"reference/api-reference/index\.html",
+        r"reference/index\.html",
+        r"search\.json",
+        r"sitemap\.xml",
+        r"tutorials/index\.html",
     )
+
+    for actual_path, pattern in zip(paths, expected, strict=True):
+        assert re.fullmatch(pattern, actual_path), (
+            f"Failed matching '{actual_path}' against '{pattern}'"
+        )

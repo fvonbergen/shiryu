@@ -61,10 +61,12 @@ class BuilderInitializer(PythonModuleInitializer):
         sdk_module_cls = Builder
         sdk_language = sdk_module_cls._sdk_name()
         sdk_module_name = sdk_module_cls.name()
+        sdk_module_function_deploy = sdk_module_cls.deploy
+        sdk_module_function_test = sdk_module_cls.test
         github_action_builder_deploy = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_cls.deploy,
+            sdk_module_function=sdk_module_function_deploy,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -72,7 +74,7 @@ class BuilderInitializer(PythonModuleInitializer):
         github_action_builder_test = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_cls.test,
+            sdk_module_function=sdk_module_function_test,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -80,7 +82,7 @@ class BuilderInitializer(PythonModuleInitializer):
         gitlab_job_builder_deploy = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_cls.deploy,
+            sdk_module_function=sdk_module_function_deploy,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,
@@ -90,7 +92,7 @@ class BuilderInitializer(PythonModuleInitializer):
         gitlab_job_builder_test = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_cls.test,
+            sdk_module_function=sdk_module_function_test,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,

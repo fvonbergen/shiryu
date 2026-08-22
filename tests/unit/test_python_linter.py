@@ -9,11 +9,11 @@ from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType,
 from .utils.common import Paths, get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 from .utils.python_linter import (
-    TestCaseFixSuccess,
-    TestCaseLint,
-    build_test_cases_linter_fix_success,
-    build_test_cases_linter_lint_failure,
-    build_test_cases_linter_lint_success,
+    TestCaseFixCodeSuccess,
+    TestCaseLintCode,
+    build_test_cases_linter_fix_code_success,
+    build_test_cases_linter_lint_code_failure,
+    build_test_cases_linter_lint_code_success,
 )
 
 
@@ -30,16 +30,27 @@ def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
     """
     return (
         *(
-            (".gitlab/jobs/.linter_lint.yml", ".gitlab/stages/quality.yml")
+            (
+                ".gitlab/jobs/.linter_lint_code.yml",
+                ".gitlab/jobs/.linter_lint_vcs.yml",
+                ".gitlab/stages/quality.yml",
+            )
             if SCM.GITLAB in scm
             else ()
         ),
         *(
-            (".github/actions/linter_lint/action.yml", ".github/workflows/quality.yml")
+            (
+                ".github/actions/linter_lint_code/action.yml",
+                ".github/actions/linter_lint_vcs/action.yml",
+                ".github/workflows/quality.yml",
+            )
             if SCM.GITHUB in scm
             else ()
         ),
-        *("ruff.toml",),
+        *(
+            "cchk.toml",
+            "ruff.toml",
+        ),
     )
 
 
@@ -73,18 +84,18 @@ async def test_python_linter_init(dagger_client: dagger.Client, test_case: TestC
     assert await get_all_paths(directory) == test_case.output.paths
 
 
-TEST_CASES_LINTER_LINT_SUCCESS = build_test_cases_linter_lint_success()
+TEST_CASES_LINTER_LINT_CODE_SUCCESS = build_test_cases_linter_lint_code_success()
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_case", TEST_CASES_LINTER_LINT_SUCCESS, ids=lambda test_case: test_case.name
+    "test_case", TEST_CASES_LINTER_LINT_CODE_SUCCESS, ids=lambda test_case: test_case.name
 )
 async def test_python_linter_lint_success(
-    dagger_client: dagger.Client, test_case: TestCaseLint
+    dagger_client: dagger.Client, test_case: TestCaseLintCode
 ) -> None:
     """
-    Test python linter lint function module success calls.
+    Test python linter lint_lint function module success calls.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -107,24 +118,24 @@ async def test_python_linter_lint_success(
     stdout = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
-        .lint(project_directory=project_directory, platform=platform)
+        .lint_code(project_directory=project_directory, platform=platform)
     )
 
     assert stdout == test_case.output.expected_stdout
 
 
-TEST_CASES_LINTER_LINT_FAILURE = build_test_cases_linter_lint_failure()
+TEST_CASES_LINTER_LINT_CODE_FAILURE = build_test_cases_linter_lint_code_failure()
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_case", TEST_CASES_LINTER_LINT_FAILURE, ids=lambda test_case: test_case.name
+    "test_case", TEST_CASES_LINTER_LINT_CODE_FAILURE, ids=lambda test_case: test_case.name
 )
 async def test_python_linter_lint_failure(
-    dagger_client: dagger.Client, test_case: TestCaseLint
+    dagger_client: dagger.Client, test_case: TestCaseLintCode
 ) -> None:
     """
-    Test python linter lint function module failure calls.
+    Test python linter lint_code function module failure calls.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -148,24 +159,24 @@ async def test_python_linter_lint_failure(
         await (
             Shiryu.python()  # ty: ignore[unresolved-attribute]
             .linter()()
-            .lint(project_directory=project_directory, platform=platform)
+            .lint_code(project_directory=project_directory, platform=platform)
         )
 
     assert str(exc_info.value.stdout) == test_case.output.expected_stdout
 
 
-TEST_CASES_LINTER_FIX_SUCCESS = build_test_cases_linter_fix_success()
+TEST_CASES_LINTER_FIX_CODE_SUCCESS = build_test_cases_linter_fix_code_success()
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "test_case", TEST_CASES_LINTER_FIX_SUCCESS, ids=lambda test_case: test_case.name
+    "test_case", TEST_CASES_LINTER_FIX_CODE_SUCCESS, ids=lambda test_case: test_case.name
 )
 async def test_python_linter_fix_success(
-    dagger_client: dagger.Client, test_case: TestCaseFixSuccess
+    dagger_client: dagger.Client, test_case: TestCaseFixCodeSuccess
 ) -> None:
     """
-    Test python linter fix function module success calls.
+    Test python linter fix code function module success calls.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -188,7 +199,7 @@ async def test_python_linter_fix_success(
     directory = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
-        .fix(project_directory=project_directory, platform=platform)
+        .fix_code(project_directory=project_directory, platform=platform)
     )
 
     assert await get_all_paths(directory) == test_case.output.paths

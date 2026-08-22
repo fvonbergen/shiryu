@@ -1,7 +1,8 @@
 """linter module."""
 
+import asyncio
 from pathlib import Path
-from typing import Final, final
+from typing import Annotated, Final, final
 
 import dagger
 
@@ -24,9 +25,15 @@ from ...common.scm import (
     build_gitlab_job,
     build_gitlab_stage_job,
 )
+from ...common.vcs import VCS_PRIMARY_BRANCH
 from ..context import PythonModuleInitContextDirectory
-from ..module import PythonModule, PythonModuleInitializer
+from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+
+BranchHistoryDaggerType = Annotated[
+    bool, dagger.Doc("Whether to lint over branch VCS history or not")
+]
+BRANCH_HISTORY_DAGGER_DEFAULT: Final = True
 
 
 class LinterInitializer(PythonModuleInitializer):
@@ -69,19 +76,38 @@ class LinterInitializer(PythonModuleInitializer):
         sdk_module_cls = Linter
         sdk_language = sdk_module_cls._sdk_name()
         sdk_module_name = sdk_module_cls.name()
-        sdk_module_function = sdk_module_cls.lint
-        github_action = build_github_action(
+        sdk_module_function_lint_code = sdk_module_cls.lint_code
+        sdk_module_function_lint_vcs = sdk_module_cls.lint_vcs
+        github_action_linter_lint_code = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
+            sdk_module_function=sdk_module_function_lint_code,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
         )
-        gitlab_job = build_gitlab_job(
+        github_action_linter_lint_vcs = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
+            sdk_module_function=sdk_module_function_lint_vcs,
+            dagger_version=dagger_version,
+            shiryu_version=shiryu_version,
+            export_path=None,
+        )
+        gitlab_job_linter_lint_code = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=sdk_module_function_lint_code,
+            shiryu_version=shiryu_version,
+            pre_script=(),
+            export_path=None,
+            post_script=(),
+            artifacts=None,
+        )
+        gitlab_job_linter_lint_vcs = build_gitlab_job(
+            sdk_language=sdk_language,
+            sdk_module_name=sdk_module_name,
+            sdk_module_function=sdk_module_function_lint_vcs,
             shiryu_version=shiryu_version,
             pre_script=(),
             export_path=None,
@@ -96,12 +122,21 @@ class LinterInitializer(PythonModuleInitializer):
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
                     actions=init_context_directory.scm.github_actions_workflows.actions
-                    | {github_action},
+                    | {github_action_linter_lint_code, github_action_linter_lint_vcs},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
-                            github_action=github_action,
+                            github_action=github_action_linter_lint_code,
+                            shiryu_version=shiryu_version,
+                            job_environment=None,
+                            post_steps=(),
+                        ),
+                    ).add(
+                        GitHubWorkflowId.QUALITY,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action_linter_lint_vcs,
                             shiryu_version=shiryu_version,
                             job_environment=None,
                             post_steps=(),
@@ -109,22 +144,46 @@ class LinterInitializer(PythonModuleInitializer):
                     ),
                 ),
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
-                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
+                    | {gitlab_job_linter_lint_code, gitlab_job_linter_lint_vcs},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.QUALITY,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
+                            gitlab_stage_id=GitLabStageId.QUALITY,
+                            gitlab_job=gitlab_job_linter_lint_code,
+                        ),
+                    ).add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY,
+                            gitlab_job=gitlab_job_linter_lint_vcs,
                         ),
                     ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
-                # >= 0.1.2: New ruff format command
                 sdk_module_name,
-                {"ruff >= 0.1.2"},
+                {
+                    # https://github.com/commit-check/commit-check/releases/tag/v2.0.0
+                    # >= 2.0.0: Configuration Migration and Removed Features
+                    "commit-check >= 2.0.0",
+                    # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
+                    # >= 0.1.2: New ruff format command
+                    "ruff >= 0.1.2",
+                },
             ),
         )
+
+    @final
+    @classmethod
+    def _cchk_toml_template_file(cls) -> TemplateFile:
+        """
+        cchk.toml template file.
+
+        Returns:
+            The cchk.toml template file.
+        """
+        return TemplateFile(Path("cchk.toml"))
 
     @final
     @classmethod
@@ -162,6 +221,12 @@ class LinterInitializer(PythonModuleInitializer):
         init_directory = await super()._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
+        # cchk.toml
+        cchk_toml_template_mapping: Mapping = {}
+        cchk_toml_template = Template(
+            PYTHON_JINJA_ENVIRONMENT, cls._cchk_toml_template_file(), cchk_toml_template_mapping
+        )
+        init_directory = directory_with_new_file(init_directory, cchk_toml_template)
         # ruff.toml
         ruff_toml_template_mapping: Mapping = {"cache_folder": cls._ruff_cache_folder()}
         ruff_toml_template = Template(
@@ -186,9 +251,9 @@ class Linter(PythonModule):
 
     @final
     @classmethod
-    async def __lint_fix(cls, container: dagger.Container, fix: bool) -> dagger.Directory:
+    async def __lint_fix_code(cls, container: dagger.Container, fix: bool) -> dagger.Directory:
         """
-        Lint pipeline.
+        Lint or fix code pipeline.
 
         Args:
             container: Project container.
@@ -224,29 +289,95 @@ class Linter(PythonModule):
         return await initial_dir.diff(modified_dir).sync()
 
     @final
+    @classmethod
+    async def __lint_vcs(cls, container: dagger.Container, branch_history: bool) -> None:
+        """
+        Lint VCS pipeline.
+
+        Args:
+            container: Project container.
+            branch_history: Whether to lint over branch VCS history or not.
+        """
+        initializer = cls._initializer_cls()
+        cchk_toml_file_name = initializer._cchk_toml_template_file().file_name
+        commit_check_config = ["commit-check", "--no-banner", f"--config={cchk_toml_file_name}"]
+        commit_check_message_command = cls._build_uv_run_command(
+            [*commit_check_config, "--message", "--author-name", "--author-email", "--compact"],
+            execution_mode=ExecutionMode.SCRIPT,
+        )
+        await asyncio.gather(
+            container.with_exec(
+                cls._build_uv_run_command(
+                    [*commit_check_config, "--branch"], execution_mode=ExecutionMode.SCRIPT
+                )
+            ).sync(),
+            container.with_exec(
+                [
+                    "bash",
+                    "-c",
+                    f"""
+                # Stop Git from complaining about folder ownership in Docker
+                #git config --global --add safe.directory /src
+
+                # Gather all commits across history, ignoring merge commits
+                #shas=$(git rev-list --no-merges HEAD) || exit 1
+                # Gather only commits unique to the current branch vs origin/main
+                shas=$(git rev-list --no-merges origin/{VCS_PRIMARY_BRANCH}..HEAD) || exit 1
+
+                status=0
+                for sha in $shas; do
+                  # Check message, author name, and email all at once in compact view
+                  if ! {" ".join(commit_check_message_command)} --rev "$sha"; then
+                    status=1
+                  fi
+                done
+
+                exit $status
+                """,
+                ]
+                if branch_history
+                else commit_check_message_command
+            ).sync(),
+        )
+
+    @final
     @dagger.function
-    async def lint(
+    async def lint_code(
         self,
         project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
-        """Run linter analysis in the project of the provided source Directory."""
+        """Run linter analysis in the project code of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
-        await self.__lint_fix(container, False)
-        return "Lint successfull"
+        await self.__lint_fix_code(container, False)
+        return "Lint code successfull"
 
     @final
     @dagger.function
-    async def fix(
+    async def fix_code(
         self,
         project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Directory:
-        """Run linter fixes in the project of the provided source Directory."""
+        """Run linter fixes in the project code of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
-        return await self.__lint_fix(container, True)
+        return await self.__lint_fix_code(container, True)
+
+    @final
+    @dagger.function
+    async def lint_vcs(
+        self,
+        project_directory: ProjectDirectoryDaggerType,
+        *,
+        branch_history: BranchHistoryDaggerType = BRANCH_HISTORY_DAGGER_DEFAULT,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> str:
+        """Run linter analysis in the project VCS of the provided source Directory."""
+        container = await self._exec_container(project_directory, platform)
+        await self.__lint_vcs(container, branch_history)
+        return "Lint VCS successfull"
 
 
 sdk_module: Final = Linter

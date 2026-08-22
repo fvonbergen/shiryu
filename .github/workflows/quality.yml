@@ -17,7 +17,7 @@ jobs:
         uses: "./.github/actions/auditor_audit"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -33,7 +33,7 @@ jobs:
         uses: "./.github/actions/builder_test"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -49,7 +49,7 @@ jobs:
         uses: "./.github/actions/checker_check"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -65,24 +65,41 @@ jobs:
         uses: "./.github/actions/documenter_document"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
-  linter_lint:
-    name: Linter lint
+  linter_lint_code:
+    name: Linter lint_code
     runs-on: ubuntu-latest
     steps:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
-      - id: linter_lint
-        name: Linter lint
-        uses: "./.github/actions/linter_lint"
+      - id: linter_lint_code
+        name: Linter lint_code
+        uses: "./.github/actions/linter_lint_code"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
+  linter_lint_vcs:
+    name: Linter lint_vcs
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v7
+      - id: linter_lint_vcs
+        name: Linter lint_vcs
+        uses: "./.github/actions/linter_lint_vcs"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat/add-python-sdk"
+          sdk_language: "python"
+          branch_history: "True"
           platform: "linux/amd64"
           project_directory: "."
   tester_unit:
@@ -97,8 +114,8 @@ jobs:
         uses: "./.github/actions/tester_unit"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat-add-python-sdk"
+          shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
-          privileged_nesting: "True"
+          privileged_nesting: "False"
           project_directory: "."

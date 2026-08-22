@@ -1,5 +1,5 @@
 [src]
-include = ["src", "tests/unit"]
+include = ["src", "tests"]
 
 [environment]
 extra-paths = ["src"]

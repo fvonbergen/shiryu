@@ -1,7 +1,7 @@
 include:
   - local: ".gitlab/jobs/.dagger.yml"
 
-.checker_check:
+.linter_lint_code:
   extends: .dagger
   variables:
     SHIRYU_VERSION: "feat/add-python-sdk"
@@ -9,4 +9,4 @@ include:
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} checker check --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint_code --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"

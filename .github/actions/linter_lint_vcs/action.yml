@@ -1,5 +1,5 @@
-name: "auditor audit"
-description: "Runs auditor audit function on a project"
+name: "linter lint_vcs"
+description: "Runs linter lint_vcs function on a project"
 
 inputs:
   dagger_cloud_token:
@@ -12,6 +12,9 @@ inputs:
   sdk_language:
     description: "SDK programming language"
     default: "python"
+  branch_history:
+    description: "Whether to lint over branch VCS history or not"
+    default: "True"
   platform:
     description: "Platform config OS and architecture in a Container."
     default: "linux/amd64"
@@ -22,12 +25,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: call_dagger_auditor_audit
-      name: Call Dagger Auditor audit
+    - id: call_dagger_linter_lint_vcs
+      name: Call Dagger Linter lint_vcs
       uses: dagger/dagger-for-github@v8.4.0
       with:
         version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} auditor audit --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
+        args: ${{ inputs.sdk_language }} linter lint_vcs --branch-history="${{ inputs.branch_history }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
