@@ -2,7 +2,7 @@
 
 from typing import final
 
-from .case import camel_case_to_snake_case
+from .case import to_snake_case
 
 
 class ClassName:
@@ -18,4 +18,4 @@ class ClassName:
             Class name.
         """
         class_name = cls.__qualname__
-        return camel_case_to_snake_case(class_name)
+        return to_snake_case(class_name)

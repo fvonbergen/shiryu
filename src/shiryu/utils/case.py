@@ -5,79 +5,78 @@ from enum import Enum, auto, unique
 from typing import final
 
 
-def camel_case_to_snake_case(string: str) -> str:
-    """
-    Convert a camel case string to a snake case string.
-
-    Args:
-        string: An input string.
-
-    Returns:
-        A snake case string.
-    """
-    # Camel case to snake case: https://stackoverflow.com/a/1176023
-    case_separator = "_"
-    _string = string
-    _string = re.sub("(.)([A-Z][a-z]+)", rf"\1{case_separator}\2", _string)
-    _string = re.sub("__([A-Z])", rf"{case_separator}\1", _string)
-    _string = re.sub("([a-z0-9])([A-Z])", rf"\1{case_separator}\2", _string)
-    return _string.lower()
-
-
-def camel_case_to_dash_case(string: str) -> str:
-    """
-    Convert a camel case string to a dash case string.
-
-    Args:
-        string: An input string.
-
-    Returns:
-        A dash case string.
-    """
-    # Camel case to snake case: https://stackoverflow.com/a/1176023
-    case_separator = "-"
-    _string = string
-    _string = re.sub("(.)([A-Z][a-z]+)", rf"\1{case_separator}\2", _string)
-    _string = re.sub("__([A-Z])", rf"{case_separator}\1", _string)
-    _string = re.sub("([a-z0-9])([A-Z])", rf"\1{case_separator}\2", _string)
-    return _string.lower()
-
-
 @final
 @unique
 class CamelCase(Enum):
-    """CamelCase options."""
+    """CamelCase options for controlling casing variant."""
 
-    LOWER = auto()
-    UPPER = auto()
+    LOWER = auto()  # e.g., camelCase
+    UPPER = auto()  # e.g., PascalCase
 
 
-def snake_case_to_camel_case(string: str, *, camel_case: CamelCase = CamelCase.UPPER) -> str:
+def _split_into_words(string: str) -> list[str]:
     """
-    Convert a snake case string to a camel case string.
+    Internal helper to split any string identifier into separate word tokens.
+
+    Args:
+        string: The raw input string to split into words.
+
+    Returns:
+        A list of lower-level word tokens extracted from the input string.
+    """
+    # Handle acronyms and consecutive capitals (e.g., "HTTPRequest" -> "HTTP_Request")
+    s = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1_\2", string)
+    # Handle camelCase transitions (e.g., "camelCase" -> "camel_Case")
+    s = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s)
+    # Replace non-alphanumeric characters with underscores
+    s = re.sub(r"[^a-zA-Z0-9]+", "_", s)
+    # Tokenize by underscores
+    return [word for word in s.split("_") if word]
+
+
+def to_kebab_case(string: str) -> str:
+    """
+    Convert any string identifier (snake, camel, Pascal, space-separated) to kebab-case.
 
     Args:
         string: An input string.
-        camel_case: Camel case type.
 
     Returns:
-        A camel case string.
+        A kebab-case string (e.g., "lint-code").
     """
-    string_split = string.split("_")
-    _string = ""
-    _string = string_split[0].capitalize() if camel_case is CamelCase.UPPER else string_split[0]
-    _string += "".join(word.capitalize() for word in string_split[1:])
-    return _string
+    words = _split_into_words(string)
+    return "-".join(words).lower()
 
 
-def snake_case_to_dash_case(string: str) -> str:
+def to_snake_case(string: str) -> str:
     """
-    Convert a snake case string to a dash case string.
+    Convert any string identifier (camel, Pascal, kebab, space-separated) to snake_case.
 
     Args:
         string: An input string.
 
     Returns:
-        A dash case string.
+        A snake_case string (e.g., "lint_code").
     """
-    return string.replace("_", "-")
+    words = _split_into_words(string)
+    return "_".join(words).lower()
+
+
+def to_camel_case(string: str, *, camel_case: CamelCase = CamelCase.UPPER) -> str:
+    """
+    Convert any string identifier to a camelCase or PascalCase string.
+
+    Args:
+        string: An input string.
+        camel_case: The camel case variant to produce.
+
+    Returns:
+        A camelCase or PascalCase string.
+    """
+    words = _split_into_words(string)
+    if not words:
+        return ""
+
+    first_word = words[0].capitalize() if camel_case is CamelCase.UPPER else words[0].lower()
+    rest = "".join(word.capitalize() for word in words[1:])
+    return first_word + rest

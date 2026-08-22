@@ -70,14 +70,14 @@ jobs:
           platform: "linux/amd64"
           project_directory: "."
   linter_lint_code:
-    name: Linter lint_code
+    name: Linter lint-code
     runs-on: ubuntu-latest
     steps:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
       - id: linter_lint_code
-        name: Linter lint_code
+        name: Linter lint-code
         uses: "./.github/actions/linter_lint_code"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
@@ -86,14 +86,14 @@ jobs:
           platform: "linux/amd64"
           project_directory: "."
   linter_lint_vcs:
-    name: Linter lint_vcs
+    name: Linter lint-vcs
     runs-on: ubuntu-latest
     steps:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
       - id: linter_lint_vcs
-        name: Linter lint_vcs
+        name: Linter lint-vcs
         uses: "./.github/actions/linter_lint_vcs"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}

@@ -9,4 +9,4 @@ include:
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint_code --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint-code --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"

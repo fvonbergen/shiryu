@@ -1,25 +1,17 @@
 """test_case module."""
 
-from shiryu.utils.case import (
-    CamelCase,
-    camel_case_to_dash_case,
-    camel_case_to_snake_case,
-    snake_case_to_camel_case,
-    snake_case_to_dash_case,
-)
+from shiryu.utils.case import CamelCase, to_camel_case, to_kebab_case, to_snake_case
 
 
-def __camel_case_to_snake_or_dash_case_test_examples(
-    separator: str,
-) -> set[tuple[str, str]]:
+def __any_case_to_snake_or_kebab_case_test_examples(separator: str) -> set[tuple[str, str]]:
     """
-    Build camel case to snake or dash case test examples.
+    Build input to snake or kebab case test examples.
 
     Args:
-        separator: Snake or dash case separator.
+        separator: Snake (_) or kebab (-) case separator.
 
     Returns:
-        Camel case to snake or dash case test examples.
+        Any case to snake or kebab case test examples.
     """
     return {
         ("a", "a"),
@@ -39,22 +31,24 @@ def __camel_case_to_snake_or_dash_case_test_examples(
     }
 
 
-def __snake_or_dash_case_to_camel_case_test_examples(
+def __any_case_to_camel_case_test_examples(
     separator: str, camel_case: CamelCase
 ) -> set[tuple[str, str]]:
     """
-    Build snake or dash case to camel case test examples.
+    Build input case to camel or Pascal case test examples.
 
     Args:
-        separator: Snake or dash case separator.
+        separator: Separator character (e.g., '_' or '-').
         camel_case: Test examples for the camel case type.
 
     Returns:
-        Snake or dash case to camel case test examples.
+        Input case to camel or Pascal case test examples.
+
+    Raises:
+        AssertionError: If an invalid CamelCase enum value is passed.
     """
     test_examples = set()
     if camel_case is CamelCase.LOWER:
-        # Commented cases are not possible.
         test_examples.update(
             {
                 ("a", "a"),
@@ -63,21 +57,11 @@ def __snake_or_dash_case_to_camel_case_test_examples(
                 ("aaa", "aaa"),
                 (f"a{separator}aa", "aAa"),
                 (f"aa{separator}a", "aaA"),
-                # (f"a{separator}aa", "aAA"),
             }
         )
     elif camel_case is CamelCase.UPPER:
-        # Commented cases are not possible.
         test_examples.update(
-            {
-                ("a", "A"),
-                ("aa", "Aa"),
-                # ("aa", "AA"),
-                # ("aaa", "Aaa"),
-                (f"a{separator}aa", "AAa"),
-                (f"aa{separator}a", "AaA"),
-                # ("aaa", "AAA"),
-            }
+            {("a", "A"), ("aa", "Aa"), (f"a{separator}aa", "AAa"), (f"aa{separator}a", "AaA")}
         )
     else:
         exception_message = f"Invalid camel case {camel_case}"
@@ -85,12 +69,12 @@ def __snake_or_dash_case_to_camel_case_test_examples(
     return test_examples
 
 
-def __snake_case_to_dash_case_test_examples() -> set[tuple[str, str]]:
+def __snake_to_kebab_case_test_examples() -> set[tuple[str, str]]:
     """
-    Build snake case to dash case test examples.
+    Build snake case to kebab case test examples.
 
     Returns:
-        Snake case to dash case test examples.
+        Snake case to kebab case test examples.
     """
     return {
         ("a", "a"),
@@ -103,47 +87,41 @@ def __snake_case_to_dash_case_test_examples() -> set[tuple[str, str]]:
     }
 
 
-def test_camel_case_to_snake_case() -> None:
-    """Test camel case to snake case conversion."""
+def test_to_snake_case() -> None:
+    """Test string conversion to snake_case."""
     snake_case_separator = "_"
-    for test_example in __camel_case_to_snake_or_dash_case_test_examples(snake_case_separator):
-        assert camel_case_to_snake_case(test_example[0]) == test_example[1], (
-            f"Test example: {test_example}"
+    for test_example in __any_case_to_snake_or_kebab_case_test_examples(snake_case_separator):
+        assert to_snake_case(test_example[0]) == test_example[1], (
+            f"Test example failed: {test_example}"
         )
 
 
-def test_camel_case_to_dash_case() -> None:
-    """Test camel case to dash case conversion."""
-    dash_case_separator = "-"
-    for test_example in __camel_case_to_snake_or_dash_case_test_examples(dash_case_separator):
-        assert camel_case_to_dash_case(test_example[0]) == test_example[1], (
-            f"Test example: {test_example}"
+def test_to_kebab_case() -> None:
+    """Test string conversion to kebab-case."""
+    kebab_case_separator = "-"
+    for test_example in __any_case_to_snake_or_kebab_case_test_examples(kebab_case_separator):
+        assert to_kebab_case(test_example[0]) == test_example[1], (
+            f"Test example failed: {test_example}"
+        )
+
+    for test_example in __snake_to_kebab_case_test_examples():
+        assert to_kebab_case(test_example[0]) == test_example[1], (
+            f"Test example failed: {test_example}"
         )
 
 
-def test_snake_case_to_camel_case() -> None:
-    """Test snake case to camel case conversion."""
+def test_to_camel_case() -> None:
+    """Test string conversion to lower camelCase and PascalCase (UPPER)."""
     snake_case_separator = "_"
+
     camel_case = CamelCase.LOWER
-    for test_example in __snake_or_dash_case_to_camel_case_test_examples(
-        snake_case_separator, camel_case
-    ):
-        assert (
-            snake_case_to_camel_case(test_example[0], camel_case=camel_case) == test_example[1]
-        ), f"Test example: {test_example}"
+    for test_example in __any_case_to_camel_case_test_examples(snake_case_separator, camel_case):
+        assert to_camel_case(test_example[0], camel_case=camel_case) == test_example[1], (
+            f"Test example failed: {test_example}"
+        )
 
     camel_case = CamelCase.UPPER
-    for test_example in __snake_or_dash_case_to_camel_case_test_examples(
-        snake_case_separator, camel_case
-    ):
-        assert (
-            snake_case_to_camel_case(test_example[0], camel_case=camel_case) == test_example[1]
-        ), f"Test example: {test_example}"
-
-
-def test_snake_case_to_dash_case() -> None:
-    """Test snake case to dash case conversion."""
-    for test_example in __snake_case_to_dash_case_test_examples():
-        assert snake_case_to_dash_case(test_example[0]) == test_example[1], (
-            f"Test example: {test_example}"
+    for test_example in __any_case_to_camel_case_test_examples(snake_case_separator, camel_case):
+        assert to_camel_case(test_example[0], camel_case=camel_case) == test_example[1], (
+            f"Test example failed: {test_example}"
         )

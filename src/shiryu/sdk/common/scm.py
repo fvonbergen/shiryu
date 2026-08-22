@@ -10,7 +10,7 @@ from typing import Final, Self, final
 
 import dagger
 
-from ...utils.case import camel_case_to_snake_case, snake_case_to_dash_case
+from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
@@ -101,7 +101,7 @@ def get_sdk_module_function_parameters(
         sdk_module_function_parameters.add(
             SDKModuleFunctionParameter(
                 parameter_name,
-                f"--{snake_case_to_dash_case(parameter_name)}",
+                f"--{to_kebab_case(parameter_name)}",
                 parameter_description,
                 parameter_default,
             )
@@ -661,8 +661,8 @@ def build_github_action(  # noqa: PLR0913, PLR0917
             not `dagger.Directory`.
     """
     sdk_module_name_title = sdk_module_name.title()
-    sdk_module_function_name = sdk_module_function.__name__
-    id_ = camel_case_to_snake_case(
+    sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
+    id_ = to_snake_case(
         f"{sdk_module_name_title}{sdk_module_function_name.title()}",
     )
     name = f"{sdk_module_name_title} {sdk_module_function_name}"
@@ -811,8 +811,8 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
             not `dagger.Directory`.
     """
-    sdk_module_function_name = sdk_module_function.__name__
-    id_ = camel_case_to_snake_case(
+    sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
+    id_ = to_snake_case(
         f"{sdk_module_name.title()}{sdk_module_function_name.title()}",
     )
     sdk_module_function_parameters = get_sdk_module_function_parameters(sdk_module_function)

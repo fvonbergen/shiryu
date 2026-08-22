@@ -1,5 +1,5 @@
-name: "linter lint_vcs"
-description: "Runs linter lint_vcs function on a project"
+name: "linter lint-vcs"
+description: "Runs linter lint-vcs function on a project"
 
 inputs:
   dagger_cloud_token:
@@ -26,11 +26,11 @@ runs:
   using: "composite"
   steps:
     - id: call_dagger_linter_lint_vcs
-      name: Call Dagger Linter lint_vcs
+      name: Call Dagger Linter lint-vcs
       uses: dagger/dagger-for-github@v8.4.0
       with:
         version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} linter lint_vcs --branch-history="${{ inputs.branch_history }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
+        args: ${{ inputs.sdk_language }} linter lint-vcs --branch-history="${{ inputs.branch_history }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
