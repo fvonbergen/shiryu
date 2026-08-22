@@ -132,6 +132,9 @@ class GitHubWorkflowStepInputParameter:
     value: str
 
 
+type GitHubWorkflowStepInputParameters = tuple[GitHubWorkflowStepInputParameter, ...]
+
+
 @final
 @dataclass(frozen=True, slots=True)
 class GitHubWorkflowRunStep:
@@ -140,7 +143,7 @@ class GitHubWorkflowRunStep:
     id: str
     name: str
     uses: str
-    with_: tuple[GitHubWorkflowStepInputParameter, ...]
+    with_: GitHubWorkflowStepInputParameters
 
 
 @final
@@ -151,7 +154,10 @@ class GitHubWorkflowJobStep:
     id: str
     name: str
     uses: str
-    with_: tuple[GitHubWorkflowStepInputParameter, ...]
+    with_: GitHubWorkflowStepInputParameters
+
+
+type GitHubWorkflowJobSteps = tuple[GitHubWorkflowJobStep, ...]
 
 
 @final
@@ -213,7 +219,7 @@ class GitHubWorkflowJob:
     id: str
     name: str
     environment: GitHubJobEnvironment | None
-    steps: tuple[GitHubWorkflowJobStep, ...]
+    steps: GitHubWorkflowJobSteps
 
 
 @final
@@ -372,6 +378,7 @@ class GitLabVariable:
     value: str
 
 
+type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
 
@@ -384,7 +391,7 @@ class GitLabStageJob:
     path: str
     name: str
     extends: GitLabArrayType
-    variables: tuple[GitLabVariable, ...]
+    variables: GitLabVariables
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
@@ -736,7 +743,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
 
 
 def build_github_workflow_checkout_job(
-    with_: tuple[GitHubWorkflowStepInputParameter, ...] = tuple(),
+    with_: GitHubWorkflowStepInputParameters = tuple(),
 ) -> GitHubWorkflowJobStep:
     """
     Builds a GitHub Actions workflow job step for checking out code.
@@ -755,8 +762,8 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
     github_action: GitHubAction,
     shiryu_version: str,
     job_environment: GitHubJobEnvironment | None,
-    pre_steps: tuple[GitHubWorkflowJobStep, ...],
-    post_steps: tuple[GitHubWorkflowJobStep, ...],
+    pre_steps: GitHubWorkflowJobSteps,
+    post_steps: GitHubWorkflowJobSteps,
 ) -> GitHubWorkflowJob:
     """
     Build a GitHub workflow job.
@@ -805,7 +812,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_module_name: str,
     sdk_module_function: FunctionType,
     shiryu_version: str,
-    variables: tuple[GitLabVariable, ...],
+    variables: GitLabVariables,
     pre_script: GitLabScript,
     export_path: PurePosixPath | None,
     post_script: GitLabScript,
