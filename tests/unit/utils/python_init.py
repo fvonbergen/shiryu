@@ -42,8 +42,7 @@ class TestCaseInit(NamedTuple):
 
 
 def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python initializer paths.
+    """Get python initializer paths.
 
     Args:
         project_name: Project name.
@@ -103,8 +102,7 @@ def __expected_paths(
     scm: SCMType,
     modules_init_paths_functions: tuple[ModulesInitPathsCallable, ...],
 ) -> Paths:
-    """
-    Get the module init expected paths.
+    """Get the module init expected paths.
 
     Args:
         project_name: Project name.
@@ -132,8 +130,7 @@ def __expected_paths(
 def build_test_cases_init(
     modules_init_paths_functions: tuple[ModulesInitPathsCallable, ...],
 ) -> tuple[TestCaseInit, ...]:
-    """
-    Builds the test cases used for testing init calls.
+    """Builds the test cases used for testing init calls.
 
     Args:
         modules_init_paths_functions: Callable functions to generate module initialization paths.

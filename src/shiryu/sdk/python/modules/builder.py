@@ -43,8 +43,7 @@ class BuilderInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -169,8 +168,7 @@ class Builder(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[BuilderInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -182,8 +180,7 @@ class Builder(PythonModule):
     def __build_container(
         cls, container: dagger.Container, platform: dagger.Platform, clean: bool
     ) -> dagger.Container:
-        """
-        Build wheel in the distributable directory container.
+        """Build wheel in the distributable directory container.
 
         Args:
             container: Project container.
@@ -203,8 +200,7 @@ class Builder(PythonModule):
     @final
     @classmethod
     def __build(cls, container: dagger.Container, platform: dagger.Platform) -> dagger.Directory:
-        """
-        Build wheel in the distributable directory.
+        """Build wheel in the distributable directory.
 
         Args:
             container: Project container.
@@ -229,8 +225,7 @@ class Builder(PythonModule):
         repository_password: RepositoryPasswordDaggerType,
         platform: PlatformType,
     ) -> None:
-        """
-        Publish distributable.
+        """Publish distributable.
 
         Args:
             container: SDK container with project distributable.

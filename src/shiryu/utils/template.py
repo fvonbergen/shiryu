@@ -13,8 +13,7 @@ TEMPLATE_FILE_SUFFIX: Final = "jinja2"
 
 
 def get_jinja_environment(file_path: Path) -> jinja2.Environment:
-    """
-    Get jinja environment based on current file path.
+    """Get jinja environment based on current file path.
 
     Args:
         file_path: Current file path.
@@ -55,8 +54,7 @@ class TemplateFile:
         output_directory: PurePosixPath | None = None,
         output_file_name: PurePosixPath | None = None,
     ) -> None:
-        """
-        Class initializer.
+        """Class initializer.
 
         Args:
             file_name: Template file name.
@@ -69,8 +67,7 @@ class TemplateFile:
 
     @property
     def file_name(self) -> Path:
-        """
-        Get file name.
+        """Get file name.
 
         Returns:
             File name.
@@ -79,8 +76,7 @@ class TemplateFile:
 
     @property
     def output_directory(self) -> PurePosixPath:
-        """
-        Get output directory.
+        """Get output directory.
 
         Returns:
             Output directory.
@@ -89,8 +85,7 @@ class TemplateFile:
 
     @property
     def output_file_name(self) -> PurePosixPath:
-        """
-        Get output file name.
+        """Get output file name.
 
         Returns:
             Output file name.
@@ -99,8 +94,7 @@ class TemplateFile:
 
     @property
     def output_path(self) -> PurePosixPath:
-        """
-        Get output path.
+        """Get output path.
 
         Returns:
             Output path.
@@ -118,8 +112,7 @@ class Template:
         template_file: TemplateFile,
         mapping: Mapping,
     ) -> None:
-        """
-        Class initializer.
+        """Class initializer.
 
         Args:
             jinja_environment: Jinja environment.
@@ -132,8 +125,7 @@ class Template:
 
     @property
     def template_file(self) -> TemplateFile:
-        """
-        Get template file.
+        """Get template file.
 
         Returns:
             The template file.
@@ -142,8 +134,7 @@ class Template:
 
     @property
     def contents(self) -> str:
-        """
-        Get file contents.
+        """Get file contents.
 
         Returns:
             File contents.

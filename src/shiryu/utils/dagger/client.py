@@ -17,8 +17,7 @@ def container_debian(
     *,
     apt_packages: APT_PACKAGES = frozenset(),
 ) -> dagger.Container:
-    """
-    A debian container.
+    """A debian container.
 
     Args:
         dagger_client: The dagger client.
@@ -64,8 +63,7 @@ def container_debian(
 
 
 def container_git(dagger_client: dagger.Client, platform: dagger.Platform) -> dagger.Container:
-    """
-    A git container.
+    """A git container.
 
     Args:
         dagger_client: The dagger client.
@@ -83,8 +81,7 @@ def container_uv(
     *,
     apt_packages: APT_PACKAGES = frozenset(),
 ) -> dagger.Container:
-    """
-    A uv container.
+    """A uv container.
 
     Args:
         dagger_client: The dagger client.

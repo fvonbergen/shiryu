@@ -14,8 +14,7 @@ from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
 def python_builder_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python builder initializer paths.
+    """Get python builder initializer paths.
 
     Args:
         project_name: Project name.
@@ -54,8 +53,7 @@ TEST_CASES = build_test_cases_init((python_builder_init_paths,))
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
 async def test_python_builder_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
-    """
-    Test python builder init function module.
+    """Test python builder init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -80,8 +78,7 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
 
 @pytest.mark.asyncio
 async def test_python_builder_build(dagger_client: dagger.Client) -> None:
-    """
-    Test python builder build function module.
+    """Test python builder build function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -118,8 +115,7 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
 
 @pytest.mark.asyncio
 async def test_python_builder_test(dagger_client: dagger.Client) -> None:
-    """
-    Test python builder test function module.
+    """Test python builder test function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

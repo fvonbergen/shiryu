@@ -16,8 +16,7 @@ class DirectoryOutput(NamedTuple):
 
 
 def ignore_pytest[T: type](cls: T) -> T:
-    """
-    Mark a class to be ignored by pytest's test collection.
+    """Mark a class to be ignored by pytest's test collection.
 
     Args:
         cls: The class to shield from pytest.
@@ -31,8 +30,7 @@ def ignore_pytest[T: type](cls: T) -> T:
 
 
 async def get_all_paths(dir_: dagger.Directory) -> Paths:
-    """
-    Takes a dagger.Directory object and returns every single file and folder path recursively.
+    """Takes a dagger.Directory object and returns every single file and folder path recursively.
 
     Args:
         dir_: The target Dagger Directory.

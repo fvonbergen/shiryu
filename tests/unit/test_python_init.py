@@ -33,8 +33,7 @@ TEST_CASES = build_test_cases_init(
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
 async def test_python_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
-    """
-    Test python init function module.
+    """Test python init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

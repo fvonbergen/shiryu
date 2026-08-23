@@ -8,8 +8,7 @@ EnumType = TypeVar("EnumType", bound=Enum)
 
 
 def get_enum_keys(enum: type[Enum]) -> set[str]:
-    """
-    Get a set of the enumeration keys.
+    """Get a set of the enumeration keys.
 
     Args:
         enum: Enumeration class.
@@ -21,8 +20,7 @@ def get_enum_keys(enum: type[Enum]) -> set[str]:
 
 
 def get_enum_values(enum: type[Enum]) -> set[object]:
-    """
-    Get a set of the enumeration values.
+    """Get a set of the enumeration values.
 
     Args:
         enum: Enumeration class.
@@ -34,8 +32,7 @@ def get_enum_values(enum: type[Enum]) -> set[object]:
 
 
 def get_enum_elements(enum: type[Enum]) -> set[Enum]:
-    """
-    Get a set of enumeration elements.
+    """Get a set of enumeration elements.
 
     Args:
         enum: Enumeration class.
@@ -49,8 +46,7 @@ def get_enum_elements(enum: type[Enum]) -> set[Enum]:
 def create_enum(
     name: str, members: Mapping[str, object], *, is_unique: bool = True
 ) -> type[EnumType]:  # pyright: ignore [reportInvalidTypeVarUse]
-    """
-    Programmatically create a dynamic Enum with proper type annotations.
+    """Programmatically create a dynamic Enum with proper type annotations.
 
     Args:
         name: The class name for the generated Enum.

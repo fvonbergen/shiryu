@@ -11,8 +11,7 @@ from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
 def python_auditor_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python auditor initializer paths.
+    """Get python auditor initializer paths.
 
     Args:
         project_name: Project name.
@@ -47,8 +46,7 @@ TEST_CASES_AUDITOR_INIT = build_test_cases_init((python_auditor_init_paths,))
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES_AUDITOR_INIT, ids=lambda test_case: test_case.name)
 async def test_python_auditor_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
-    """
-    Test python auditor init function module.
+    """Test python auditor init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

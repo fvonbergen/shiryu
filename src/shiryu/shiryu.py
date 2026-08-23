@@ -16,22 +16,19 @@ SHIRYU_PACKAGE_NAME: Final = SHIRYU_PACKAGE_PATH.stem
 
 # TODO: remove?
 # def __package_get_version() -> str:
-#     """
-#     Get package version from importlib metadata or a fixed string if package is not installed.
+#     """Get package version from importlib metadata or a fixed string if package is not installed.
 #
 #     Returns:
 #         Package version.
 #     """
-#     # """
-#     # Get package version from importlib metadata, then a fallback method, finally a fixed string.
+#     # """Get package version from importlib metadata, then a fallback method, finally a fixed string.
 #
 #     # Returns:
 #     #    Package version.
 #     # """
 #
 #     def __package_get_version_fallback() -> str:
-#         """
-#         Get package version with fallback method.
+#         """Get package version with fallback method.
 #
 #         Returns:
 #             Package version.

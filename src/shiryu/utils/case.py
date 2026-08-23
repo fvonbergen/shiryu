@@ -15,8 +15,7 @@ class CamelCase(Enum):
 
 
 def _split_into_words(string: str) -> list[str]:
-    """
-    Internal helper to split any string identifier into separate word tokens.
+    """Internal helper to split any string identifier into separate word tokens.
 
     Args:
         string: The raw input string to split into words.
@@ -35,8 +34,7 @@ def _split_into_words(string: str) -> list[str]:
 
 
 def to_kebab_case(string: str) -> str:
-    """
-    Convert any string identifier (snake, camel, Pascal, space-separated) to kebab-case.
+    """Convert any string identifier (snake, camel, Pascal, space-separated) to kebab-case.
 
     Args:
         string: An input string.
@@ -49,8 +47,7 @@ def to_kebab_case(string: str) -> str:
 
 
 def to_snake_case(string: str) -> str:
-    """
-    Convert any string identifier (camel, Pascal, kebab, space-separated) to snake_case.
+    """Convert any string identifier (camel, Pascal, kebab, space-separated) to snake_case.
 
     Args:
         string: An input string.
@@ -63,8 +60,7 @@ def to_snake_case(string: str) -> str:
 
 
 def to_camel_case(string: str, *, camel_case: CamelCase = CamelCase.UPPER) -> str:
-    """
-    Convert any string identifier to a camelCase or PascalCase string.
+    """Convert any string identifier to a camelCase or PascalCase string.
 
     Args:
         string: An input string.

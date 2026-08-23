@@ -11,8 +11,7 @@ class ClassName:
     @final
     @classmethod
     def name(cls) -> str:
-        """
-        Get class name.
+        """Get class name.
 
         Returns:
             Class name.

@@ -10,8 +10,7 @@ _PACKAGE_SANITIZER_PATTERN = re.compile(r"[-_.]+")
 
 
 def get_package_name_canonical(project_name: ProjectNameType) -> str:
-    """
-    Converts PyPI project distribution name into its canonical local package folder and import name.
+    """Map a PyPI project name to its local path and import name.
 
     This function bridges the gap between two different Python packaging standards:
     1. PEP 503/508 distribution naming (which normalizes names using dashes).

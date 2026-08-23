@@ -12,8 +12,7 @@ type EnumValueType = type
 
 
 def add_enum_values_as_methods(enum_options: type[Enum]) -> Callable[[ClassType], ClassType]:
-    """
-    Add enum values as dagger class methods to class decorator wrapper.
+    """Add enum values as dagger class methods to class decorator wrapper.
 
     Args:
         enum_options: Enum options.
@@ -23,8 +22,7 @@ def add_enum_values_as_methods(enum_options: type[Enum]) -> Callable[[ClassType]
     """
 
     def __add_enum_values(cls: ClassType) -> ClassType:
-        """
-        Add enum values as dagger class methods to class decorator.
+        """Add enum values as dagger class methods to class decorator.
 
         Args:
             cls: Class.
@@ -34,8 +32,7 @@ def add_enum_values_as_methods(enum_options: type[Enum]) -> Callable[[ClassType]
         """
 
         def lambda_enum_value_template(enum_option: Enum) -> FunctionType:
-            """
-            Lambda enum value template.
+            """Lambda enum value template.
 
             Args:
                 enum_option: Enum option.
@@ -45,8 +42,7 @@ def add_enum_values_as_methods(enum_options: type[Enum]) -> Callable[[ClassType]
             """
 
             def __enum_value_template() -> EnumValueType:
-                """
-                Enum value method.
+                """Enum value method.
 
                 Returns:
                     Enum value class.

@@ -34,8 +34,7 @@ class AuditorInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -117,8 +116,7 @@ class Auditor(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[AuditorInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.

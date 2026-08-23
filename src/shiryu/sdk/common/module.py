@@ -38,8 +38,7 @@ DAGGER_VERSION = "0.21.7"
 
 
 def warning(message: str) -> None:
-    """
-    Helper function to print a formatted warning to stderr.
+    """Helper function to print a formatted warning to stderr.
 
     Args:
         message: Warning message.
@@ -102,8 +101,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
     @classmethod
     @abstractmethod
     def _create_init_context_directory(cls) -> SDKModuleInitContextDirectoryType:
-        """
-        Create an initialization context.
+        """Create an initialization context.
 
         Returns:
             An initialization context.
@@ -117,8 +115,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> SDKModuleInitContextDirectoryType:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -157,8 +154,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         directory: dagger.Directory,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Initialize the directory with the VCS folders and files.
+        """Initialize the directory with the VCS folders and files.
 
         Args:
             project_authors: Project authors.
@@ -195,8 +191,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         init_context_directory_scm: SDKModuleInitContextDirectoryScm,
         scm: SCMType,
     ) -> dagger.Directory:
-        """
-        Initialize the directory with the SCM's files and folders.
+        """Initialize the directory with the SCM's files and folders.
 
         Args:
             directory: A directory to SCM initialize.
@@ -218,8 +213,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
     @final
     @classmethod
     def _readme_md_template_file(cls) -> TemplateFile:
-        """
-        README.md template file.
+        """README.md template file.
 
         Returns:
             The README.md template file.
@@ -229,8 +223,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
     @final
     @classmethod
     def _readme_md_template(cls, project_name: ProjectNameType) -> Template:
-        """
-        README.md template.
+        """README.md template.
 
         Args:
             project_name: Project name.
@@ -252,8 +245,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -293,8 +285,7 @@ class SDKModule[
     @staticmethod
     @abstractmethod
     def _sdk_name() -> str:
-        """
-        Get the SDK name.
+        """Get the SDK name.
 
         Returns:
             The SDK name.
@@ -304,8 +295,7 @@ class SDKModule[
     @staticmethod
     @abstractmethod
     def _initializer_cls() -> type[SDKModuleInitializerType]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -315,8 +305,7 @@ class SDKModule[
     @final
     @classmethod
     async def __get_shiryu_metadata(cls, platform: PlatformType) -> DaggerModuleMetadata:
-        """
-        Returns shiryu metadata.
+        """Returns shiryu metadata.
 
         Args:
             platform: The container platform used for initialization.
@@ -385,8 +374,7 @@ class SDKModule[
     async def _get_project_metadata(
         cls, project_directory: ProjectDirectoryType, platform: PlatformType
     ) -> ProjectMetadata:
-        """
-        Get project metadata.
+        """Get project metadata.
 
         Warning: It depends on the generated project files.
 
@@ -428,8 +416,7 @@ class SDKModule[
         project_name: ProjectNameDaggerType,
         platform: PlatformType,
     ) -> tuple[DaggerModuleMetadata, ProjectMetadata]:
-        """
-        Helper function to return metadata for the SDK module and project.
+        """Helper function to return metadata for the SDK module and project.
 
         Args:
             project_directory: Project directory.
@@ -453,8 +440,7 @@ class SDKModule[
     async def __is_vcs_init(
         cls, project_directory: dagger.Directory, platform: PlatformType
     ) -> bool:
-        """
-        Whether the dagger directory is initialized or not.
+        """Whether the dagger directory is initialized or not.
 
         Args:
             project_directory: The project directory.
@@ -485,8 +471,7 @@ class SDKModule[
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Returns a SDK module initialized directory.
+        """Returns a SDK module initialized directory.
 
         Args:
             shiryu_metadata: Shiryu metadata.
@@ -518,8 +503,7 @@ class SDKModule[
         is_update: IsUpdateType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Returns a project directory merged with the SDK module initialized directory.
+        """Returns a project directory merged with the SDK module initialized directory.
 
         Args:
             init_directory: SDK module initialization directory.
@@ -568,8 +552,7 @@ class SDKModule[
     @classmethod
     @abstractmethod
     def _create_init_context_container(cls) -> SDKModuleInitContextContainerType:
-        """
-        Create an initialization context container.
+        """Create an initialization context container.
 
         Returns:
             An initialization context container.
@@ -580,8 +563,7 @@ class SDKModule[
     def _init_context_container(
         cls, init_context_container: SDKModuleInitContextContainerType
     ) -> SDKModuleInitContextContainerType:
-        """
-        Initialization container context used in the SDK module container initialization.
+        """Initialization container context used in the SDK module container initialization.
 
         Args:
             init_context_container: SDK module initialization container context.
@@ -598,8 +580,7 @@ class SDKModule[
     def _base_container(
         cls, init_context_container: SDKModuleInitContextContainerType, platform: PlatformType
     ) -> dagger.Container:
-        """
-        Base container.
+        """Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
@@ -618,8 +599,7 @@ class SDKModule[
         project_directory: ProjectDirectoryDaggerType,
         platform: PlatformDaggerType,
     ) -> dagger.Container:
-        """
-        Helper function to return an initialized container for the SDK module.
+        """Helper function to return an initialized container for the SDK module.
 
         Args:
             init_context_container: SDK module initialization container context.
@@ -638,8 +618,7 @@ class SDKModule[
     async def _exec_container(
         cls, project_directory: ProjectDirectoryDaggerType, platform: PlatformDaggerType
     ) -> dagger.Container:
-        """
-        Helper function to return an initialized container for the SDK module.
+        """Helper function to return an initialized container for the SDK module.
 
         Args:
             project_directory: Project directory.
@@ -656,8 +635,7 @@ class SDKModule[
 def get_sdk_language(
     sdk_module: type[SDKModule], sdk_module_modules: set[type[SDKModule]]
 ) -> type[SDKModule]:
-    """
-    Get SDK language.
+    """Get SDK language.
 
     Args:
         sdk_module: SDK module.
@@ -677,8 +655,7 @@ def get_sdk_language(
     )
 
     def _initializer_cls() -> type[SDKModuleInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.

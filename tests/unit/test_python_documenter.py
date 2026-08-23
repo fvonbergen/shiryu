@@ -13,8 +13,7 @@ from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
 def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python documenter initializer paths.
+    """Get python documenter initializer paths.
 
     Args:
         project_name: Project name.
@@ -62,8 +61,7 @@ TEST_CASES = build_test_cases_init((python_documenter_init_paths,))
 async def test_python_documenter_init(
     dagger_client: dagger.Client, test_case: TestCaseInit
 ) -> None:
-    """
-    Test python documenter init function module.
+    """Test python documenter init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -88,8 +86,7 @@ async def test_python_documenter_init(
 
 @pytest.mark.asyncio
 async def test_python_documenter_document(dagger_client: dagger.Client) -> None:
-    """
-    Test python documenter document function module.
+    """Test python documenter document function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

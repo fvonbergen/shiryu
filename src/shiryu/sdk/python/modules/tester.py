@@ -48,8 +48,7 @@ class TesterInitializer(PythonModuleInitializer):
     @final
     @staticmethod
     def _coverage_file_name() -> str:
-        """
-        Get the coverage file name.
+        """Get the coverage file name.
 
         Returns:
             The coverage file name.
@@ -59,8 +58,7 @@ class TesterInitializer(PythonModuleInitializer):
     # @final
     # @staticmethod
     # def _coverage_badge_file_name() -> str:
-    #     """
-    #     Get the coverage badge file name.
+    #     """Get the coverage badge file name.
 
     #     Returns:
     #         The coverage badge file name.
@@ -70,8 +68,7 @@ class TesterInitializer(PythonModuleInitializer):
     # @final
     # @classmethod
     # def _coverage_badge_file_path(cls) -> Path:
-    #     """
-    #     Get the container project coverage badge file path.
+    #     """Get the container project coverage badge file path.
 
     #     Returns:
     #         The container project coverage badge file path.
@@ -81,8 +78,7 @@ class TesterInitializer(PythonModuleInitializer):
     @final
     @classmethod
     def _pytest_unit_ini_template_file(cls) -> TemplateFile:
-        """
-        pytest.ini template file.
+        """pytest.ini template file.
 
         Returns:
             The pytest.ini template file.
@@ -96,8 +92,7 @@ class TesterInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -199,8 +194,7 @@ class TesterInitializer(PythonModuleInitializer):
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -249,8 +243,7 @@ class Tester(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[TesterInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -265,8 +258,7 @@ class Tester(PythonModule):
         keyword: OptionalKeywordDaggerType,
         privileged_nesting: PrivilegedNestingDaggerType,
     ) -> dagger.Container:
-        """
-        Unit test pipeline.
+        """Unit test pipeline.
 
         Args:
             container: Project container.

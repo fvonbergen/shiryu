@@ -11,8 +11,7 @@ from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
 def python_jupyter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python jupyter initializer paths.
+    """Get python jupyter initializer paths.
 
     Args:
         project_name: Project name.
@@ -30,8 +29,7 @@ TEST_CASES = build_test_cases_init((python_jupyter_init_paths,))
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
 async def test_python_builder_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
-    """
-    Test python jupyter init function module.
+    """Test python jupyter init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

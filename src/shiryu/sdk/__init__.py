@@ -12,8 +12,7 @@ from .common.module import SDKModule
 
 
 def get_sub_directories(directory: Path, *, ignore: set[str] | None = None) -> set[Path]:
-    """
-    Get immediate sub-directories in directory.
+    """Get immediate sub-directories in directory.
 
     Args:
         directory: Root directory.
@@ -38,8 +37,7 @@ def get_sub_directories(directory: Path, *, ignore: set[str] | None = None) -> s
 
 
 def __get_sdk_options() -> type[Enum]:
-    """
-    Get SDK languages options.
+    """Get SDK languages options.
 
     Returns:
         An enumeration with SDK options.

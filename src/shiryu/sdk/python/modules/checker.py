@@ -37,8 +37,7 @@ class CheckerInitializer(PythonModuleInitializer):
     @final
     @classmethod
     def _ty_toml_template_file(cls) -> TemplateFile:
-        """
-        Get the ty.toml template file.
+        """Get the ty.toml template file.
 
         Returns:
             The ty.toml template file.
@@ -52,8 +51,7 @@ class CheckerInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -139,8 +137,7 @@ class CheckerInitializer(PythonModuleInitializer):
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -172,8 +169,7 @@ class Checker(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[CheckerInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -183,8 +179,7 @@ class Checker(PythonModule):
     @final
     @classmethod
     async def __check(cls, container: dagger.Container) -> None:
-        """
-        Check pipeline.
+        """Check pipeline.
 
         Args:
             container: Project container.
@@ -200,6 +195,7 @@ class Checker(PythonModule):
     async def check(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Run type checks in the project of the provided source Directory."""

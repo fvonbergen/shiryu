@@ -4,8 +4,7 @@ from shiryu.utils.case import CamelCase, to_camel_case, to_kebab_case, to_snake_
 
 
 def __any_case_to_snake_or_kebab_case_test_examples(separator: str) -> set[tuple[str, str]]:
-    """
-    Build input to snake or kebab case test examples.
+    """Build input to snake or kebab case test examples.
 
     Args:
         separator: Snake (_) or kebab (-) case separator.
@@ -34,8 +33,7 @@ def __any_case_to_snake_or_kebab_case_test_examples(separator: str) -> set[tuple
 def __any_case_to_camel_case_test_examples(
     separator: str, camel_case: CamelCase
 ) -> set[tuple[str, str]]:
-    """
-    Build input case to camel or Pascal case test examples.
+    """Build input case to camel or Pascal case test examples.
 
     Args:
         separator: Separator character (e.g., '_' or '-').
@@ -70,8 +68,7 @@ def __any_case_to_camel_case_test_examples(
 
 
 def __snake_to_kebab_case_test_examples() -> set[tuple[str, str]]:
-    """
-    Build snake case to kebab case test examples.
+    """Build snake case to kebab case test examples.
 
     Returns:
         Snake case to kebab case test examples.

@@ -1,5 +1,4 @@
-"""
-Context module for Python-specific SDK initialization operations.
+"""Context module for Python-specific SDK initialization operations.
 
 This module provides data models and context containers tailored for initializing Python modules. It
 manages structural immutability for dependency groups and specializes core SDK directory and module
@@ -27,8 +26,7 @@ DistributionPackages = frozenset[str]
 @final
 @dataclass(frozen=True, slots=True)
 class DependencyGroups:
-    """
-    DependencyGroups class with enforced read-only structural immutability.
+    """DependencyGroups class with enforced read-only structural immutability.
 
     Wraps a mapping proxy containing mappings of group names to sets of package requirements.
 
@@ -58,8 +56,7 @@ class DependencyGroups:
             object.__setattr__(self, "_dependency_groups", MappingProxyType(immutable_data))
 
     def add(self, group_name: str, packages: Set[str]) -> "DependencyGroups":
-        """
-        Add a collection of dependency packages to a dependency group name.
+        """Add a collection of dependency packages to a dependency group name.
 
         Args:
             group_name: The target dependency group name.
@@ -79,8 +76,7 @@ class DependencyGroups:
         return DependencyGroups(MappingProxyType(updated_dict))
 
     def merge(self, other: "DependencyGroups") -> "DependencyGroups":
-        """
-        Merge another DependencyGroups instance into a brand new state.
+        """Merge another DependencyGroups instance into a brand new state.
 
         Args:
             other: A DependencyGroups instance to merge into this one.
@@ -95,8 +91,7 @@ class DependencyGroups:
         return DependencyGroups(MappingProxyType(merged_dict))
 
     def items(self) -> ItemsView[str, DistributionPackages]:
-        """
-        Return the dependency groups names and packages as key-value pairs.
+        """Return the dependency groups names and packages as key-value pairs.
 
         Returns:
             The group names and their package sets.
@@ -108,8 +103,7 @@ class DependencyGroups:
         *,
         dependency_groups: MappingProxyType[str, DistributionPackages] | None = None,
     ) -> "DependencyGroups":
-        """
-        Type-safe evolution for the underlying dependency groups.
+        """Type-safe evolution for the underlying dependency groups.
 
         Args:
             dependency_groups: Python package dependency groups.
@@ -131,8 +125,7 @@ SourceCodeFilesFolders = frozenset[str]
 @final
 @dataclass(frozen=True, slots=True)
 class PythonModuleInitContextDirectory(SDKModuleInitContextDirectory):
-    """
-    Python-specific implementation of SDKModuleInitContextDirectory.
+    """Python-specific implementation of SDKModuleInitContextDirectory.
 
     Attributes:
         dependency_groups: Python package dependency groups.
@@ -149,8 +142,7 @@ class PythonModuleInitContextDirectory(SDKModuleInitContextDirectory):
         dependency_groups: DependencyGroups | None = None,
         source_code_files_folders: SourceCodeFilesFolders | None = None,
     ) -> Self:
-        """
-        Type-safe pure assignment evolution extending base directory capabilities.
+        """Type-safe pure assignment evolution extending base directory capabilities.
 
         Args:
             vcs: Version control system context configuration.
@@ -173,8 +165,7 @@ class PythonModuleInitContextDirectory(SDKModuleInitContextDirectory):
 
     @classmethod
     def create_default(cls) -> Self:
-        """
-        Build the default directory.
+        """Build the default directory.
 
         Returns:
             A default directory.

@@ -46,8 +46,7 @@ class LinterInitializer(PythonModuleInitializer):
     @final
     @staticmethod
     def _ruff_cache_folder() -> str:
-        """
-        Get the linter cache folder.
+        """Get the linter cache folder.
 
         Returns:
             The linter cache folder.
@@ -61,8 +60,7 @@ class LinterInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -190,8 +188,7 @@ class LinterInitializer(PythonModuleInitializer):
     @final
     @classmethod
     def _cchk_toml_template_file(cls) -> TemplateFile:
-        """
-        cchk.toml template file.
+        """cchk.toml template file.
 
         Returns:
             The cchk.toml template file.
@@ -201,8 +198,7 @@ class LinterInitializer(PythonModuleInitializer):
     @final
     @classmethod
     def _ruff_toml_template_file(cls) -> TemplateFile:
-        """
-        ruff.toml template file.
+        """ruff.toml template file.
 
         Returns:
             The ruff.toml template file.
@@ -218,8 +214,7 @@ class LinterInitializer(PythonModuleInitializer):
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -257,8 +252,7 @@ class Linter(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[LinterInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -268,8 +262,7 @@ class Linter(PythonModule):
     @final
     @classmethod
     async def __lint_fix_code(cls, container: dagger.Container, fix: bool) -> dagger.Directory:
-        """
-        Lint or fix code pipeline.
+        """Lint or fix code pipeline.
 
         Args:
             container: Project container.
@@ -307,8 +300,7 @@ class Linter(PythonModule):
     @final
     @classmethod
     async def __lint_vcs(cls, container: dagger.Container, branch_history: bool) -> None:
-        """
-        Lint VCS pipeline.
+        """Lint VCS pipeline.
 
         Args:
             container: Project container.

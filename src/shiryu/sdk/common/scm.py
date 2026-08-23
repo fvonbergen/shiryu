@@ -51,8 +51,7 @@ def __is_secret_type(param_type: Any) -> bool:
 def get_sdk_module_function_parameters(
     sdk_module_function: FunctionType,
 ) -> SDKModuleFunctionParameters:
-    """
-    Get SDK module function parameters.
+    """Get SDK module function parameters.
 
     Args:
         sdk_module_function: SDK module function.
@@ -275,8 +274,7 @@ class GitHubWorkflows:
     def add(
         self, workflow_id: GitHubWorkflowId, workflow_job: GitHubWorkflowJob
     ) -> "GitHubWorkflows":
-        """
-        Add a GitHub workflow job to a GitHub workflow identifier.
+        """Add a GitHub workflow job to a GitHub workflow identifier.
 
         Args:
             workflow_id: GitHub workflow identifier.
@@ -298,8 +296,7 @@ class GitHubWorkflows:
         return GitHubWorkflows(MappingProxyType(updated_dict))
 
     def merge(self, other: "GitHubWorkflows") -> "GitHubWorkflows":
-        """
-        Merge another GitHubWorkflows instance into a brand new state.
+        """Merge another GitHubWorkflows instance into a brand new state.
 
         Args:
             other: Another GitHubWorkflows instance to merge.
@@ -316,8 +313,7 @@ class GitHubWorkflows:
         return GitHubWorkflows(MappingProxyType(merged_dict))
 
     def items(self) -> ItemsView[GitHubWorkflowId, frozenset[GitHubWorkflowJob]]:
-        """
-        Return the GitHub workflows identifiers and GitHub workflows jobs as key-value pair.
+        """Return the GitHub workflows identifiers and GitHub workflows jobs as key-value pair.
 
         Returns:
             The GitHub workflows identifiers and GitHub workflows jobs.
@@ -325,8 +321,7 @@ class GitHubWorkflows:
         return self._github_workflows.items()
 
     def keys(self) -> KeysView[GitHubWorkflowId]:
-        """
-        Return the GitHub workflows identifiers.
+        """Return the GitHub workflows identifiers.
 
         Returns:
             The GitHub workflows identifiers.
@@ -334,8 +329,7 @@ class GitHubWorkflows:
         return self._github_workflows.keys()
 
     def values(self) -> ValuesView[frozenset[GitHubWorkflowJob]]:
-        """
-        Return the GitHub workflows jobs.
+        """Return the GitHub workflows jobs.
 
         Returns:
             The GitHub workflows jobs.
@@ -348,8 +342,7 @@ class GitHubWorkflows:
         github_workflows: MappingProxyType[GitHubWorkflowId, frozenset[GitHubWorkflowJob]]
         | None = None,
     ) -> "GitHubWorkflows":
-        """
-        Type-safe evolution for the underlying GitHub workflows.
+        """Type-safe evolution for the underlying GitHub workflows.
 
         Args:
             github_workflows: GitHub workflows.
@@ -379,8 +372,7 @@ class GitHubActionsWorkflows:
         actions: GitHubActions | None = None,
         workflows: GitHubWorkflows | None = None,
     ) -> Self:
-        """
-        Type-safe evolution for GitHub actions and workflows tracking.
+        """Type-safe evolution for GitHub actions and workflows tracking.
 
         Args:
             actions: GitHub actions.
@@ -470,8 +462,7 @@ GitLabJobs = frozenset[GitLabJob]
 @final
 @dataclass(frozen=True, slots=True)
 class GitLabStages:
-    """
-    GitLabStages class with enforced read-only structural immutability.
+    """GitLabStages class with enforced read-only structural immutability.
 
     Attributes:
         _gitlab_stages: Internal gitlab-stages mapping
@@ -482,8 +473,7 @@ class GitLabStages:
     )
 
     def add(self, stage_id: GitLabStageId, stage_job: GitLabStageJob) -> "GitLabStages":
-        """
-        Add a collection of GitLab stage jobs to a GitLab stage identifier.
+        """Add a collection of GitLab stage jobs to a GitLab stage identifier.
 
         Args:
             stage_id: GitLab stage identifier.
@@ -498,8 +488,7 @@ class GitLabStages:
         return GitLabStages(MappingProxyType(updated_dict))
 
     def merge(self, other: "GitLabStages") -> "GitLabStages":
-        """
-        Merge another GitLabStages instance into a brand new state.
+        """Merge another GitLabStages instance into a brand new state.
 
         Args:
             other: A GitLabStages instance to merge into this one.
@@ -513,8 +502,7 @@ class GitLabStages:
         return GitLabStages(MappingProxyType(merged_dict))
 
     def items(self) -> ItemsView[GitLabStageId, frozenset[GitLabStageJob]]:
-        """
-        Return the GitLab stage identifier and the GitLab stage job as key-value pairs.
+        """Return the GitLab stage identifier and the GitLab stage job as key-value pairs.
 
         Returns:
             The GitLab stage identifier and the GitLab stage job as key-value pairs.
@@ -526,8 +514,7 @@ class GitLabStages:
         *,
         gitlab_stages: MappingProxyType[GitLabStageId, frozenset[GitLabStageJob]] | None = None,
     ) -> "GitLabStages":
-        """
-        Type-safe evolution for the GitLab stages.
+        """Type-safe evolution for the GitLab stages.
 
         Args:
             gitlab_stages: GitLab stages.
@@ -549,8 +536,7 @@ class GitLabJobsStages:
     stages: GitLabStages
 
     def evolve(self, *, jobs: GitLabJobs | None = None, stages: GitLabStages | None = None) -> Self:
-        """
-        Type-safe evolution for GitLab jobs and stages tracking.
+        """Type-safe evolution for GitLab jobs and stages tracking.
 
         Args:
             jobs: GitLab jobs.
@@ -582,8 +568,7 @@ GITHUB_FOLDER: Final = ".github"
 def github_init(
     directory: dagger.Directory, github_actions_workflows: GitHubActionsWorkflows
 ) -> dagger.Directory:
-    """
-    Initialize the directory with GitHub files and folders.
+    """Initialize the directory with GitHub files and folders.
 
     Args:
         directory: A directory to GitHub initialize.
@@ -627,8 +612,7 @@ GITLAB_FOLDER: Final = ".gitlab"
 def gitlab_init(
     directory: dagger.Directory, gitlab_jobs_stages: GitLabJobsStages
 ) -> dagger.Directory:
-    """
-    Initialize the directory with GitLab files and folders.
+    """Initialize the directory with GitLab files and folders.
 
     Args:
         directory: A directory to GitLab initialize.
@@ -685,8 +669,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     shiryu_version: str,
     export_path: PurePosixPath | None,
 ) -> GitHubAction:
-    """
-    Build a github action.
+    """Build a github action.
 
     Args:
         sdk_language: SDK language.
@@ -794,8 +777,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
 def build_github_workflow_checkout_job(
     with_: GitHubWorkflowStepInputParameters = tuple(),
 ) -> GitHubWorkflowJobStep:
-    """
-    Builds a GitHub Actions workflow job step for checking out code.
+    """Builds a GitHub Actions workflow job step for checking out code.
 
     Args:
         with_: A tuple of input parameters to pass to the checkout action.
@@ -814,8 +796,7 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
     pre_steps: GitHubWorkflowJobSteps,
     post_steps: GitHubWorkflowJobSteps,
 ) -> GitHubWorkflowJob:
-    """
-    Build a GitHub workflow job.
+    """Build a GitHub workflow job.
 
     Args:
         sdk_language: SDK language.
@@ -867,8 +848,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     post_script: GitLabScript,
     artifacts: GitLabArtifacts | None,
 ) -> GitLabJob:
-    """
-    Build a GitLab job.
+    """Build a GitLab job.
 
     Args:
         sdk_language: SDK language.
@@ -962,8 +942,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
 
 
 def build_gitlab_stage_job(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJob) -> GitLabStageJob:
-    """
-    Build a GitLab stage job.
+    """Build a GitLab stage job.
 
     Args:
         gitlab_stage_id: The GitLab stage id.

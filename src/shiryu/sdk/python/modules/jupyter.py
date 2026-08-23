@@ -39,8 +39,7 @@ class JupyterInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -70,8 +69,7 @@ class JupyterInitializer(PythonModuleInitializer):
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -105,8 +103,7 @@ class Jupyter(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[JupyterInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -116,8 +113,7 @@ class Jupyter(PythonModule):
     @final
     @classmethod
     def __notebooks_cache_folder(cls) -> str:
-        """
-        Get the container project notebooks cache folder.
+        """Get the container project notebooks cache folder.
 
         Returns:
             The container project notebooks cache folder.
@@ -127,8 +123,7 @@ class Jupyter(PythonModule):
     @final
     @classmethod
     async def __serve(cls, container: dagger.Container, jupyter_port: PortType) -> dagger.Service:
-        """
-        Jupyter pipeline.
+        """Jupyter pipeline.
 
         Args:
             container: Project container.

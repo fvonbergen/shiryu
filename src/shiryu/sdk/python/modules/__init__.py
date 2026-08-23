@@ -10,8 +10,7 @@ from ...common.module import SDKModule
 
 
 def get_files(directory: Path, *, ignore: list[str] | None = None) -> list[Path]:
-    """
-    Get files in directory.
+    """Get files in directory.
 
     Args:
         directory: Root directory.
@@ -34,8 +33,7 @@ def get_files(directory: Path, *, ignore: list[str] | None = None) -> list[Path]
 
 
 def __get_sdk_module_modules() -> set[type[SDKModule]]:
-    """
-    Get SDK module modules.
+    """Get SDK module modules.
 
     Returns:
         SDK module modules.

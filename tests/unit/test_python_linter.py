@@ -18,8 +18,7 @@ from .utils.python_linter import (
 
 
 def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python linter initializer paths.
+    """Get python linter initializer paths.
 
     Args:
         project_name: Project name.
@@ -60,8 +59,7 @@ TEST_CASES_LINTER_INIT = build_test_cases_init((python_linter_init_paths,))
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES_LINTER_INIT, ids=lambda test_case: test_case.name)
 async def test_python_linter_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
-    """
-    Test python linter init function module.
+    """Test python linter init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -94,8 +92,7 @@ TEST_CASES_LINTER_LINT_CODE_SUCCESS = build_test_cases_linter_lint_code_success(
 async def test_python_linter_lint_success(
     dagger_client: dagger.Client, test_case: TestCaseLintCode
 ) -> None:
-    """
-    Test python linter lint_lint function module success calls.
+    """Test python linter lint_lint function module success calls.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -134,8 +131,7 @@ TEST_CASES_LINTER_LINT_CODE_FAILURE = build_test_cases_linter_lint_code_failure(
 async def test_python_linter_lint_failure(
     dagger_client: dagger.Client, test_case: TestCaseLintCode
 ) -> None:
-    """
-    Test python linter lint_code function module failure calls.
+    """Test python linter lint_code function module failure calls.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
@@ -175,8 +171,7 @@ TEST_CASES_LINTER_FIX_CODE_SUCCESS = build_test_cases_linter_fix_code_success()
 async def test_python_linter_fix_success(
     dagger_client: dagger.Client, test_case: TestCaseFixCodeSuccess
 ) -> None:
-    """
-    Test python linter fix code function module success calls.
+    """Test python linter fix code function module success calls.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

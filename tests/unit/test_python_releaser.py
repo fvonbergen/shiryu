@@ -11,8 +11,7 @@ from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
 def python_releaser_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
-    """
-    Get python releaser initializer paths.
+    """Get python releaser initializer paths.
 
     Args:
         project_name: Project name.
@@ -50,8 +49,7 @@ TEST_CASES_RELEASER_INIT = build_test_cases_init((python_releaser_init_paths,))
     "test_case", TEST_CASES_RELEASER_INIT, ids=lambda test_case: test_case.name
 )
 async def test_python_releaser_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
-    """
-    Test python releaser init function module.
+    """Test python releaser init function module.
 
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.

@@ -43,8 +43,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
     @final
     @classmethod
     def _create_init_context_directory(cls) -> PythonModuleInitContextDirectory:
-        """
-        Create an initialization context directory.
+        """Create an initialization context directory.
 
         Returns:
             An initialization context directory.
@@ -58,8 +57,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -80,8 +78,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
     @final
     @classmethod
     def _pyproject_toml_template_file(cls) -> TemplateFile:
-        """
-        Get the pyproject.toml template file.
+        """Get the pyproject.toml template file.
 
         Returns:
             The pyproject.toml template file.
@@ -97,8 +94,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -170,8 +166,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     @final
     @staticmethod
     def _sdk_name() -> str:
-        """
-        Get the SDK name.
+        """Get the SDK name.
 
         Returns:
             The SDK name.
@@ -183,8 +178,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     async def _get_project_metadata(
         cls, project_directory: ProjectDirectoryType, platform: PlatformType
     ) -> ProjectMetadata:
-        """
-        Get project metadata.
+        """Get project metadata.
 
         Args:
             project_directory: Project directory.
@@ -228,8 +222,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     @final
     @classmethod
     def _create_init_context_container(cls) -> SDKModuleInitContextContainer:
-        """
-        Create an initialization context container.
+        """Create an initialization context container.
 
         Returns:
             An initialization context container.
@@ -241,8 +234,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     def _base_container(
         cls, init_context_container: SDKModuleInitContextContainer, platform: PlatformType
     ) -> dagger.Container:
-        """
-        Base container.
+        """Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
@@ -258,8 +250,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     def _build_uv_run_command(
         cls, command: list[str], *, execution_mode: ExecutionMode = ExecutionMode.MODULE
     ) -> list[str]:
-        """
-        Builds the uv run command.
+        """Builds the uv run command.
 
         Args:
             command: A command as a list of strings.

@@ -18,8 +18,7 @@ class TestCaseLintFixCodeInputFile(NamedTuple):
 
 
 def __get_source_file_path(project_name: ProjectNameType, file_name: str) -> PurePosixPath:
-    """
-    Construct relative path to a source file within a shiryu project.
+    """Construct relative path to a source file within a shiryu project.
 
     Args:
         project_name: Project name.
@@ -35,8 +34,7 @@ def __get_source_file_path(project_name: ProjectNameType, file_name: str) -> Pur
 def __build_test_case_lint_fix_code_input_file(
     project_name: ProjectNameType, file_name: str, contents: str
 ) -> TestCaseLintFixCodeInputFile:
-    """
-    Helper to build input file for lint or fix code calls test cases.
+    """Helper to build input file for lint or fix code calls test cases.
 
     Args:
         project_name: Project name.
@@ -85,8 +83,7 @@ def main() -> None:
 
 
 def build_test_cases_linter_lint_code_success() -> tuple[TestCaseLintCode, ...]:
-    """
-    Builds the test cases used for testing linter lint_code successfull calls.
+    """Builds the test cases used for testing linter lint_code successfull calls.
 
     Returns:
         The test cases.
@@ -113,8 +110,7 @@ def build_test_cases_linter_lint_code_success() -> tuple[TestCaseLintCode, ...]:
 
 
 def build_test_cases_linter_lint_code_failure() -> tuple[TestCaseLintCode, ...]:
-    """
-    Builds the test cases used for testing linter lint_code failure calls.
+    """Builds the test cases used for testing linter lint_code failure calls.
 
     Returns:
         The test cases.
@@ -146,8 +142,7 @@ class TestCaseFixCodeSuccess(NamedTuple):
 
 
 def build_test_cases_linter_fix_code_success() -> tuple[TestCaseFixCodeSuccess, ...]:
-    """
-    Builds the test cases used for testing linter fix code successfull calls.
+    """Builds the test cases used for testing linter fix code successfull calls.
 
     Returns:
         The test cases.

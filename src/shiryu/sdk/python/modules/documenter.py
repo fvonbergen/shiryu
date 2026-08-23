@@ -59,8 +59,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         shiryu_metadata: DaggerModuleMetadata,
         project_metadata: ProjectMetadata,
     ) -> PythonModuleInitContextDirectory:
-        """
-        Initialization directory context used in the SDK module directory initialization.
+        """Initialization directory context used in the SDK module directory initialization.
 
         Args:
             init_context_directory: SDK module initialization directory context.
@@ -189,8 +188,7 @@ class DocumenterInitializer(PythonModuleInitializer):
     @final
     @classmethod
     def _zensical_toml_template_file(cls) -> TemplateFile:
-        """
-        zensical.toml template file.
+        """zensical.toml template file.
 
         Returns:
             The zensical.toml template file.
@@ -200,8 +198,7 @@ class DocumenterInitializer(PythonModuleInitializer):
     @final
     @classmethod
     def _gen_ref_pages_py_template_file(cls) -> TemplateFile:
-        """
-        gen_ref_pages.py template file.
+        """gen_ref_pages.py template file.
 
         Returns:
             The gen_ref_pages.py template file.
@@ -217,8 +214,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         scm: SCMType,
         platform: PlatformType,
     ) -> dagger.Directory:
-        """
-        Build the initialization directory.
+        """Build the initialization directory.
 
         Args:
             init_directory: The dagger directory to initialize.
@@ -330,8 +326,7 @@ class Documenter(PythonModule):
 
     @staticmethod
     def _initializer_cls() -> type[DocumenterInitializer]:
-        """
-        Initializer class.
+        """Initializer class.
 
         Returns:
             The initializer class.
@@ -341,8 +336,7 @@ class Documenter(PythonModule):
     @final
     @classmethod
     def __document(cls, container: dagger.Container) -> dagger.Directory:
-        """
-        Document pipeline.
+        """Document pipeline.
 
         Args:
             container: Project container.
@@ -397,8 +391,7 @@ class Documenter(PythonModule):
 
         # 2. Define environment with string output target
         environment = dagger.dag.env().with_string_output(
-            "audit_report",
-            "Strictly raw JSON audit report matching the required schema.",
+            "audit_report", "Strictly raw JSON audit report matching the required schema."
         )
         documenter_audit_propmpt_txt_template_mapping: Mapping = {
             "source_code_dump": source_code_dump,

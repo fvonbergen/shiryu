@@ -4,8 +4,7 @@ from pathlib import PurePath
 
 
 def path_to_module_str(path_module: PurePath, *, is_package: bool = True) -> str:
-    """
-    Convert path to module string.
+    """Convert path to module string.
 
     Args:
         path_module: Module path.
