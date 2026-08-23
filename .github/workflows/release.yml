@@ -1,19 +1,12 @@
-name: deploy
+name: release
 on:
+  workflow_dispatch:
   push:
     branches:
       - "main"
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
 
 env:
   DO_NOT_TRACK: "1"
-
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
-permissions:
-  contents: read
-  pages: write
-  id-token: write
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -22,16 +15,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  builder_deploy:
-    name: Builder deploy
+  releaser_release:
+    name: Releaser release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: releaser_release
+        name: Releaser release
+        uses: "./.github/actions/releaser_release"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat/add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          project_directory: "."
+          auth_token: ${{ secrets.GITHUB_TOKEN}}
+          git_user_name: "CI Release Bot"
+          git_user_email: "ci@shiryu.dev"
+  builder_publish:
+    name: Builder publish
+    needs: releaser_release
     runs-on: ubuntu-latest
     steps:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
-      - id: builder_deploy
-        name: Builder deploy
-        uses: "./.github/actions/builder_deploy"
+        with:
+          ref: main
+          fetch-depth: 0
+      - id: builder_publish
+        name: Builder publish
+        uses: "./.github/actions/builder_publish"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
           shiryu_version: "feat/add-python-sdk"
@@ -43,14 +63,23 @@ jobs:
           repository_user: ${{ secrets.REPOSITORY_USER }}
   documenter_document:
     name: Documenter document
+    needs: releaser_release
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     steps:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
       - id: documenter_document
         name: Documenter document
         uses: "./.github/actions/documenter_document"

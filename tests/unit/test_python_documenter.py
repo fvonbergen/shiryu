@@ -27,8 +27,8 @@ def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) ->
         *(
             (
                 ".gitlab/jobs/.documenter_document.yml",
-                ".gitlab/stages/deploy.yml",
                 ".gitlab/stages/quality.yml",
+                ".gitlab/stages/release.yml",
             )
             if SCM.GITLAB in scm
             else ()
@@ -36,8 +36,8 @@ def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) ->
         *(
             (
                 ".github/actions/documenter_document/action.yml",
-                ".github/workflows/deploy.yml",
                 ".github/workflows/quality.yml",
+                ".github/workflows/release.yml",
             )
             if SCM.GITHUB in scm
             else ()

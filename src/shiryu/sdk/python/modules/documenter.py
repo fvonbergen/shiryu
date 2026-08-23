@@ -118,7 +118,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                     actions=init_context_directory.scm.github_actions_workflows.actions
                     | {github_action},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
-                        GitHubWorkflowId.DEPLOY,
+                        GitHubWorkflowId.RELEASE,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
                             github_action=github_action,
@@ -159,9 +159,9 @@ class DocumenterInitializer(PythonModuleInitializer):
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.DEPLOY,
+                        GitLabStageId.RELEASE,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.DEPLOY, gitlab_job=gitlab_job
+                            gitlab_stage_id=GitLabStageId.RELEASE, gitlab_job=gitlab_job
                         ),
                     ).add(
                         GitLabStageId.QUALITY,

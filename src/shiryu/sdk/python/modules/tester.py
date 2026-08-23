@@ -37,7 +37,7 @@ OptionalKeywordDaggerType = Annotated[
 ]
 OPTIONAL_KEYWORD_DAGGER_DEFAULT: Final = None
 PrivilegedNestingDaggerType = Annotated[
-    bool, dagger.Doc("Whether to allow container dagger client to connect to the dagger engine.")
+    bool, dagger.Doc("Whether to allow container dagger client to connect to the dagger engine")
 ]
 PRIVILEGED_NESTING_DAGGER_DEFAULT: Final = False
 

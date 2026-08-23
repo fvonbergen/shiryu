@@ -62,12 +62,12 @@ class BuilderInitializer(PythonModuleInitializer):
         sdk_module_cls = Builder
         sdk_language = sdk_module_cls._sdk_name()
         sdk_module_name = sdk_module_cls.name()
-        sdk_module_function_deploy = sdk_module_cls.deploy
+        sdk_module_function_publish = sdk_module_cls.publish
         sdk_module_function_test = sdk_module_cls.test
-        github_action_builder_deploy = build_github_action(
+        github_action_builder_publish = build_github_action(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_deploy,
+            sdk_module_function=sdk_module_function_publish,
             dagger_version=dagger_version,
             shiryu_version=shiryu_version,
             export_path=None,
@@ -80,10 +80,10 @@ class BuilderInitializer(PythonModuleInitializer):
             shiryu_version=shiryu_version,
             export_path=None,
         )
-        gitlab_job_builder_deploy = build_gitlab_job(
+        gitlab_job_builder_publish = build_gitlab_job(
             sdk_language=sdk_language,
             sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_deploy,
+            sdk_module_function=sdk_module_function_publish,
             shiryu_version=shiryu_version,
             variables=(),
             pre_script=(),
@@ -112,12 +112,12 @@ class BuilderInitializer(PythonModuleInitializer):
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
                     actions=init_context_directory.scm.github_actions_workflows.actions
-                    | {github_action_builder_deploy, github_action_builder_test},
+                    | {github_action_builder_publish, github_action_builder_test},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
-                        GitHubWorkflowId.DEPLOY,
+                        GitHubWorkflowId.RELEASE,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
-                            github_action=github_action_builder_deploy,
+                            github_action=github_action_builder_publish,
                             shiryu_version=shiryu_version,
                             job_environment=None,
                             pre_steps=pre_steps,
@@ -137,12 +137,12 @@ class BuilderInitializer(PythonModuleInitializer):
                 ),
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
-                    | {gitlab_job_builder_deploy, gitlab_job_builder_test},
+                    | {gitlab_job_builder_publish, gitlab_job_builder_test},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.DEPLOY,
+                        GitLabStageId.RELEASE,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.DEPLOY,
-                            gitlab_job=gitlab_job_builder_deploy,
+                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_job=gitlab_job_builder_publish,
                         ),
                     ).add(
                         GitLabStageId.QUALITY,
@@ -154,7 +154,11 @@ class BuilderInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"hatch"}
+                sdk_module_name,
+                {
+                    # All versions supported
+                    "hatch"
+                },
             ),
         )
 
@@ -217,7 +221,7 @@ class Builder(PythonModule):
 
     @final
     @classmethod
-    async def __deploy(
+    async def __publish(
         cls,
         container: dagger.Container,
         repository_url: RepositoryUrlDaggerType,
@@ -226,7 +230,7 @@ class Builder(PythonModule):
         platform: PlatformType,
     ) -> None:
         """
-        Deploy distributable.
+        Publish distributable.
 
         Args:
             container: SDK container with project distributable.
@@ -266,7 +270,7 @@ class Builder(PythonModule):
         return self.__build(container, platform)
 
     @dagger.function
-    async def deploy(
+    async def publish(
         self,
         project_directory: ProjectDirectoryDaggerType,
         repository_url: RepositoryUrlDaggerType,
@@ -275,12 +279,12 @@ class Builder(PythonModule):
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
-        """Build and deploy project distributable of the provided source Directory."""
+        """Build and publish project distributable of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
-        await self.__deploy(
+        await self.__publish(
             container, repository_url, repository_user, repository_password, platform
         )
-        return "Deploy successfull"
+        return "Publish successfull"
 
     @dagger.function
     async def test(

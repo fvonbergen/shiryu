@@ -11,6 +11,7 @@ from .test_python_checker import python_checker_init_paths
 from .test_python_documenter import python_documenter_init_paths
 from .test_python_jupyter import python_jupyter_init_paths
 from .test_python_linter import python_linter_init_paths
+from .test_python_releaser import python_releaser_init_paths
 from .test_python_tester import python_tester_init_paths
 from .utils.common import get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
@@ -23,6 +24,7 @@ TEST_CASES = build_test_cases_init(
         python_documenter_init_paths,
         python_jupyter_init_paths,
         python_linter_init_paths,
+        python_releaser_init_paths,
         python_tester_init_paths,
     )
 )

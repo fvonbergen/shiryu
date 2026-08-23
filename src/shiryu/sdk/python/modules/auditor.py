@@ -101,10 +101,12 @@ class AuditorInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                # https://github.com/astral-sh/uv/releases/tag/0.11.0
-                # >= 0.11.0: New uv audit command
                 sdk_module_name,
-                {"uv >= 0.11.0"},
+                {
+                    # https://github.com/astral-sh/uv/releases/tag/0.11.0
+                    # >= 0.11.0: New uv audit command
+                    "uv >= 0.11.0"
+                },
             ),
         )
 
@@ -128,6 +130,7 @@ class Auditor(PythonModule):
     async def audit(
         self,
         project_directory: ProjectDirectoryDaggerType,
+        *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Run security audit analysis in the project."""

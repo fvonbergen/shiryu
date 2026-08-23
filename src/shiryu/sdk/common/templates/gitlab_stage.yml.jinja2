@@ -3,7 +3,7 @@ include:
   - local: "{{ job.path }}"
   {%- endfor %}
 
-{%- for job in jobs|sort(attribute="name") %}
+{% for job in jobs|sort(attribute="name") %}
 {{ job.name }}:
   extends:{%- if job.extends|length == 1 %} {{ job.extends|first }}{% else %}
     {%- for extend in job.extends -%}

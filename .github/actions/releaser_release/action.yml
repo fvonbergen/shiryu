@@ -1,5 +1,5 @@
-name: "builder deploy"
-description: "Runs builder deploy function on a project"
+name: "releaser release"
+description: "Runs releaser release function on a project"
 
 inputs:
   dagger_cloud_token:
@@ -18,24 +18,25 @@ inputs:
   project_directory:
     description: "Project directory path."
     default: "."
-  repository_password:
+  auth_token:
     description: "Repository password"
-  repository_url:
+    required: true
+  git_user_name:
     description: "Repository to push distributable"
-  repository_user:
+    default: "CI Release Bot"
+  git_user_email:
     description: "Repository user"
+    default: "ci@shiryu.dev"
 
 runs:
   using: "composite"
   steps:
-    - id: call_dagger_builder_deploy
-      name: Call Dagger Builder deploy
+    - id: call_dagger_releaser_release
+      name: Call Dagger Releaser release
       uses: dagger/dagger-for-github@v8.4.0
-      env:
-        REPOSITORY_PASSWORD: "${{ inputs.repository_password }}"
       with:
         version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
+        args: ${{ inputs.sdk_language }} releaser release --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --auth-token="${{ inputs.auth_token }}" --git-user-name="${{ inputs.git_user_name }}" --git-user-email="${{ inputs.git_user_email }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

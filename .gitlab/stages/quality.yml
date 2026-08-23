@@ -6,6 +6,7 @@ include:
   - local: ".gitlab/jobs/.linter_lint_code.yml"
   - local: ".gitlab/jobs/.linter_lint_vcs.yml"
   - local: ".gitlab/jobs/.tester_unit.yml"
+
 quality_auditor_audit:
   extends: .auditor_audit
   stage: quality

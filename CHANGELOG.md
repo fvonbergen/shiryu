@@ -9,24 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- feat: Initial commit
-- feat: Add python SDK skeleton
-- feat: Add python SDK command auditor
-- feat: Add python SDK command builder
-- feat: Add python SDK command checker
-- feat: Add python SDK command documenter
-- feat: Add python SDK command init
-- feat: Add python SDK command jupyter
-- feat: Add python SDK command linter
-- feat: Add python SDK command tester
-- feat: Add SCM support for GitLab and GitHub
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
+- Initial commit
+- Add python SDK skeleton
+- Add python SDK command auditor
+- Add python SDK command builder
+- Add python SDK command checker
+- Add python SDK command documenter
+- Add python SDK command init
+- Add python SDK command jupyter
+- Add python SDK command linter
+- Add python SDK command tester
+- Add SCM support for GitLab and GitHub

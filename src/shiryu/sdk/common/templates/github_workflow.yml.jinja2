@@ -6,10 +6,14 @@ on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys
   {%- else %}
   {{ action }}:
     {%- for action_property_name, action_property_value in action_properties|dictsort %}
+    {% if action_property_value is none %}
+    {{ action_property_name }}:
+    {%- else %}
     {{ action_property_name }}:{%- if action_property_value is string %} {{ action_property_value }}{% else %}
       {%- for value in action_property_value %}
       - {{ value }}
       {%- endfor %}
+    {%- endif %}
     {%- endif %}
     {%- endfor -%}
   {%- endif -%}

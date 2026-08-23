@@ -58,21 +58,21 @@ PROJECT_NAME_DAGGER_DEFAULT: Final = None
 # - GOOS/GOARCH: https://go.dev/doc/install/source#environment
 PlatformType = dagger.Platform
 PlatformDaggerType = Annotated[
-    PlatformType, dagger.Doc("Platform config OS and architecture in a Container.")
+    PlatformType, dagger.Doc("Platform config OS and architecture in a Container")
 ]
 PLATFORM_DAGGER_DEFAULT: Final = dagger.Platform("linux/amd64")
 ProjectDirectoryType = dagger.Directory
 ProjectDirectoryDaggerType = Annotated[ProjectDirectoryType, PROJECT_DIRECTORY_DAGGER_TYPE_DOC]
 IsUpdateType = bool
 IsUpdateDaggerType = Annotated[
-    IsUpdateType, dagger.Doc("Whether to update project directory files or not.")
+    IsUpdateType, dagger.Doc("Whether to update project directory files or not")
 ]
 IS_UPDATE_DAGGER_DEFAULT: Final = False
 
 SCMType = list[SCM]
 """A list of Source Control Management (SCM) configurations."""
 SCMDaggerType = Annotated[
-    SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured.")
+    SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured")
 ]
 SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 

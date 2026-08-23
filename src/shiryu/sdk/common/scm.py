@@ -14,7 +14,6 @@ from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
-from .vcs import VCS_PRIMARY_BRANCH
 
 PROJECT_DIRECTORY_DAGGER_TYPE_DOC: Final = dagger.Doc("Project directory path.")
 
@@ -188,14 +187,26 @@ class GitHubWorkflowJobStep:
 
 type GitHubWorkflowJobSteps = tuple[GitHubWorkflowJobStep, ...]
 
+# https://docs.gitlab.com/ci/inputs/#array-type
+type GitLabArrayElementType = str
+type GitLabArrayType = tuple[GitLabArrayElementType, ...]
+
 
 @final
 @dataclass(frozen=True, slots=True)
 class GitHubWorkflowTriggerActionPush:
     """GitHubWorkflowTriggerActionPush class."""
 
-    branches: tuple[str, ...]
-    tags: tuple[str, ...]
+    branches: GitLabArrayType
+    tags: GitLabArrayType
+
+
+@final
+@dataclass(frozen=True, slots=True)
+class GitHubWorkflowTriggerActionWorkflowDispatch:
+    """GitHubWorkflowTriggerActionWorkflowDispatch class."""
+
+    inputs: None
 
 
 @final
@@ -204,6 +215,7 @@ class GitHubWorkflowTriggerAction:
     """GitHubWorkflowTriggerAction class."""
 
     push: GitHubWorkflowTriggerActionPush | None
+    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | None
 
 
 @final
@@ -220,15 +232,15 @@ class GitHubWorkflowProperties:
 class GitHubWorkflowId(Enum):
     """GitHubWorkflowId options."""
 
-    DEPLOY = GitHubWorkflowProperties(
-        "deploy",
+    QUALITY = GitHubWorkflowProperties(
+        "quality", GitHubWorkflowTriggerAction(push=None, workflow_dispatch=None)
+    )
+    RELEASE = GitHubWorkflowProperties(
+        "release",
         GitHubWorkflowTriggerAction(
-            push=GitHubWorkflowTriggerActionPush(
-                branches=(f'"{VCS_PRIMARY_BRANCH}"',), tags=('"v[0-9]+.[0-9]+.[0-9]+"',)
-            )
+            push=None, workflow_dispatch=GitHubWorkflowTriggerActionWorkflowDispatch(inputs=None)
         ),
     )
-    QUALITY = GitHubWorkflowProperties("quality", GitHubWorkflowTriggerAction(push=None))
 
 
 @final
@@ -384,9 +396,6 @@ class GitHubActionsWorkflows:
         )
 
 
-# https://docs.gitlab.com/ci/inputs/#array-type
-type GitLabArrayElementType = str
-type GitLabArrayType = tuple[GitLabArrayElementType, ...]
 type GitLabScript = GitLabArrayType
 
 
@@ -440,14 +449,8 @@ class GitLabStageProperties:
 class GitLabStageId(Enum):
     """GitLabStageId options."""
 
-    DEPLOY = GitLabStageProperties(
-        "deploy",
-        (
-            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
-            r"$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/",
-        ),
-    )
     QUALITY = GitLabStageProperties("quality", ())
+    RELEASE = GitLabStageProperties("release", ())
 
 
 @final
