@@ -6,7 +6,7 @@ from enum import Enum, StrEnum, unique
 from inspect import Parameter, signature
 from pathlib import Path, PurePosixPath
 from types import FunctionType, MappingProxyType
-from typing import Final, Self, final
+from typing import Any, Final, Self, final, get_args, get_origin
 
 import dagger
 
@@ -28,9 +28,25 @@ class SDKModuleFunctionParameter:
     option: str
     description: str
     default: str | None
+    is_secret: bool
 
 
 SDKModuleFunctionParameters = tuple[SDKModuleFunctionParameter, ...]
+
+
+def __is_secret_type(param_type: Any) -> bool:
+    """Check if a parameter type or annotation represents a Dagger Secret.
+
+    Args:
+        param_type: The type annotation or object of the parameter (e.g., `dagger.Secret`,
+            `typing.Annotated[dagger.Secret, ...]`, or string representation).
+
+    Returns:
+        bool: `True` if the type corresponds to a `dagger.Secret`, `False` otherwise.
+    """
+    if get_origin(param_type) is not None and (args := get_args(param_type)):
+        param_type = args[0]
+    return param_type is dagger.Secret or param_type == "dagger.Secret"
 
 
 def get_sdk_module_function_parameters(
@@ -61,11 +77,10 @@ def get_sdk_module_function_parameters(
                 f"Parameter {parameter_name} of function {sdk_module_function} has no annotations."
             )
             raise ValueError(exception_message)
-        parameter_type = parameter_annotation.__origin__
-        parameter_annotation_metadata = parameter_annotation.__metadata__
-        parameter_annotation_metadata_len = len(parameter_annotation_metadata)
+        parameter_type = getattr(parameter_annotation, "__origin__", parameter_annotation)
+        parameter_annotation_metadata = getattr(parameter_annotation, "__metadata__", ())
         parameter_description: str
-        if parameter_annotation_metadata_len < 1:
+        if not parameter_annotation_metadata:
             exception_message = (
                 f"Parameter {parameter_name} of function {sdk_module_function} must contain "
                 "annotation metadata description"
@@ -104,6 +119,7 @@ def get_sdk_module_function_parameters(
                 f"--{to_kebab_case(parameter_name)}",
                 parameter_description,
                 parameter_default,
+                is_secret=__is_secret_type(parameter_annotation),
             )
         )
     return tuple(sorted(sdk_module_function_parameters, key=lambda param: param.name))
@@ -121,6 +137,18 @@ class GitHubAction:
 
 
 GitHubActions = frozenset[GitHubAction]
+
+
+@final
+@dataclass(frozen=True, slots=True)
+class GitHubWorkflowStepEnvParameter:
+    """GitHubWorkflowStepEnvParameter class."""
+
+    name: str
+    value: str
+
+
+type GitHubWorkflowStepEnvParameters = tuple[GitHubWorkflowStepEnvParameter, ...]
 
 
 @final
@@ -143,6 +171,7 @@ class GitHubWorkflowRunStep:
     id: str
     name: str
     uses: str
+    env: GitHubWorkflowStepEnvParameters
     with_: GitHubWorkflowStepInputParameters
 
 
@@ -694,6 +723,17 @@ def build_github_action(  # noqa: PLR0913, PLR0917
             raise ValueError(exception_message)
         # TODO: Check that the return type is of type dagger.
         export_chain.append(f"export --path=./{export_path}")
+    formatted_parameters = [
+        (
+            f"{parameter.option}="
+            f"""{
+                f"env://{parameter.name.upper()}"
+                if parameter.is_secret
+                else f'"${{{{ inputs.{parameter.name} }}}}"'
+            }"""
+        )
+        for parameter in sdk_module_function_parameters
+    ]
     action_yml_template_mapping: Mapping = {
         "function": sdk_module_function_name,
         "module": sdk_module_name,
@@ -706,6 +746,15 @@ def build_github_action(  # noqa: PLR0913, PLR0917
                 f"Call Dagger {name}",
                 "dagger/dagger-for-github@v8.4.0",
                 (
+                    *[
+                        GitHubWorkflowStepEnvParameter(
+                            parameter.name.upper(), f'"${{{{ inputs.{parameter.name} }}}}"'
+                        )
+                        for parameter in sdk_module_function_parameters
+                        if parameter.is_secret
+                    ],
+                ),
+                (
                     GitHubWorkflowStepInputParameter("version", f'"v{dagger_version}"'),
                     GitHubWorkflowStepInputParameter("verb", "call"),
                     GitHubWorkflowStepInputParameter(
@@ -717,10 +766,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
                             [
                                 f"${{{{ inputs.sdk_language }}}} {sdk_module_name} "
                                 f"{sdk_module_function_name}",
-                                *[
-                                    f'{parameter.option}="${{{{ inputs.{parameter.name} }}}}"'
-                                    for parameter in sdk_module_function_parameters
-                                ],
+                                *formatted_parameters,
                                 *export_chain,
                             ]
                         ),
@@ -869,13 +915,19 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         *tuple(
             GitLabVariable(
                 sdk_module_function_parameter.name.upper(),
-                sdk_module_function_parameter.default
+                f"env:{sdk_module_function_parameter.name.upper()}"
+                if sdk_module_function_parameter.is_secret
+                else sdk_module_function_parameter.default
                 if sdk_module_function_parameter.default is not None
                 else f"${{{sdk_module_function_parameter.name.upper()}}}",
             )
             for sdk_module_function_parameter in sdk_module_function_parameters
         ),
     )
+    formatted_parameters = [
+        f'{parameter.option}="${{{parameter.name.upper()}}}"'
+        for parameter in sdk_module_function_parameters
+    ]
     dagger_call_script = " ".join(
         [
             (
@@ -884,10 +936,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
                 f"call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
                 f"{sdk_module_function_name}"
             ),
-            *[
-                f'{parameter.option}="${{{parameter.name.upper()}}}"'
-                for parameter in sdk_module_function_parameters
-            ],
+            *formatted_parameters,
             *export_chain,
         ],
     )

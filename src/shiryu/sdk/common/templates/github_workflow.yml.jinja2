@@ -35,6 +35,12 @@ jobs:
       - id: {{ step.id }}
         name: {{ step.name }}
         uses: {{ step.uses }}
+        {%- if step.env|length != 0 %}
+        env:
+          {%- for step_env in step.env %}
+          {{ step_env.name }}: {{ step_env.value }}
+          {%- endfor %}
+        {%- endif %}
         {%- if step.with_|length != 0 %}
         with:
           {%- for step_with_ in step.with_ %}

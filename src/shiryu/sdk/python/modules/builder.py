@@ -243,13 +243,16 @@ class Builder(PythonModule):
             [
                 "hatch",
                 "publish",
-                f"--user={repository_user}",
-                f"--auth={repository_password}",
-                f"--repo={repository_url}",
+                f'--user="{repository_user}"',
+                f'--repo="{repository_url}"',
                 str(PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform),
             ]
         )
-        await container.with_exec(deploy_command).sync()
+        await (
+            container.with_secret_variable("HATCH_INDEX_AUTH", repository_password)
+            .with_exec(deploy_command)
+            .sync()
+        )
 
     @dagger.function
     async def build(

@@ -31,9 +31,11 @@ runs:
     - id: call_dagger_builder_deploy
       name: Call Dagger Builder deploy
       uses: dagger/dagger-for-github@v8.4.0
+      env:
+        REPOSITORY_PASSWORD: "${{ inputs.repository_password }}"
       with:
         version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password="${{ inputs.repository_password }}" --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
+        args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
