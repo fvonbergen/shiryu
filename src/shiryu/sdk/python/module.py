@@ -271,8 +271,8 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         return [
             "uv",
             "run",
-            "--group",
-            cls.name(),
+            "--locked",
+            f"--group={cls.name()}",
             *(("--module",) if execution_mode is ExecutionMode.MODULE else ()),
             *command,
         ]

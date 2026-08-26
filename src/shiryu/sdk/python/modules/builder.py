@@ -243,8 +243,8 @@ class Builder(PythonModule):
             [
                 "hatch",
                 "publish",
-                f'--user="{repository_user}"',
-                f'--repo="{repository_url}"',
+                f"--user={repository_user}",
+                f"--repo={repository_url}",
                 str(PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform),
             ]
         )
