@@ -4,14 +4,14 @@ include:
 .releaser_release:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat/add-python-sdk"
+    SHIRYU_VERSION: "feat/add-python-sdk-release"
     SDK_LANGUAGE: "python"
+    GIT_STRATEGY: "fetch"
+    GIT_DEPTH: "0"
+    AUTH_TOKEN: "env:AUTH_TOKEN"
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
-    AUTH_TOKEN: "${GITLAB_TOKEN}"
-    GIT_USER_NAME: "${GIT_USER_NAME}"
-    GIT_USER_EMAIL: "${GIT_USER_EMAIL}"
+    VCS_USER_EMAIL: "ci@shiryu.dev"
+    VCS_USER_NAME: "CI Release Bot"
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} releaser release --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}" --auth-token="env:AUTH_TOKEN" --git-user-name="${GIT_USER_NAME}" --git-user-email="${GIT_USER_EMAIL}"
-  rules:
-    - when: manual
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} releaser release --auth-token="${AUTH_TOKEN}" --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}" --vcs-user-email="${VCS_USER_EMAIL}" --vcs-user-name="${VCS_USER_NAME}"

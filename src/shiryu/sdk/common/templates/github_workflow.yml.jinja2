@@ -1,6 +1,7 @@
 name: {{ name }}
 on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys()|list|first }}{% else %}
   {%- for action, action_properties in on|dictsort -%}
+  {% if action_properties is not sameas action_properties.UNSET %}
   {% if action_properties is none %}
   {{ action }}:
   {%- else %}
@@ -16,6 +17,7 @@ on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys
     {%- endif %}
     {%- endif %}
     {%- endfor -%}
+  {%- endif -%}
   {%- endif -%}
   {%- endfor %}
 {%- endif %}

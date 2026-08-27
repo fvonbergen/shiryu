@@ -205,7 +205,16 @@ class GitHubWorkflowTriggerActionPush:
 class GitHubWorkflowTriggerActionWorkflowDispatch:
     """GitHubWorkflowTriggerActionWorkflowDispatch class."""
 
-    inputs: None
+    inputs: dict[str, str] | None
+
+
+class UnsetType(Enum):
+    """Sentinel type to distinguish unprovided fields from explicit `None` values."""
+
+    UNSET = object()
+
+
+UNSET: Final = UnsetType.UNSET
 
 
 @final
@@ -213,8 +222,8 @@ class GitHubWorkflowTriggerActionWorkflowDispatch:
 class GitHubWorkflowTriggerAction:
     """GitHubWorkflowTriggerAction class."""
 
-    push: GitHubWorkflowTriggerActionPush | None
-    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | None
+    push: GitHubWorkflowTriggerActionPush | None | UnsetType
+    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | None | UnsetType
 
 
 @final
@@ -232,13 +241,10 @@ class GitHubWorkflowId(Enum):
     """GitHubWorkflowId options."""
 
     QUALITY = GitHubWorkflowProperties(
-        "quality", GitHubWorkflowTriggerAction(push=None, workflow_dispatch=None)
+        "quality", GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET)
     )
     RELEASE = GitHubWorkflowProperties(
-        "release",
-        GitHubWorkflowTriggerAction(
-            push=None, workflow_dispatch=GitHubWorkflowTriggerActionWorkflowDispatch(inputs=None)
-        ),
+        "release", GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None)
     )
 
 

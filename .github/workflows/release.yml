@@ -1,9 +1,6 @@
 name: release
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "main"
 
 env:
   DO_NOT_TRACK: "1"
@@ -31,13 +28,13 @@ jobs:
         uses: "./.github/actions/releaser_release"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
+          auth_token: ${{ secrets.AUTH_TOKEN }}
           platform: "linux/amd64"
           project_directory: "."
-          auth_token: ${{ secrets.GITHUB_TOKEN}}
-          git_user_name: "CI Release Bot"
-          git_user_email: "ci@shiryu.dev"
+          vcs_user_email: "ci@shiryu.dev"
+          vcs_user_name: "CI Release Bot"
   builder_publish:
     name: Builder publish
     needs: releaser_release
@@ -54,7 +51,7 @@ jobs:
         uses: "./.github/actions/builder_publish"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -85,7 +82,7 @@ jobs:
         uses: "./.github/actions/documenter_document"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."

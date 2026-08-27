@@ -17,7 +17,7 @@ jobs:
         uses: "./.github/actions/auditor_audit"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -33,7 +33,7 @@ jobs:
         uses: "./.github/actions/builder_test"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -49,7 +49,7 @@ jobs:
         uses: "./.github/actions/checker_check"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -65,7 +65,7 @@ jobs:
         uses: "./.github/actions/documenter_document"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -81,7 +81,7 @@ jobs:
         uses: "./.github/actions/linter_lint_code"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -99,7 +99,7 @@ jobs:
         uses: "./.github/actions/linter_lint_vcs"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           branch_history: "True"
           platform: "linux/amd64"
@@ -116,7 +116,7 @@ jobs:
         uses: "./.github/actions/tester_unit"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
           privileged_nesting: "True"

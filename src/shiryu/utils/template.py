@@ -37,6 +37,7 @@ def get_jinja_environment(file_path: Path) -> jinja2.Environment:
             package_path=str(templates_file_path.relative_to(SHIRYU_PACKAGE_PATH)),
         ),
         autoescape=jinja2.select_autoescape(),
+        keep_trailing_newline=True,
     )
 
 
@@ -107,10 +108,7 @@ class Template:
     """Template class."""
 
     def __init__(
-        self,
-        jinja_environment: jinja2.Environment,
-        template_file: TemplateFile,
-        mapping: Mapping,
+        self, jinja_environment: jinja2.Environment, template_file: TemplateFile, mapping: Mapping
     ) -> None:
         """Class initializer.
 

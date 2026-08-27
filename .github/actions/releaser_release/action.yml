@@ -8,25 +8,24 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat/add-python-sdk"
+    default: "feat/add-python-sdk-release"
   sdk_language:
     description: "SDK programming language"
     default: "python"
+  auth_token:
+    description: "Authorization token"
   platform:
-    description: "Platform config OS and architecture in a Container."
+    description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
   project_directory:
     description: "Project directory path."
     default: "."
-  auth_token:
-    description: "Repository password"
-    required: true
-  git_user_name:
-    description: "Repository to push distributable"
-    default: "CI Release Bot"
-  git_user_email:
-    description: "Repository user"
+  vcs_user_email:
+    description: "VCS user email"
     default: "ci@shiryu.dev"
+  vcs_user_name:
+    description: "VCS user name"
+    default: "CI Release Bot"
 
 runs:
   using: "composite"
@@ -34,9 +33,11 @@ runs:
     - id: call_dagger_releaser_release
       name: Call Dagger Releaser release
       uses: dagger/dagger-for-github@v8.4.0
+      env:
+        AUTH_TOKEN: "${{ inputs.auth_token }}"
       with:
         version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} releaser release --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --auth-token="${{ inputs.auth_token }}" --git-user-name="${{ inputs.git_user_name }}" --git-user-email="${{ inputs.git_user_email }}"
+        args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

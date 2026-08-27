@@ -8,12 +8,12 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat/add-python-sdk"
+    default: "feat/add-python-sdk-release"
   sdk_language:
     description: "SDK programming language"
     default: "python"
   platform:
-    description: "Platform config OS and architecture in a Container."
+    description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
   project_directory:
     description: "Project directory path."
@@ -37,5 +37,5 @@ runs:
         version: "v0.21.7"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} builder deploy --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
+        args: ${{ inputs.sdk_language }} builder publish --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

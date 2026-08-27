@@ -8,12 +8,12 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat/add-python-sdk"
+    default: "feat/add-python-sdk-release"
   sdk_language:
     description: "SDK programming language"
     default: "python"
   platform:
-    description: "Platform config OS and architecture in a Container."
+    description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
   project_directory:
     description: "Project directory path."

@@ -4,7 +4,7 @@ include:
 .linter_lint_code:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat/add-python-sdk"
+    SHIRYU_VERSION: "feat/add-python-sdk-release"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
     PROJECT_DIRECTORY: "."
