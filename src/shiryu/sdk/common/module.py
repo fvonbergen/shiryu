@@ -68,7 +68,7 @@ SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 
 
 @final
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, order=True)
 class ProjectAuthor:
     """ProjectAuthor."""
 
