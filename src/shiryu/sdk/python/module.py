@@ -118,6 +118,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         pyproject_toml_template_mapping: Mapping = {
             "project_name": project_name,
             "project_authors": project_authors,
+            "project_version": project_metadata.version,
             "readme_file_name": str(cls._readme_md_template_file().output_file_name),
             "dependency_groups": init_context_directory.dependency_groups,
         }
@@ -203,6 +204,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
             project_metadata = replace(
                 project_metadata,
                 name=pyproject_toml_project["name"],
+                version=pyproject_toml_project.get("version", project_metadata.version),
                 authors=frozenset(
                     {
                         ProjectAuthor(name=project_author["name"], email=project_author["email"])
