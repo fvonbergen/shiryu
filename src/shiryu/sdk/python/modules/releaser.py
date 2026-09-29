@@ -37,12 +37,18 @@ from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 AuthTokenDaggerType = Annotated[dagger.Secret, dagger.Doc("Authorization token")]
+GitUserNameDaggerType = Annotated[str, dagger.Doc("Git user name used for the release commit.")]
+GitUserEmailDaggerType = Annotated[str, dagger.Doc("Git user email used for the release commit.")]
 VCSUserNameDaggerType = Annotated[str, dagger.Doc("VCS user name")]
+
 VCS_USER_NAME_DAGGER_DEFAULT: Final = "CI Release Bot"
 VCSUserEMailDaggerType = Annotated[str, dagger.Doc("VCS user email")]
 VCS_USER_EMAIL_DAGGER_DEFAULT: Final = "ci@shiryu.dev"
 
 type PushUrls = list[str]
+
+CZ_NOTHING_TO_RELEASE_EXIT_CODES: Final = frozenset({3, 21})
+NOTHING_TO_RELEASE: Final = "Nothing to release"
 
 
 class ReleaserInitializer(PythonModuleInitializer):
@@ -183,6 +189,106 @@ class Releaser(PythonModule):
             The initializer class.
         """
         return ReleaserInitializer
+
+    @final
+    @classmethod
+    async def __next_version(cls, container: dagger.Container) -> str | None:
+        """Compute the next version from the commits since the last release tag.
+
+        Args:
+            container: Project container.
+
+        Returns:
+            The next version, or `None` if no commit is eligible for a release.
+
+        Raises:
+            RuntimeError: If commitizen fails for any other reason.
+        """
+        executed_container = container.with_exec(
+            cls._build_uv_run_command(
+                ["cz", "bump", "--get-next", "--yes"], execution_mode=ExecutionMode.SCRIPT
+             ),
+            expect=dagger.ReturnType.ANY,
+        )
+        exit_code = await executed_container.exit_code()
+        if exit_code in CZ_NOTHING_TO_RELEASE_EXIT_CODES:
+            return None
+        if exit_code != 0:
+            exception_message = (
+                f"{await executed_container.stdout()}{await executed_container.stderr()}"
+            )
+            raise RuntimeError(exception_message)
+        return (await executed_container.stdout()).strip()
+
+    @final
+    @classmethod
+    def __bump(
+        cls, container: dagger.Container, version: str, git_user_name: str, git_user_email: str
+    ) -> dagger.Container:
+        """Bump the project version, update the changelog, commit and tag.
+
+        Args:
+            container: Project container.
+            version: The new version.
+            git_user_name: Release commit author name.
+            git_user_email: Release commit author email.
+
+        Returns:
+            A container with the release commit and tag.
+        """
+        tag = f"v{version}"
+        git_identity = ["-c", f"user.name={git_user_name}", "-c", f"user.email={git_user_email}"]
+        return (
+            # Updates pyproject.toml and uv.lock together.
+            container.with_exec(["uv", "version", version, "--no-sync"])
+            .with_exec(
+                cls._build_uv_run_command(
+                    ["cz", "changelog", "--incremental", f"--unreleased-version={tag}"],
+                    execution_mode=ExecutionMode.SCRIPT,
+                )
+            )
+            .with_exec(["git", "add", "pyproject.toml", "uv.lock", "CHANGELOG.md"])
+            .with_exec(["git", *git_identity, "commit", "-m", f"chore: release {tag}"])
+            .with_exec(["git", *git_identity, "tag", "--annotate", tag, f"-m={tag}"])
+        )
+
+    @final
+    @classmethod
+    async def __push(
+        cls,
+        container: dagger.Container
+    ) -> dagger.Container | str:
+        """Push the release commit and tag atomically.
+
+        Args:
+            container: Container with the release commit and tag.
+
+        Returns:
+            The container after pushing.
+        """
+        return "git push"
+
+    @final
+    @dagger.function
+    async def release(  # noqa: PLR0913, PLR0917
+        self,
+        project_directory: ProjectDirectoryDaggerType,
+        git_user_name: GitUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
+        git_user_email: GitUserEmailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> dagger.Directory | None:
+        """Bump version, update changelog, commit, tag, push and publish the project."""
+        container = await self._exec_container(project_directory, platform)
+        version = await self.__next_version(container)
+        if version is None:
+            return None
+        bump_container = await self.__bump(container, version, git_user_name, git_user_email).sync()
+        await bump_container.directory(".")
+
+        # push_container = await self.__push()
+        # TODO deploy
+        # solo debe hacerse en main desde github/gitlab
+        return bump_container.directory(".")
 
     @final
     @classmethod
@@ -342,22 +448,6 @@ class Releaser(PythonModule):
             container, clean_push_urls, auth_token, vcs_user_name, vcs_user_email, dry_run=dry_run
         )
         return output if dry_run else "Release successful"
-
-    @final
-    @dagger.function
-    async def release(
-        self,
-        project_directory: ProjectDirectoryDaggerType,
-        auth_token: AuthTokenDaggerType,
-        *,
-        vcs_user_name: VCSUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
-        vcs_user_email: VCSUserEMailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
-        """Run release in the project."""
-        return await self.__run_release_workflow(
-            project_directory, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=False
-        )
 
     @final
     @dagger.function

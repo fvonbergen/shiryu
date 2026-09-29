@@ -99,14 +99,9 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
         .build(project_directory=project_directory, platform=platform)
     )
     paths = await get_all_paths(directory)
-    date_pattern = r"\d{4}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
     expected_paths_compiled_patterns = (
-        re.compile(
-            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-py3-none-any\.whl$"
-        ),
-        re.compile(
-            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}\.tar\.gz$"
-        ),
+        re.compile(rf"^dist/linux/amd64/{package_name_canonical}-0\.1\.0-py3-none-any\.whl$"),
+        re.compile(rf"^dist/linux/amd64/{package_name_canonical}-0\.1\.0\.tar\.gz$"),
     )
 
     for path, pattern in zip(paths, expected_paths_compiled_patterns, strict=True):

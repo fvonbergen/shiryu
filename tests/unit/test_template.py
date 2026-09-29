@@ -33,15 +33,17 @@ def test_template_file() -> None:
 
 def test_pyproject_toml_multiple_authors() -> None:
     """Test rendering mulitple authors."""
-    authors = frozenset({ProjectAuthor("Emma", "emma@sate.com"),
-                         ProjectAuthor("Emma2", "emma2@sate.com")})
-    content = Template(PYTHON_JINJA_ENVIRONMENT,
-                       TemplateFile(Path("pyproject.toml")),
-                       {
-                           "project_name": "test",
-                           "project_authors": authors,
-                           "dependency_groups": DependencyGroups(),
-                       }).contents
+    authors = frozenset(
+        {ProjectAuthor("Emma", "emma@sate.com"), ProjectAuthor("Emma2", "emma2@sate.com")}
+    )
+    content = Template(
+        PYTHON_JINJA_ENVIRONMENT,
+        TemplateFile(Path("pyproject.toml")),
+        {
+            "project_name": "test",
+            "project_authors": authors,
+            "dependency_groups": DependencyGroups(),
+        },
+    ).contents
 
     assert content.index('name = "Emma"') < content.index('name = "Emma2"')
-
