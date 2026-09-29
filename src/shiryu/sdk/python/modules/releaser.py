@@ -38,16 +38,15 @@ from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
-AuthTokenType = dagger.Secret
+AuthTokenType = Secret
 AuthTokenDaggerType = Annotated[
     AuthTokenType,
     dagger.Doc(
         "Authorization token with write access to the repository and its releases (GitLab tokens "
-        "need the api scope)."
+        "need the api scope)"
     ),
 ]
 AuthUserNameType = str
-AUTH_USER_NAME_DAGGER_DEFAULT: Final = "x-access-token"
 AuthUserNameDaggerType = Annotated[
     AuthUserNameType,
     dagger.Doc(
@@ -55,14 +54,21 @@ AuthUserNameDaggerType = Annotated[
         "GitLab access tokens)"
     ),
 ]
+AUTH_USER_NAME_DAGGER_DEFAULT: Final = "x-access-token"
 BranchType = str
 BranchDaggerType = Annotated[
     BranchType, dagger.Doc("Branch to release from and push the release commit to")
 ]
+VCSUserNameType = str
+VCSUserNameDaggerType = Annotated[
+    VCSUserNameType, dagger.Doc("VCS user name used for the release commit")
+]
 VCS_USER_NAME_DAGGER_DEFAULT: Final = "CI Release Bot"
-VCSUserNameDaggerType = Annotated[str, dagger.Doc("VCS user name used for the release commit")]
+VCSUserEMailType = str
+VCSUserEMailDaggerType = Annotated[
+    VCSUserEMailType, dagger.Doc("VCS user email used for the release commit")
+]
 VCS_USER_EMAIL_DAGGER_DEFAULT: Final = "ci@shiryu.dev"
-VCSUserEMailDaggerType = Annotated[str, dagger.Doc("VCS user email used for the release commit")]
 
 type PushUrl = str
 type PushUrls = list[PushUrl]
@@ -304,7 +310,7 @@ class Releaser(PythonModule):
 
     @final
     @staticmethod
-    async def __ensure_branch_head(container: dagger.Container, branch: BranchType) -> None:
+    async def __ensure_branch_head(container: Container, branch: BranchType) -> None:
         """Ensure the checked out commit is the tip of the remote release branch.
 
         CI checkouts are usually in detached HEAD state (always in GitLab), so the current branch
@@ -332,7 +338,7 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    async def __next_version(cls, container: dagger.Container) -> str | None:
+    async def __next_version(cls, container: Container) -> str | None:
         """Compute the next version from the commits since the last release tag.
 
         Args:
@@ -363,8 +369,12 @@ class Releaser(PythonModule):
     @final
     @classmethod
     def __bump(
-        cls, container: dagger.Container, version: str, vcs_user_name: str, vcs_user_email: str
-    ) -> dagger.Container:
+        cls,
+        container: Container,
+        version: str,
+        vcs_user_name: VCSUserNameType,
+        vcs_user_email: VCSUserEMailType,
+    ) -> Container:
         """Bump the project version, update the changelog, commit and tag.
 
         Args:
@@ -394,7 +404,7 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    async def __release_notes(cls, container: dagger.Container, tag: str) -> str:
+    async def __release_notes(cls, container: Container, tag: str) -> str:
         """Get the release notes of a tag from the changelog.
 
         Args:
@@ -422,7 +432,7 @@ class Releaser(PythonModule):
         tag: str,
         auth_user_name: AuthUserNameType,
         auth_token: AuthTokenType,
-    ) -> dagger.Container:
+    ) -> Container:
         """Push the release commit and tag atomically.
 
         Args:
@@ -476,7 +486,7 @@ class Releaser(PythonModule):
         notes: str,
         auth_token: AuthTokenType,
         platform: PlatformType,
-    ) -> dagger.Container:
+    ) -> Container:
         """Create the GitHub or GitLab release of a pushed tag in every push URL.
 
         Args:
@@ -490,7 +500,7 @@ class Releaser(PythonModule):
             The container after creating the releases.
         """
         container = container_debian(
-            dagger.dag, platform, apt_packages={"ca-certificates", "curl"}
+            platform, apt_packages={"ca-certificates", "curl"}
         ).with_secret_variable("RELEASE_AUTH_TOKEN", auth_token)
         curl_command = (
             "curl --fail-with-body --silent --show-error --request POST "
