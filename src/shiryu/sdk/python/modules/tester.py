@@ -36,11 +36,6 @@ OptionalKeywordDaggerType = Annotated[
     str | None, dagger.Doc("Run tests that match substring expression")
 ]
 OPTIONAL_KEYWORD_DAGGER_DEFAULT: Final = None
-PrivilegedNestingDaggerType = Annotated[
-    bool, dagger.Doc("Whether to allow container dagger client to connect to the dagger engine")
-]
-PRIVILEGED_NESTING_DAGGER_DEFAULT: Final = False
-
 
 class TesterInitializer(PythonModuleInitializer):
     """TesterInitializer class."""
@@ -256,14 +251,12 @@ class Tester(PythonModule):
         cls,
         container: dagger.Container,
         keyword: OptionalKeywordDaggerType,
-        privileged_nesting: PrivilegedNestingDaggerType,
     ) -> dagger.Container:
         """Unit test pipeline.
 
         Args:
             container: Project container.
             keyword: Run tests that match substring expression.
-            privileged_nesting: Whether to allow dagger container connect to the dagger engine.
 
         Returns:
             A container with the project test command executed.
@@ -288,7 +281,7 @@ class Tester(PythonModule):
         if keyword:
             pytest_command.extend([f"-k={keyword}", "--cov-fail-under=0"])
         return container.with_exec(
-            pytest_command, expect=expect, experimental_privileged_nesting=privileged_nesting
+            pytest_command, expect=expect
         )
 
     @final
@@ -299,11 +292,10 @@ class Tester(PythonModule):
         *,
         keyword: OptionalKeywordDaggerType = OPTIONAL_KEYWORD_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-        privileged_nesting: PrivilegedNestingDaggerType = PRIVILEGED_NESTING_DAGGER_DEFAULT,
     ) -> str:
         """Run unit tests in the project of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
-        container = await self.__unit(container, keyword, privileged_nesting)
+        container = await self.__unit(container, keyword)
         return await container.stdout()
 
     # @final

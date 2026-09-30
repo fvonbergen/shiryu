@@ -2,6 +2,7 @@ target-version = "py312"
 cache-dir = ".ruff_cache"
 respect-gitignore = true
 line-length = 100
+extend-exclude = ["sdk"]
 
 [lint]
 select = [

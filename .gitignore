@@ -4,6 +4,5 @@
 /.venv/
 /dist/
 /docs/reference/api-reference/
-/sdk/
 /site/
 __pycache__/

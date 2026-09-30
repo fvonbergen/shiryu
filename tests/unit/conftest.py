@@ -1,7 +1,5 @@
 """conftest module."""
 
-import sys
-
 import dagger
 import pytest_asyncio
 
@@ -16,6 +14,5 @@ async def dagger_client():
     Yields:
         dagger.Client: A live, connected Dagger client instance.
     """
-    config = dagger.Config(log_output=sys.stderr)
-    async with dagger.connection(config) as client:
+    async with await dagger.connect() as client:
         yield client

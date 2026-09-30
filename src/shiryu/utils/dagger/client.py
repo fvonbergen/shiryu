@@ -10,6 +10,9 @@ APT_PACKAGES = Set[str]
 
 WORKDIR_PATH: Final = PurePosixPath("/workspace")
 
+# FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = "public.ecr.aws/debian/debian:trixie-slim"
+FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = "docker.io/library/debian:trixie-slim"
+
 
 def container_debian(
     dagger_client: dagger.Client,
@@ -27,9 +30,7 @@ def container_debian(
     Returns:
         A debian container.
     """
-    container = dagger_client.container(platform=platform).from_(
-        "public.ecr.aws/debian/debian:trixie-slim"
-    )
+    container = dagger_client.container(platform=platform).from_(FULLY_QUALIFIED_IMAGE_NAME_DEBIAN)
     if apt_packages:
         apt_install = (
             "apt-get",

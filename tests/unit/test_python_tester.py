@@ -91,7 +91,7 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
     )
     stdout_regex = re.compile(
         r"^============================= test session starts ==============================\n"
-        r"platform linux -- Python (?P<python_major_version>\d+)\.\d+\.\d+, pytest-\d+\.\d+\.\d+, pluggy-\d+\.\d+\.\d+ -- /opt/.venv/bin/python(?P=python_major_version)\n"  # noqa: E501
+        r"platform linux -- Python (?P<python_major_version>\d+)\.\d+\.\d+, pytest-\d+\.\d+\.\d+, pluggy-\d+\.\d+\.\d+ -- /opt/.venv/bin/python\n"  # noqa: E501
         r"cachedir: \.pytest_cache\n"
         rf"rootdir: {WORKDIR_PATH}\n"
         r"configfile: pytest\.unit\.ini\n"

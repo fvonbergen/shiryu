@@ -136,4 +136,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     generate_reference_docs(dry_run=args.dry_run, verbose=args.verbose)
-

@@ -23,34 +23,33 @@ control commands internally and depends on the `.git/` directory and `.gitignore
 To install the Dagger CLI, follow the official instructions at
 [https://docs.dagger.io/install/](https://docs.dagger.io/install/).
 
-### Execution Modes
+### Installation & Execution
 
-You can run Shiryu by cloning the repository locally, or directly from a remote reference.
-
-Shiryu can be used by cloning the repository and running it with the dagger
-python SDK or by installing it with Dagger.
-
-To install Dagger follow the instructions in [https://docs.dagger.io/install/](https://docs.dagger.io/install/).
-
-To use Shiryu with a cloned repository run:
+Install Shiryu directly into your workspace using `dagger module install`:
 
 ```bash
-git clone https://github.com/fvonbergen/shiryu.git
-cd shiryu
-DO_NOT_TRACK=1 dagger call \
-    <shiryu_function>
+dagger module install https://github.com/fvonbergen/shiryu.git
 ```
 
-To run Shiryu using with dagger run:
+Once installed, invoke functions directly via the Dagger CLI:
 
 ```bash
-DO_NOT_TRACK=1 dagger --mod=https://github.com/fvonbergen/shiryu.git call \
+DO_NOT_TRACK=1 dagger api                                 \
+  call                                                    \
+  --verbose=4                                             \
+  shiryu                                                  \
   <shiryu_function>
 ```
 
-> [!IMPORTANT]
-> Prerequisites: Shiryu projects must use `git` as VCS. Shiryu executes
-`git` commands internally and depend on the `.git/` folder and `.gitignore` file.
+Alternatively, you can run functions directly from the remote reference without prior installation:
+
+```bash
+DO_NOT_TRACK=1 dagger api                                 \
+  call                                                    \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
+  <shiryu_function>
+```
 
 ### Python SDK
 
@@ -65,32 +64,41 @@ presence of a `uv.lock` file to manage deterministic environments.
 List commands:
 
 ```bash
-DO_NOT_TRACK=1 dagger call \
+DO_NOT_TRACK=1 dagger api                                 \
+  call                                                    \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
   python --help
 ```
 
 Initialize a new project:
 
 ```bash
-DO_NOT_TRACK=1 dagger call                        \
-  python                                          \
-  init                                            \
-    --project-directory=<project_directory_path>  \
-    --project-name=<project_name>                 \
-  export                                          \
+DO_NOT_TRACK=1 dagger api                                 \
+  call                                                    \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
+  python                                                  \
+  init                                                    \
+    --project-directory=<project_directory_path>          \
+    --project-name=<project_name>                         \
+  export                                                  \
     --path=<output_directory_path>
 ```
 
 Update a project:
 
 ```bash
-DO_NOT_TRACK=1 dagger call                        \
-  python                                          \
-  init                                            \
-    --project-directory=<project_directory_path>  \
-    --project-name=<project_name>                 \
-    --is-update                                   \
-  export                                          \
+DO_NOT_TRACK=1 dagger api                                 \
+  call                                                    \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
+  python                                                  \
+  init                                                    \
+    --project-directory=<project_directory_path>          \
+    --project-name=<project_name>                         \
+    --is-update                                           \
+  export                                                  \
     --path=<output_directory_path>
 ```
 
@@ -106,10 +114,29 @@ Assumes the Dagger Cloud token is in a repository CI/CD variable named
 
 ## For developers
 
-In the [pyproject.toml](pyproject.toml) file:
+### Local Execution & Testing
 
-- Uncomment the lines inside the `<develop>` tags to link and install your local, editable copy of the [Dagger Python SDK](https://github.com/dagger/dagger/tree/main/sdk/python).
-- Comment out the lines inside the `<release>` tags to disable fetching the published [Dagger Python SDK](https://github.com/dagger/dagger/tree/main/sdk/python) package from PyPI.
+To run Shiryu locally when cloned from source:
+
+```bash
+git clone https://github.com/fvonbergen/shiryu.git
+cd shiryu
+DO_NOT_TRACK=1 dagger api \
+  call                    \
+  --verbose=4             \
+  --load-module=.         \
+  <shiryu_function>
+```
+
+To run Shiryu directly from the remote repository:
+
+```bash
+DO_NOT_TRACK=1 dagger api                                 \
+  call                                                    \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
+  <shiryu_function>
+```
 
 ### Local virtual environment
 

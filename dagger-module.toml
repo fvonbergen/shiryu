@@ -1,0 +1,7 @@
+name = "shiryu"
+# https://docs.dagger.io/reference/sdks/python/#regenerate-bindings
+# engineVersion update involves regenerating bindings. Run `dagger generate`
+engineVersion = "v1.0.0-beta.15"
+
+[runtime]
+source = "python"

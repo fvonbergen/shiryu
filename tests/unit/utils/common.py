@@ -5,6 +5,8 @@ from typing import Any, NamedTuple, final
 
 import dagger
 
+from shiryu.utils.dagger.client import FULLY_QUALIFIED_IMAGE_NAME_DEBIAN
+
 Paths = tuple[str, ...]
 
 
@@ -92,7 +94,7 @@ print(json.dumps(final_paths))
     workdir_path_str = "/workspace"
     output_json = await (
         dagger.dag.container(platform=dagger.Platform("linux/amd64"))
-        .from_("public.ecr.aws/debian/debian:trixie-slim")
+        .from_(FULLY_QUALIFIED_IMAGE_NAME_DEBIAN)
         .with_env_variable(name="LC_ALL", value="C.UTF-8")
         # Prevent hanging scripts due to interactive prompts
         .with_env_variable(name="DEBIAN_FRONTEND", value="noninteractive")

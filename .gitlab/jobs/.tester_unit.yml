@@ -7,7 +7,6 @@ include:
     SHIRYU_VERSION: "feat/add-python-sdk-release"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
-    PRIVILEGED_NESTING: "True"
     PROJECT_DIRECTORY: "."
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --platform="${PLATFORM}" --privileged-nesting="${PRIVILEGED_NESTING}" --project-directory="${PROJECT_DIRECTORY}"
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}"

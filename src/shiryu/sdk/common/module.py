@@ -34,7 +34,7 @@ from .scm import (
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAULT
 
-DAGGER_VERSION = "0.21.7"
+DAGGER_VERSION = "1.0.0-beta.15"
 
 
 def warning(message: str) -> None:
@@ -61,7 +61,9 @@ PlatformDaggerType = Annotated[
 ]
 PLATFORM_DAGGER_DEFAULT: Final = dagger.Platform("linux/amd64")
 ProjectDirectoryType = dagger.Directory
-ProjectDirectoryDaggerType = Annotated[ProjectDirectoryType, PROJECT_DIRECTORY_DAGGER_TYPE_DOC]
+ProjectDirectoryDaggerType = Annotated[
+    ProjectDirectoryType, PROJECT_DIRECTORY_DAGGER_TYPE_DOC
+]
 IsUpdateType = bool
 IsUpdateDaggerType = Annotated[
     IsUpdateType, dagger.Doc("Whether to update project directory files or not")
@@ -71,7 +73,10 @@ IS_UPDATE_DAGGER_DEFAULT: Final = False
 SCMType = list[SCM]
 """A list of Source Control Management (SCM) configurations."""
 SCMDaggerType = Annotated[
-    SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured")
+    SCMType,
+    dagger.Doc(
+        "Project Source Code Management (SCM) list to be targeted or configured"
+    ),
 ]
 SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 
@@ -95,7 +100,9 @@ class ProjectMetadata:
     authors: frozenset[ProjectAuthor]
 
 
-class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitContextDirectory](ABC):
+class SDKModuleInitializer[
+    SDKModuleInitContextDirectoryType: SDKModuleInitContextDirectory
+](ABC):
     """SDKModuleInitializer class."""
 
     @classmethod
@@ -127,7 +134,9 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         """
         dagger_name = "dagger"
         job_name = f".{dagger_name}"
-        dagger_yml_template_mapping: Mapping = {"dagger_version": shiryu_metadata.dagger_version}
+        dagger_yml_template_mapping: Mapping = {
+            "dagger_version": shiryu_metadata.dagger_version
+        }
         dagger_yml_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
@@ -140,7 +149,8 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         return init_context_directory.evolve(
             scm=init_context_directory.scm.evolve(
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
-                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {dagger_job}
+                    jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
+                    | {dagger_job}
                 )
             )
         )
@@ -166,7 +176,9 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             Returns a directory with the VCS folders and files.
         """
         _project_authors = sorted(project_authors, key=lambda author: author.name)
-        project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
+        project_author = (
+            _project_authors[0] if len(_project_authors) else ProjectAuthor()
+        )
         container = container_git(dagger.dag, platform)
         _directory = (
             container.with_directory(".", directory)
@@ -180,7 +192,9 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             "exclude": sorted(init_context_vcs.exclude_files_folders)
         }
         _gitignore_template = Template(
-            COMMON_JINJA_ENVIRONMENT, TemplateFile(Path(".gitignore")), _gitignore_template_mapping
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(Path(".gitignore")),
+            _gitignore_template_mapping,
         )
         return directory_with_new_file(_directory, _gitignore_template)
 
@@ -207,7 +221,9 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
                     directory, init_context_directory_scm.github_actions_workflows
                 )
             if SCM.GITLAB in scm:
-                directory = gitlab_init(directory, init_context_directory_scm.gitlab_jobs_stages)
+                directory = gitlab_init(
+                    directory, init_context_directory_scm.gitlab_jobs_stages
+                )
         return directory
 
     @final
@@ -231,9 +247,13 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         Returns:
             The README.md template.
         """
-        readme_md_template_mapping: Mapping = {"project_name": project_name.capitalize()}
+        readme_md_template_mapping: Mapping = {
+            "project_name": project_name.capitalize()
+        }
         return Template(
-            COMMON_JINJA_ENVIRONMENT, cls._readme_md_template_file(), readme_md_template_mapping
+            COMMON_JINJA_ENVIRONMENT,
+            cls._readme_md_template_file(),
+            readme_md_template_mapping,
         )
 
     @classmethod
@@ -304,7 +324,9 @@ class SDKModule[
 
     @final
     @classmethod
-    async def __get_shiryu_metadata(cls, platform: PlatformType) -> DaggerModuleMetadata:
+    async def __get_shiryu_metadata(
+        cls, platform: PlatformType
+    ) -> DaggerModuleMetadata:
         """Returns shiryu metadata.
 
         Args:
@@ -344,10 +366,14 @@ class SDKModule[
         # Use a hard coded version
         dagger_version = DAGGER_VERSION
         # Get module exact git tag. Falls back to the branch name if the commit is not tagged.
-        container = container_git(dagger.dag, platform).with_directory(".", module_source)
+        container = container_git(dagger.dag, platform).with_directory(
+            ".", module_source
+        )
         try:
             module_tag = (
-                await container.with_exec(["git", "describe", "--tags", "--exact-match"]).stdout()
+                await container.with_exec(
+                    ["git", "describe", "--tags", "--exact-match"]
+                ).stdout()
             ).strip()
             return DaggerModuleMetadata(
                 dagger_version=dagger_version, git_tag_or_branch=module_tag.strip()
@@ -358,10 +384,13 @@ class SDKModule[
             # in dagger-in-dagger used in our tester unit module call with a QueryError
             try:
                 module_branch = (
-                    await container.with_exec(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout()
+                    await container.with_exec(
+                        ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+                    ).stdout()
                 ).strip()
                 return DaggerModuleMetadata(
-                    dagger_version=dagger_version, git_tag_or_branch=module_branch.strip()
+                    dagger_version=dagger_version,
+                    git_tag_or_branch=module_branch.strip(),
                 )
             except dagger.QueryError:
                 git_tag_or_branch = "undefined"
@@ -391,14 +420,18 @@ class SDKModule[
         )
         try:
             project_author_name = (
-                await project_container.with_exec(["git", "config", "user.name"]).stdout()
+                await project_container.with_exec(
+                    ["git", "config", "user.name"]
+                ).stdout()
             ).strip()
             project_author = replace(project_author, name=project_author_name)
         except dagger.QueryError:
             ...
         try:
             project_author_email = (
-                await project_container.with_exec(["git", "config", "user.email"]).stdout()
+                await project_container.with_exec(
+                    ["git", "config", "user.email"]
+                ).stdout()
             ).strip()
             project_author = replace(project_author, email=project_author_email)
         except dagger.QueryError:
@@ -431,7 +464,9 @@ class SDKModule[
             self._get_project_metadata(project_directory, platform),
         )
         project_metadata = (
-            replace(_project_metadata, name=project_name) if project_name else _project_metadata
+            replace(_project_metadata, name=project_name)
+            if project_name
+            else _project_metadata
         )
         return (shiryu_metadata, project_metadata)
 
@@ -521,7 +556,9 @@ class SDKModule[
         merged_directory = (
             project_directory.with_directory(".", init_directory, exclude=vcs_excludes)
             if is_update
-            else init_directory.filter(exclude=vcs_excludes).with_directory(".", project_directory)
+            else init_directory.filter(exclude=vcs_excludes).with_directory(
+                ".", project_directory
+            )
         ).directory(".")
         return merged_directory
 
@@ -578,7 +615,9 @@ class SDKModule[
     @classmethod
     @abstractmethod
     def _base_container(
-        cls, init_context_container: SDKModuleInitContextContainerType, platform: PlatformType
+        cls,
+        init_context_container: SDKModuleInitContextContainerType,
+        platform: PlatformType,
     ) -> dagger.Container:
         """Base container.
 
@@ -662,12 +701,16 @@ def get_sdk_language(
         """
         return init_initializer
 
-    sdk_module_options = create_enum("SDKModuleOptions", sdk_module_options_dict, is_unique=True)
+    sdk_module_options = create_enum(
+        "SDKModuleOptions", sdk_module_options_dict, is_unique=True
+    )
     sdk_module_options.__doc__ = """SDKModule options."""
     sdk_module_name = sdk_module.name()
     sdk_language = dagger.object_type(
         add_enum_values_as_methods(sdk_module_options)(
-            type(sdk_module_name, (sdk_module,), {"_initializer_cls": _initializer_cls()})
+            type(
+                sdk_module_name, (sdk_module,), {"_initializer_cls": _initializer_cls()}
+            )
         )
     )
 

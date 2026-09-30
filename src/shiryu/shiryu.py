@@ -21,7 +21,8 @@ SHIRYU_PACKAGE_NAME: Final = SHIRYU_PACKAGE_PATH.stem
 #     Returns:
 #         Package version.
 #     """
-#     # """Get package version from importlib metadata, then a fallback method, finally a fixed string.
+#     # """Get package version from importlib metadata, then a fallback method, finally a fixed
+#     # string.
 #
 #     # Returns:
 #     #    Package version.

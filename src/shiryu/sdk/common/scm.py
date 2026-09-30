@@ -222,8 +222,8 @@ UNSET: Final = UnsetType.UNSET
 class GitHubWorkflowTriggerAction:
     """GitHubWorkflowTriggerAction class."""
 
-    push: GitHubWorkflowTriggerActionPush | None | UnsetType
-    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | None | UnsetType
+    push: GitHubWorkflowTriggerActionPush | UnsetType | None
+    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | UnsetType | None
 
 
 @final
