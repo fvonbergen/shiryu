@@ -416,5 +416,4 @@ class Releaser(PythonModule):
         push_urls = [line.strip() for line in raw_origin.strip().splitlines() if line.strip()]
         return [cls.__normalize_to_https(url) for url in push_urls]
 
-
 sdk_module: Final = Releaser
