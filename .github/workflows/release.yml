@@ -34,6 +34,7 @@ jobs:
           sdk_language: "python"
           auth_token: ${{ secrets.AUTH_TOKEN }}
           auth_user_name: "x-access-token"
+          branch: "feat/add-python-sdk-release"
           git_user_email: "ci@shiryu.dev"
           git_user_name: "CI Release Bot"
           platform: "linux/amd64"
