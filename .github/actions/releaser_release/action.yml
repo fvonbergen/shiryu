@@ -14,18 +14,21 @@ inputs:
     default: "python"
   auth_token:
     description: "Authorization token"
+  auth_user_name:
+    description: "User name sent with the authorization token."
+    default: "x-access-token"
+  git_user_email:
+    description: "Git user email used for the release commit."
+    default: "ci@shiryu.dev"
+  git_user_name:
+    description: "Git user name used for the release commit."
+    default: "CI Release Bot"
   platform:
     description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
   project_directory:
     description: "Project directory path."
     default: "."
-  vcs_user_email:
-    description: "VCS user email"
-    default: "ci@shiryu.dev"
-  vcs_user_name:
-    description: "VCS user name"
-    default: "CI Release Bot"
 
 runs:
   using: "composite"
@@ -39,5 +42,5 @@ runs:
         version: "v1.0.0-beta.15"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
+        args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --auth-user-name="${{ inputs.auth_user_name }}" --git-user-email="${{ inputs.git_user_email }}" --git-user-name="${{ inputs.git_user_name }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

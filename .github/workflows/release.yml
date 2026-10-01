@@ -31,10 +31,11 @@ jobs:
           shiryu_version: "feat/add-python-sdk-release-add-some-new-things"
           sdk_language: "python"
           auth_token: ${{ secrets.AUTH_TOKEN }}
+          auth_user_name: "x-access-token"
+          git_user_email: "ci@shiryu.dev"
+          git_user_name: "CI Release Bot"
           platform: "linux/amd64"
           project_directory: "."
-          vcs_user_email: "ci@shiryu.dev"
-          vcs_user_name: "CI Release Bot"
   builder_publish:
     name: Builder publish
     needs: releaser_release
