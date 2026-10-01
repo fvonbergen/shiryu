@@ -17,6 +17,9 @@ inputs:
   auth_user_name:
     description: "User name sent with the authorization token."
     default: "x-access-token"
+  branch:
+    description: "Branch to release from and push the release commit to."
+    default: "main"
   git_user_email:
     description: "Git user email used for the release commit."
     default: "ci@shiryu.dev"
