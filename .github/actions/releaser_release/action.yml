@@ -30,6 +30,11 @@ inputs:
     description: "Project directory path."
     default: "."
 
+outputs:
+  tag:
+    description: "Release tag, empty if there was nothing to release"
+    value: ${{ steps.release_tag.outputs.tag }}
+
 runs:
   using: "composite"
   steps:
@@ -44,3 +49,9 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --auth-user-name="${{ inputs.auth_user_name }}" --git-user-email="${{ inputs.git_user_email }}" --git-user-name="${{ inputs.git_user_name }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+    - id: release_tag
+      name: Release tag
+      shell: bash
+      env:
+        OUTPUT: ${{ steps.call_dagger_releaser_release.outputs.output }}
+      run: echo "tag=$(printf '%s' "$OUTPUT" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"

@@ -16,7 +16,6 @@ from ...common.module import (
     PlatformDaggerType,
     PlatformType,
     ProjectDirectoryDaggerType,
-    ProjectDirectoryType,
     ProjectMetadata,
     SCMType,
 )
@@ -343,8 +342,12 @@ class Releaser(PythonModule):
         git_user_name: GitUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
         git_user_email: GitUserEmailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Directory | None:
-        """Bump version, update changelog, commit, tag, push and publish the project."""
+    ) -> str:
+        """Bump version, update changelog, commit, tag and push the project.
+
+        Returns the release tag, or an empty string if there is nothing to release, so CI can
+        decide whether to run the publishing jobs and which ref to check out.
+        """
         container, push_urls = await asyncio.gather(
             self._exec_container(project_directory, platform),
             self.__get_clean_push_urls(project_directory, platform),
@@ -352,13 +355,11 @@ class Releaser(PythonModule):
         await self.__ensure_primary_branch_head(container)
         version = await self.__next_version(container)
         if version is None:
-            return None
+            return ""
         tag = f"v{version}"
         bump_container = self.__bump(container, version, git_user_name, git_user_email)
-        push_container = await self.__push(
-            bump_container, push_urls, tag, auth_user_name, auth_token
-        ).sync()
-        return push_container.directory(".")
+        await self.__push(bump_container, push_urls, tag, auth_user_name, auth_token).sync()
+        return tag
 
     @final
     @classmethod
@@ -418,7 +419,6 @@ class Releaser(PythonModule):
 
         push_urls = [line.strip() for line in raw_origin.strip().splitlines() if line.strip()]
         return [cls.__normalize_to_https(url) for url in push_urls]
-
 
 
 sdk_module: Final = Releaser
