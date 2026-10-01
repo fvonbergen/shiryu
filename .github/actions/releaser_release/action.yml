@@ -33,6 +33,11 @@ inputs:
     description: "VCS user name"
     default: "CI Release Bot"
 
+outputs:
+  tag:
+    description: "Release tag, empty if there was nothing to release"
+    value: ${{ steps.release_tag.outputs.tag }}
+
 runs:
   using: "composite"
   steps:
@@ -47,3 +52,9 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --platform="${{ inputs.platform }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+    - id: release_tag
+      name: Release tag
+      shell: bash
+      env:
+        OUTPUT: ${{ steps.call_dagger_releaser_release.outputs.output }}
+      run: echo "tag=$(printf '%s' "$OUTPUT" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
