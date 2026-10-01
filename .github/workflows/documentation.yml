@@ -34,7 +34,7 @@ jobs:
         uses: ./.github/actions/documenter_document
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
+          shiryu_version: "feat/add-python-sdk-release-add-some-new-things"
           sdk_language: "python"
           platform: "linux/amd64"
           project: "."
