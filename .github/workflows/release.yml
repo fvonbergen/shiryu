@@ -15,6 +15,8 @@ jobs:
   releaser_release:
     name: Releaser release
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.releaser_release.outputs.tag }}
     permissions:
       contents: write
     steps:
@@ -28,30 +30,34 @@ jobs:
         uses: "./.github/actions/releaser_release"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
+          shiryu_version: "feat/add-python-sdk-release-add-some-new-things"
           sdk_language: "python"
           auth_token: ${{ secrets.AUTH_TOKEN }}
+          auth_user_name: "x-access-token"
+          # TODO: set back to "main" after testing the release from this branch.
+          branch: "feat/add-python-sdk-release-add-some-new-things"
+          git_user_email: "ci@shiryu.dev"
+          git_user_name: "CI Release Bot"
           platform: "linux/amd64"
           project_directory: "."
-          vcs_user_email: "ci@shiryu.dev"
-          vcs_user_name: "CI Release Bot"
   builder_publish:
     name: Builder publish
     needs: releaser_release
+    if: needs.releaser_release.outputs.tag != ''
     runs-on: ubuntu-latest
     steps:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ needs.releaser_release.outputs.tag }}
           fetch-depth: 0
       - id: builder_publish
         name: Builder publish
         uses: "./.github/actions/builder_publish"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
+          shiryu_version: "feat/add-python-sdk-release-add-some-new-things"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."
@@ -61,6 +67,7 @@ jobs:
   documenter_document:
     name: Documenter document
     needs: releaser_release
+    if: needs.releaser_release.outputs.tag != ''
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -75,14 +82,14 @@ jobs:
         name: Check out code
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: ${{ needs.releaser_release.outputs.tag }}
           fetch-depth: 0
       - id: documenter_document
         name: Documenter document
         uses: "./.github/actions/documenter_document"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
+          shiryu_version: "feat/add-python-sdk-release-add-some-new-things"
           sdk_language: "python"
           platform: "linux/amd64"
           project_directory: "."

@@ -1,6 +1,6 @@
 [project]
 name = "{{ project_name }}"
-dynamic = ["version"]
+version = "{{ project_version }}"
 description = ""
 readme = "{{ readme_file_name }}"
 authors = [
@@ -40,7 +40,7 @@ dependencies = []
 # "Twitter" = ""
 
 [build-system]
-requires = ["hatchling==1.31.0", "hatch-vcs==0.5.0"]
+requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
 
 [tool.uv]
@@ -52,7 +52,3 @@ environments = [
   "python_version == '3.13'",
   "python_version == '3.14'",
 ]
-
-[tool.hatch.version]
-source = "vcs"
-fallback-version = "0.0.0+unknown"
