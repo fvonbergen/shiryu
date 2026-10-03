@@ -49,7 +49,7 @@ runs:
       with:
         version: "v1.0.0-beta.15"
         verb: call
-        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        module: github.com/eamanu/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --auth-user-name="${{ inputs.auth_user_name }}" --branch="${{ inputs.branch }}" --git-user-email="${{ inputs.git_user_email }}" --git-user-name="${{ inputs.git_user_name }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
     - id: release_tag

@@ -31,6 +31,6 @@ runs:
       with:
         version: "v1.0.0-beta.15"
         verb: call
-        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        module: github.com/eamanu/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} linter lint-vcs --branch-history="${{ inputs.branch_history }}" --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

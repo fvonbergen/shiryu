@@ -36,6 +36,6 @@ runs:
       with:
         version: "v1.0.0-beta.15"
         verb: call
-        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        module: github.com/eamanu/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder publish --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
