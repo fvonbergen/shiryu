@@ -16,6 +16,7 @@ from ...common.module import (
     PlatformDaggerType,
     PlatformType,
     ProjectDirectoryDaggerType,
+    ProjectDirectoryType,
     ProjectMetadata,
     SCMType,
 )
@@ -264,31 +265,51 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    async def __ensure_branch_head(cls, container: dagger.Container, branch: str) -> None:
-        """Ensure the checked out commit is the tip of the remote release branch.
+    async def remote_branch_sha(cls, push_url: str, branch: str, auth_token: dagger.Secret, auth_user_name: str) -> str:
+        remote = dagger.dag.git(
+            push_url, http_auth_username=auth_user_name, http_auth_token=auth_token
+        )
+        return await remote.branch(branch).commit_sha()
+
+    @final
+    @classmethod
+    async def __ensure_branch_head(
+        cls,
+        project_directory: ProjectDirectoryType,
+        push_urls: PushUrls,
+        branch: str,
+        auth_user_name: str,
+        auth_token: dagger.Secret,
+    ) -> None:
+        """Ensure the checked out commit is the tip of the release branch on every push remote.
 
         CI checkouts are usually in detached HEAD state (always in GitLab), so the current branch
-        name can't be used. Comparing against the remote-tracking ref prevents releasing (and
-        pushing to the release branch) from any other branch.
+        name can't be used. Comparing against the actual remotes (instead of the local
+        remote-tracking refs, which depend on how the checkout was fetched) prevents releasing
+        (and pushing to the release branch) from any other branch or from an outdated commit.
 
         Args:
-            container: Project container.
+            project_directory: Project directory.
+            push_urls: Credential-free HTTPS push URLs.
             branch: Release branch.
+            auth_user_name: User name sent along with the token.
+            auth_token: Token with read access to the repository.
 
         Raises:
-            RuntimeError: If HEAD is not the tip of the remote release branch.
+            RuntimeError: If HEAD is not the tip of the release branch on any push remote.
         """
-        remote_ref = f"refs/remotes/origin/{branch}"
-        executed_container = container.with_exec(
-            ["git", "rev-parse", "HEAD", remote_ref], expect=dagger.ReturnType.ANY
+
+        head_sha, *remote_shas = await asyncio.gather(
+            project_directory.as_git().head().commit_sha(),
+            *(cls.remote_branch_sha(push_url, branch, auth_token, auth_user_name) for push_url in push_urls),
         )
-        head_sha, _, remote_sha = (await executed_container.stdout()).strip().partition("\n")
-        if await executed_container.exit_code() != 0 or head_sha != remote_sha:
-            exception_message = (
-                f"Releases can only be made from the tip of {branch} "
-                f"(HEAD={head_sha or 'unknown'}, {remote_ref}={remote_sha or 'missing'})"
-            )
-            raise RuntimeError(exception_message)
+        for push_url, remote_sha in zip(push_urls, remote_shas, strict=True):
+            if head_sha != remote_sha:
+                exception_message = (
+                    f"Releases can only be made from the tip of {branch} "
+                    f"(HEAD={head_sha}, {push_url} {branch}={remote_sha})"
+                )
+                raise RuntimeError(exception_message)
 
     @final
     @classmethod
@@ -359,7 +380,9 @@ class Releaser(PythonModule):
             self._exec_container(project_directory, platform),
             self.__get_clean_push_urls(project_directory, platform),
         )
-        await self.__ensure_branch_head(container, branch)
+        await self.__ensure_branch_head(
+            project_directory, push_urls, branch, auth_user_name, auth_token
+        )
         version = await self.__next_version(container)
         if version is None:
             return ""
