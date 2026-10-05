@@ -364,10 +364,11 @@ class Documenter(PythonModule):
         project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Directory:
+    ) -> dagger.Changeset:
         """Run documenter document in the project of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
-        return self.__document(container)
+        return self.__document(container).changes(project_directory)
+
 
 #     @final
 #     @dagger.function
@@ -379,7 +380,7 @@ class Documenter(PythonModule):
 #     ) -> str | None:
 #         """Audit source code docstrings."""
 #         workspace = await self._exec_container(project_directory, platform)
-# 
+#
 #         # Extract source code context before calling LLM
 #         source_code_dump = await workspace.with_exec(
 #             [
@@ -388,7 +389,7 @@ class Documenter(PythonModule):
 #                 f"find {PROJECT_SOURCE_CODE_FOLDER} -name '*.py' -exec echo '=== FILE: {{}} ===' \\; -exec cat {{}} \\;",  # noqa: E501
 #             ]
 #         ).stdout()
-# 
+#
 #         # Render prompt template
 #         documenter_audit_propmpt_txt_template_mapping: Mapping = {
 #             "source_code_dump": source_code_dump,
@@ -399,7 +400,7 @@ class Documenter(PythonModule):
 #             TemplateFile(Path("documenter_audit_prompt.txt")),
 #             documenter_audit_propmpt_txt_template_mapping,
 #         )
-# 
+#
 #         prompt = documenter_audit_prompt_txt_template.contents
 #         report = await (
 #             dagger.dag.llm(model="gemini-3.6-flash")
@@ -407,7 +408,7 @@ class Documenter(PythonModule):
 #             .loop()
 #             .last_reply()
 #         )
-# 
+#
 #         return report
 
 

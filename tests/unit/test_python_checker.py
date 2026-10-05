@@ -6,7 +6,7 @@ import pytest
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
 
-from .utils.common import Paths, get_all_paths
+from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -22,12 +22,19 @@ def python_checker_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
     """
     return (
         *(
-            (".gitlab/jobs/.checker_check.yml", ".gitlab/stages/quality.yml")
+            (".gitlab/jobs/.checker_check.yml", ".gitlab/stages/", ".gitlab/stages/quality.yml")
             if SCM.GITLAB in scm
             else ()
         ),
         *(
-            (".github/actions/checker_check/action.yml", ".github/workflows/quality.yml")
+            (
+                ".github/",
+                ".github/actions/",
+                ".github/actions/checker_check/",
+                ".github/actions/checker_check/action.yml",
+                ".github/workflows/",
+                ".github/workflows/quality.yml",
+            )
             if SCM.GITHUB in scm
             else ()
         ),
@@ -49,7 +56,7 @@ async def test_python_checker_init(dagger_client: dagger.Client, test_case: Test
     """
     inputs = test_case.inputs
 
-    directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .checker()()
         .init(
@@ -61,7 +68,7 @@ async def test_python_checker_init(dagger_client: dagger.Client, test_case: Test
         )
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths
 
 
 @pytest.mark.asyncio
@@ -75,7 +82,7 @@ async def test_python_checker_check(dagger_client: dagger.Client) -> None:
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .checker()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
@@ -83,7 +90,7 @@ async def test_python_checker_check(dagger_client: dagger.Client) -> None:
     stdout = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .checker()()
-        .check(project_directory=project_directory, platform=platform)
+        .check(project_directory=project_directory.with_changes(init_changeset), platform=platform)
     )
 
     assert stdout == "Check successfull"

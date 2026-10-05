@@ -6,7 +6,7 @@ import pytest
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
 
-from .utils.common import Paths, get_all_paths
+from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 from .utils.python_linter import (
     TestCaseFixCodeSuccess,
@@ -32,6 +32,7 @@ def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
             (
                 ".gitlab/jobs/.linter_lint_code.yml",
                 ".gitlab/jobs/.linter_lint_vcs.yml",
+                ".gitlab/stages/",
                 ".gitlab/stages/quality.yml",
             )
             if SCM.GITLAB in scm
@@ -39,8 +40,13 @@ def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
         ),
         *(
             (
+                ".github/",
+                ".github/actions/",
+                ".github/actions/linter_lint_code/",
                 ".github/actions/linter_lint_code/action.yml",
+                ".github/actions/linter_lint_vcs/",
                 ".github/actions/linter_lint_vcs/action.yml",
+                ".github/workflows/",
                 ".github/workflows/quality.yml",
             )
             if SCM.GITHUB in scm
@@ -67,7 +73,7 @@ async def test_python_linter_init(dagger_client: dagger.Client, test_case: TestC
     """
     inputs = test_case.inputs
 
-    directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(
@@ -79,7 +85,7 @@ async def test_python_linter_init(dagger_client: dagger.Client, test_case: TestC
         )
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths
 
 
 TEST_CASES_LINTER_LINT_CODE_SUCCESS = build_test_cases_linter_lint_code_success()
@@ -103,11 +109,12 @@ async def test_python_linter_lint_success(
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
+    project_directory = project_directory.with_changes(init_changeset)
     if file is not None:
         project_directory = project_directory.with_new_file(
             path=str(file.path), contents=file.contents
@@ -142,11 +149,12 @@ async def test_python_linter_lint_failure(
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
+    project_directory = project_directory.with_changes(init_changeset)
     if file is not None:
         project_directory = project_directory.with_new_file(
             path=str(file.path), contents=file.contents
@@ -182,19 +190,20 @@ async def test_python_linter_fix_success(
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
+    project_directory = project_directory.with_changes(init_changeset)
     if file is not None:
         project_directory = project_directory.with_new_file(
             path=str(file.path), contents=file.contents
         )
-    directory = (
+    changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .linter()()
         .fix_code(project_directory=project_directory, platform=platform)
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await changeset.added_paths()) == test_case.output.paths

@@ -6,7 +6,7 @@ import pytest
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import ProjectNameType, SCMType
 
-from .utils.common import Paths, get_all_paths
+from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -20,7 +20,10 @@ def python_jupyter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
     Returns:
         The python jupyter initializer paths.
     """
-    return ("notebooks/playground.ipynb",)
+    return (
+        "notebooks/",
+        "notebooks/playground.ipynb",
+    )
 
 
 TEST_CASES = build_test_cases_init((python_jupyter_init_paths,))
@@ -28,7 +31,7 @@ TEST_CASES = build_test_cases_init((python_jupyter_init_paths,))
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
-async def test_python_builder_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
+async def test_python_jupyter_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
     """Test python jupyter init function module.
 
     Args:
@@ -37,7 +40,7 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
     """
     inputs = test_case.inputs
 
-    directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .jupyter()()
         .init(
@@ -49,4 +52,4 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
         )
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths

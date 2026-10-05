@@ -9,7 +9,7 @@ from shiryu.main import Shiryu
 from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
 from shiryu.sdk.python.utils import get_package_name_canonical
 
-from .utils.common import Paths, get_all_paths
+from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -28,6 +28,7 @@ def python_builder_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
             (
                 ".gitlab/jobs/.builder_publish.yml",
                 ".gitlab/jobs/.builder_test.yml",
+                ".gitlab/stages/",
                 ".gitlab/stages/quality.yml",
                 ".gitlab/stages/release.yml",
             )
@@ -36,8 +37,13 @@ def python_builder_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
         ),
         *(
             (
+                ".github/",
+                ".github/actions/",
+                ".github/actions/builder_publish/",
                 ".github/actions/builder_publish/action.yml",
+                ".github/actions/builder_test/",
                 ".github/actions/builder_test/action.yml",
+                ".github/workflows/",
                 ".github/workflows/quality.yml",
                 ".github/workflows/release.yml",
             )
@@ -61,7 +67,7 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
     """
     inputs = test_case.inputs
 
-    directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .builder()()
         .init(
@@ -73,7 +79,7 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
         )
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths
 
 
 @pytest.mark.asyncio
@@ -88,29 +94,29 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .builder()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
     )
-    directory = (
+    build_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .builder()()
-        .build(project_directory=project_directory, platform=platform)
+        .build(project_directory=project_directory.with_changes(init_changeset), platform=platform)
     )
-    paths = await get_all_paths(directory)
     date_pattern = r"\d{4}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
-    expected_paths_compiled_patterns = (
-        re.compile(
-            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-py3-none-any\.whl$"
-        ),
-        re.compile(
-            rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}\.tar\.gz$"
-        ),
+    expected_changeset_patterns = (
+        "^dist/$",
+        "^dist/linux/$",
+        "^dist/linux/amd64/$",
+        rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-py3-none-any\.whl$",
+        rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}\.tar\.gz$",
     )
 
-    for path, pattern in zip(paths, expected_paths_compiled_patterns, strict=True):
-        assert pattern.match(path)
+    for changeset, pattern in zip(
+        await build_changeset.added_paths(), expected_changeset_patterns, strict=True
+    ):
+        assert re.compile(pattern).fullmatch(changeset)
 
 
 @pytest.mark.asyncio
@@ -124,7 +130,7 @@ async def test_python_builder_test(dagger_client: dagger.Client) -> None:
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .builder()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
@@ -132,7 +138,7 @@ async def test_python_builder_test(dagger_client: dagger.Client) -> None:
     stdout = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .builder()()
-        .test(project_directory=project_directory, platform=platform)
+        .test(project_directory=project_directory.with_changes(init_changeset), platform=platform)
     )
 
     assert stdout == "Test build successfull"

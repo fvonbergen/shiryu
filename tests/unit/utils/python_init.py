@@ -53,10 +53,12 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
     """
     package_name_canonical = get_package_name_canonical(project_name)
     return (
+        ".git/",
         ".git/HEAD",
         ".git/branches/",
         ".git/config",
         ".git/description",
+        ".git/hooks/",
         ".git/hooks/applypatch-msg.sample",
         ".git/hooks/commit-msg.sample",
         ".git/hooks/fsmonitor-watchman.sample",
@@ -71,15 +73,20 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
         ".git/hooks/push-to-checkout.sample",
         ".git/hooks/sendemail-validate.sample",
         ".git/hooks/update.sample",
+        ".git/info/",
         ".git/info/exclude",
+        ".git/objects/",
         ".git/objects/info/",
         ".git/objects/pack/",
+        ".git/refs/",
         ".git/refs/heads/",
         ".git/refs/tags/",
         ".gitignore",
         *(
             (
                 ".gitlab-ci.yml",
+                ".gitlab/",
+                ".gitlab/jobs/",
                 ".gitlab/jobs/.dagger.yml",
             )
             if SCM.GITLAB in scm
@@ -88,6 +95,8 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
         "CHANGELOG.md",
         "README.md",
         "pyproject.toml",
+        "src/",
+        f"src/{package_name_canonical}/",
         f"src/{package_name_canonical}/__init__.py",
         f"src/{package_name_canonical}/py.typed",
         "uv.lock",

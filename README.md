@@ -82,8 +82,6 @@ DO_NOT_TRACK=1 dagger api                                 \
   init                                                    \
     --project-directory=<project_directory_path>          \
     --project-name=<project_name>                         \
-  export                                                  \
-    --path=<output_directory_path>
 ```
 
 Update a project:
@@ -98,8 +96,6 @@ DO_NOT_TRACK=1 dagger api                                 \
     --project-directory=<project_directory_path>          \
     --project-name=<project_name>                         \
     --is-update                                           \
-  export                                                  \
-    --path=<output_directory_path>
 ```
 
 ### With GitHub

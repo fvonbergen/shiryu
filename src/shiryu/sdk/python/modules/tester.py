@@ -37,6 +37,7 @@ OptionalKeywordDaggerType = Annotated[
 ]
 OPTIONAL_KEYWORD_DAGGER_DEFAULT: Final = None
 
+
 class TesterInitializer(PythonModuleInitializer):
     """TesterInitializer class."""
 
@@ -280,9 +281,7 @@ class Tester(PythonModule):
         )
         if keyword:
             pytest_command.extend([f"-k={keyword}", "--cov-fail-under=0"])
-        return container.with_exec(
-            pytest_command, expect=expect
-        )
+        return container.with_exec(pytest_command, expect=expect)
 
     @final
     @dagger.function

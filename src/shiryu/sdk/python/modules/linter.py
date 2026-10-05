@@ -261,7 +261,7 @@ class Linter(PythonModule):
 
     @final
     @classmethod
-    async def __lint_fix_code(cls, container: dagger.Container, fix: bool) -> dagger.Directory:
+    async def __lint_fix_code(cls, container: dagger.Container, fix: bool) -> dagger.Changeset:
         """Lint or fix code pipeline.
 
         Args:
@@ -269,7 +269,7 @@ class Linter(PythonModule):
             fix: Whether to fix the project files or not.
 
         Returns:
-            Modified files between the project directory before and after running commands.
+            Changeset between the project directory before and after running commands.
         """
         initializer = cls._initializer_cls()
         ruff_cache_folder = initializer._ruff_cache_folder()
@@ -295,7 +295,7 @@ class Linter(PythonModule):
             ruff_format_command
         )
         modified_dir = executed_container.directory(".").filter(exclude=[f"{ruff_cache_folder}/"])
-        return await initial_dir.diff(modified_dir).sync()
+        return await modified_dir.changes(initial_dir).sync()
 
     @final
     @classmethod
@@ -368,7 +368,7 @@ class Linter(PythonModule):
         project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Directory:
+    ) -> dagger.Changeset:
         """Run linter fixes in the project code of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
         return await self.__lint_fix_code(container, True)

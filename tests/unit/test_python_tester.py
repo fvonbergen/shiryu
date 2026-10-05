@@ -9,7 +9,7 @@ from shiryu.main import Shiryu
 from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
 from shiryu.utils.dagger.client import WORKDIR_PATH
 
-from .utils.common import Paths, get_all_paths
+from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -26,16 +26,23 @@ def python_tester_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
     return (
         *(".coveragerc",),
         *(
-            (".gitlab/jobs/.tester_unit.yml", ".gitlab/stages/quality.yml")
+            (".gitlab/jobs/.tester_unit.yml", ".gitlab/stages/", ".gitlab/stages/quality.yml")
             if SCM.GITLAB in scm
             else ()
         ),
         *(
-            (".github/actions/tester_unit/action.yml", ".github/workflows/quality.yml")
+            (
+                ".github/",
+                ".github/actions/",
+                ".github/actions/tester_unit/",
+                ".github/actions/tester_unit/action.yml",
+                ".github/workflows/",
+                ".github/workflows/quality.yml",
+            )
             if SCM.GITHUB in scm
             else ()
         ),
-        *("pytest.unit.ini", "tests/unit/"),
+        *("pytest.unit.ini", "tests/", "tests/unit/"),
     )
 
 
@@ -53,7 +60,7 @@ async def test_python_tester_init(dagger_client: dagger.Client, test_case: TestC
     """
     inputs = test_case.inputs
 
-    directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .tester()()
         .init(
@@ -65,7 +72,7 @@ async def test_python_tester_init(dagger_client: dagger.Client, test_case: TestC
         )
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths
 
 
 @pytest.mark.asyncio
@@ -79,7 +86,7 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
     project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
-    project_directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .tester()()
         .init(project_name=project_name, project_directory=project_directory, platform=platform)
@@ -87,7 +94,7 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
     stdout = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .tester()()
-        .unit(project_directory=project_directory, platform=platform)
+        .unit(project_directory=project_directory.with_changes(init_changeset), platform=platform)
     )
     stdout_regex = re.compile(
         r"^============================= test session starts ==============================\n"

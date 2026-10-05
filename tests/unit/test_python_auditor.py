@@ -6,7 +6,7 @@ import pytest
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
 
-from .utils.common import Paths, get_all_paths
+from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -24,6 +24,7 @@ def python_auditor_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
         *(
             (
                 ".gitlab/jobs/.auditor_audit.yml",
+                ".gitlab/stages/",
                 ".gitlab/stages/quality.yml",
             )
             if SCM.GITLAB in scm
@@ -31,7 +32,11 @@ def python_auditor_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
         ),
         *(
             (
+                ".github/",
+                ".github/actions/",
+                ".github/actions/auditor_audit/",
                 ".github/actions/auditor_audit/action.yml",
+                ".github/workflows/",
                 ".github/workflows/quality.yml",
             )
             if SCM.GITHUB in scm
@@ -54,7 +59,7 @@ async def test_python_auditor_init(dagger_client: dagger.Client, test_case: Test
     """
     inputs = test_case.inputs
 
-    directory = (
+    init_changeset = (
         await Shiryu.python()  # ty: ignore[unresolved-attribute]
         .auditor()()
         .init(
@@ -66,4 +71,4 @@ async def test_python_auditor_init(dagger_client: dagger.Client, test_case: Test
         )
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths

@@ -13,7 +13,6 @@ from .test_python_jupyter import python_jupyter_init_paths
 from .test_python_linter import python_linter_init_paths
 from .test_python_releaser import python_releaser_init_paths
 from .test_python_tester import python_tester_init_paths
-from .utils.common import get_all_paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 TEST_CASES = build_test_cases_init(
@@ -41,7 +40,7 @@ async def test_python_init(dagger_client: dagger.Client, test_case: TestCaseInit
     """
     inputs = test_case.inputs
 
-    directory = await Shiryu.python()().init(  # ty: ignore[unresolved-attribute]
+    init_changeset = await Shiryu.python()().init(  # ty: ignore[unresolved-attribute]
         project_name=inputs.project_name,
         project_directory=inputs.project_directory,
         is_update=inputs.is_update,
@@ -49,4 +48,4 @@ async def test_python_init(dagger_client: dagger.Client, test_case: TestCaseInit
         platform=inputs.platform,
     )
 
-    assert await get_all_paths(directory) == test_case.output.paths
+    assert tuple(await init_changeset.added_paths()) == test_case.output.paths

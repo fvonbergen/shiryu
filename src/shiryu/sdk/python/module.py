@@ -126,9 +126,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             pyproject_toml_template_file,
             pyproject_toml_template_mapping,
         )
-        init_directory = directory_with_new_file(
-            init_directory, pyproject_toml_template
-        )
+        init_directory = directory_with_new_file(init_directory, pyproject_toml_template)
         source_code_package_name_canonical_path = (
             PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / package_name_canonical
         )
@@ -192,12 +190,10 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
             The project metadata.
         """
         initializer = cls._initializer_cls()
-        project_metadata = await super()._get_project_metadata(
-            project_directory, platform
+        project_metadata = await super()._get_project_metadata(project_directory, platform)
+        project_container = container_uv(dagger.dag, platform, apt_packages={"git"}).with_directory(
+            ".", project_directory
         )
-        project_container = container_uv(
-            dagger.dag, platform, apt_packages={"git"}
-        ).with_directory(".", project_directory)
         try:
             pyproject_toml_file_contents = await project_container.file(
                 str(initializer._pyproject_toml_template_file().output_path)
@@ -209,9 +205,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
                 name=pyproject_toml_project["name"],
                 authors=frozenset(
                     {
-                        ProjectAuthor(
-                            name=project_author["name"], email=project_author["email"]
-                        )
+                        ProjectAuthor(name=project_author["name"], email=project_author["email"])
                         for project_author in pyproject_toml_project["authors"]
                     }
                 ),
@@ -253,9 +247,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         Returns:
             A base container.
         """
-        return container_uv(
-            dagger.dag, platform, apt_packages=init_context_container.apt_packages
-        )
+        return container_uv(dagger.dag, platform, apt_packages=init_context_container.apt_packages)
 
     @final
     @classmethod

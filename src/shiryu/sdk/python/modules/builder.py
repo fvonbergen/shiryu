@@ -259,10 +259,10 @@ class Builder(PythonModule):
         project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Directory:
+    ) -> dagger.Changeset:
         """Build project distributable of the provided source Directory."""
         container = await self._exec_container(project_directory, platform)
-        return self.__build(container, platform)
+        return self.__build(container, platform).changes(project_directory)
 
     @dagger.function
     async def publish(

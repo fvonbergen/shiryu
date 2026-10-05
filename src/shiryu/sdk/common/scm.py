@@ -705,7 +705,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
         sdk_module_function_return_type = signature(sdk_module_function).return_annotation
         if (
             sdk_module_function_return_type is Parameter.empty
-            or sdk_module_function_return_type is not dagger.Directory
+            or sdk_module_function_return_type not in (dagger.Changeset, dagger.Directory)
         ):
             exception_message = (
                 f"Invalid `export_path` argument for SDK module function "
@@ -884,7 +884,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         sdk_module_function_return_type = signature(sdk_module_function).return_annotation
         if (
             sdk_module_function_return_type is Parameter.empty
-            or sdk_module_function_return_type is not dagger.Directory
+            or sdk_module_function_return_type not in (dagger.Changeset, dagger.Directory)
         ):
             exception_message = (
                 f"Invalid `export_path` argument for SDK module function "
