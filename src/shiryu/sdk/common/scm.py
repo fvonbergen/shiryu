@@ -400,6 +400,7 @@ class GitLabVariable:
 type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
+type GitLabStageWhen = str | None
 
 
 @final
@@ -407,13 +408,16 @@ type GitLabStageName = str
 class GitLabStageJob:
     """GitLabStageJob class."""
 
-    path: str
+    path: str | None
     name: str
     extends: GitLabArrayType
     variables: GitLabVariables
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
+    when: GitLabStageWhen = None
+    script: GitLabScript = ()
+    artifacts: GitLabArtifacts | None = None
 
 
 @final
@@ -423,6 +427,7 @@ class GitLabStageProperties:
 
     name: GitLabStageName
     rules: GitLabStageRules
+    when: GitLabStageWhen = None
 
 
 @final
@@ -430,6 +435,7 @@ class GitLabStageProperties:
 class GitLabStageId(Enum):
     """GitLabStageId options."""
 
+    DOCUMENTATION = GitLabStageProperties("documentation", ())
     QUALITY = GitLabStageProperties("quality", ())
     RELEASE = GitLabStageProperties("release", ())
 
@@ -616,7 +622,11 @@ def gitlab_init(
         directory = directory_with_new_file(directory, gitlab_job.template)
     # .gitlab/stages/*.yml
     gitlab_ci_stages: dict[str, str] = {}
-    for gitlab_stage, gitlab_stage_jobs in gitlab_jobs_stages.stages.items():
+    gitlab_stage_jobs_by_id = dict(gitlab_jobs_stages.stages.items())
+    for gitlab_stage in GitLabStageId:
+        gitlab_stage_jobs = gitlab_stage_jobs_by_id.get(gitlab_stage)
+        if gitlab_stage_jobs is None:
+            continue
         gitlab_stage_name = gitlab_stage.value.name
         gitlab_stage_file_name = f"{gitlab_stage_name}.yml"
         gitlab_stage_yml_template_mapping: Mapping = {"jobs": gitlab_stage_jobs}
@@ -836,6 +846,9 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     export_path: PurePosixPath | None,
     post_script: GitLabScript,
     artifacts: GitLabArtifacts | None,
+    gitlab_module_path: str = "gitlab.com/fvonbergen1/shiryu",
+    parameter_variable_names: dict[str, str] | None = None,
+    secret_reference_prefix: str = "env:",
 ) -> GitLabJob:
     """Build a GitLab job.
 
@@ -880,14 +893,19 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     job_name = f".{id_}"
     shiryu_version_gitlab_variable = GitLabVariable("SHIRYU_VERSION", shiryu_version)
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
+    _parameter_variable_names = parameter_variable_names or {}
+    parameter_variable_names_by_parameter = {
+        parameter.name: _parameter_variable_names.get(parameter.name, parameter.name.upper())
+        for parameter in sdk_module_function_parameters
+    }
     variables = (
         shiryu_version_gitlab_variable,
         sdk_language_gitlab_variable,
         *variables,
         *tuple(
             GitLabVariable(
-                sdk_module_function_parameter.name.upper(),
-                f"env:{sdk_module_function_parameter.name.upper()}"
+                parameter_variable_names_by_parameter[sdk_module_function_parameter.name],
+                f"{secret_reference_prefix}{sdk_module_function_parameter.name.upper()}"
                 if sdk_module_function_parameter.is_secret
                 else sdk_module_function_parameter.default
                 if sdk_module_function_parameter.default is not None
@@ -897,14 +915,14 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         ),
     )
     formatted_parameters = [
-        f'{parameter.option}="${{{parameter.name.upper()}}}"'
+        f'{parameter.option}="${{{parameter_variable_names_by_parameter[parameter.name]}}}"'
         for parameter in sdk_module_function_parameters
     ]
     dagger_call_script = " ".join(
         [
             (
                 "dagger "
-                f"--mod=gitlab.com/fvonbergen1/shiryu@${{{shiryu_version_gitlab_variable.name}}} "
+                f"--mod={gitlab_module_path}@${{{shiryu_version_gitlab_variable.name}}} "
                 f"call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
                 f"{sdk_module_function_name}"
             ),
@@ -930,23 +948,30 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     return GitLabJob(id_, job_name, job_yml_template, sdk_module_function_parameters)
 
 
-def build_gitlab_stage_job(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJob) -> GitLabStageJob:
+def build_gitlab_stage_job(
+    gitlab_stage_id: GitLabStageId,
+    gitlab_job: GitLabJob,
+    needs: GitLabArrayType = (),
+    when: GitLabStageWhen = None,
+) -> GitLabStageJob:
     """Build a GitLab stage job.
 
     Args:
         gitlab_stage_id: The GitLab stage id.
         gitlab_job: The GitLab job.
+        needs: GitLab jobs that must complete before this job.
 
     Returns:
         A GitLab stage job.
     """
     gitlab_stage_name = gitlab_stage_id.name.lower()
     return GitLabStageJob(
-        str(gitlab_job.template.template_file.output_path),
-        f"{gitlab_stage_name}_{gitlab_job.id_}",
-        (gitlab_job.name,),
-        (),
-        gitlab_stage_name,
-        (),
-        gitlab_stage_id.value.rules,
+        path=str(gitlab_job.template.template_file.output_path),
+        name=f"{gitlab_stage_name}_{gitlab_job.id_}",
+        extends=(gitlab_job.name,),
+        variables=(),
+        stage=gitlab_stage_name,
+        needs=needs,
+        rules=gitlab_stage_id.value.rules,
+        when=when if when is not None else gitlab_stage_id.value.when,
     )

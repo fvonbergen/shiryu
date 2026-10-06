@@ -1,22 +1,43 @@
 include:
   {%- for job in jobs|sort(attribute="name") %}
+  {%- if job.path is not none %}
   - local: "{{ job.path }}"
+  {%- endif %}
   {%- endfor %}
 
 {% for job in jobs|sort(attribute="name") %}
-{{ job.name }}:
-  extends:{%- if job.extends|length == 1 %} {{ job.extends|first }}{% else %}
+{{ job.name }}:{% if job.extends|length == 1 %}
+  extends: {{ job.extends|first }}{% elif job.extends|length > 1 %}
+  extends:
     {%- for extend in job.extends -%}
     - {{ extend }}
     {%- endfor %}
-  {%- endif %}
+{% endif %}
   stage: {{ job.stage }}
   needs:
-    - [{{ job.needs|join(", ") }}]
+    - [{{ job.needs| map('tojson')| join(", ") }}]
+  {%- if job.script|length != 0 %}
+  script:
+    {%- for script in job.script %}
+    - {{ script }}
+    {%- endfor %}
+  {%- endif %}
   {%- if job.rules|length != 0 %}
   rules:
     {%- for rule in job.rules %}
     - if: '{{ rule }}'
     {%- endfor %}
+  {%- endif %}
+  {%- if job.when %}
+  when: {{ job.when }}
+  {%- endif %}
+  {%- if job.artifacts is not none %}
+  artifacts:
+    {%- if job.artifacts.paths|length != 0 %}
+    paths:
+      {%- for path in job.artifacts.paths %}
+      - {{ path }}
+      {%- endfor %}
+    {%- endif %}
   {%- endif %}
 {%- endfor %}

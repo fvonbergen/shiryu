@@ -26,7 +26,7 @@ def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) ->
         *(
             (
                 ".gitlab/jobs/.documenter_document.yml",
-                ".gitlab/stages/",
+                ".gitlab/stages/documentation.yml",
                 ".gitlab/stages/quality.yml",
                 ".gitlab/stages/release.yml",
             )
