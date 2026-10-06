@@ -153,6 +153,8 @@ class ReleaserInitializer(PythonModuleInitializer):
             export_path=None,
             post_script=(),
             artifacts=None,
+            parameter_variable_names={"auth_token": "AUTH_TOKEN_REF"},
+            secret_reference_prefix="env://",
         )
         pre_steps = (
             build_github_workflow_checkout_job(
