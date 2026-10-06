@@ -285,7 +285,7 @@ class Releaser(PythonModule):
         head_sha, _, remote_sha = (await executed_container.stdout()).strip().partition("\n")
         if await executed_container.exit_code() != 0 or head_sha != remote_sha:
             exception_message = (
-                f"Releases can only be made from the tip of {branch} "
+                f"Releases can only be made from the top of {branch} "
                 f"(HEAD={head_sha or 'unknown'}, {remote_ref}={remote_sha or 'missing'})"
             )
             raise RuntimeError(exception_message)
