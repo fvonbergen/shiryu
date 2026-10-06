@@ -18,3 +18,4 @@ release_releaser_release:
   stage: release
   needs:
     - []
+  when: manual
