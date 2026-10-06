@@ -437,6 +437,7 @@ class GitLabVariable:
 type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
+type GitLabStageWhen = str | None
 
 
 # https://docs.gitlab.com/ci/yaml/#when
@@ -465,7 +466,7 @@ class GitLabStageJob:
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
-    when: GitLabJobWhen | None = None
+    when: GitLabStageWhen = None
     script: GitLabScript = ()
     artifacts: GitLabArtifacts | None = None
 
@@ -477,6 +478,7 @@ class GitLabStageProperties:
 
     name: GitLabStageName
     rules: GitLabStageRules
+    when: GitLabStageWhen = None
 
 
 @final
@@ -1020,7 +1022,7 @@ def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
     needs: GitLabArrayType = (),
-    when: GitLabJobWhen | None = None,
+    when: GitLabStageWhen = None,
 ) -> GitLabStageJob:
     """Build a GitLab stage job.
 
