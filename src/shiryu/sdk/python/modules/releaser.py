@@ -106,6 +106,8 @@ class ReleaserInitializer(PythonModuleInitializer):
             export_path=None,
             post_script=(),
             artifacts=None,
+            parameter_variable_names={"auth_token": "AUTH_TOKEN_REF"},
+            secret_reference_prefix="env://",
         )
         pre_steps = (
             build_github_workflow_checkout_job(
@@ -135,7 +137,9 @@ class ReleaserInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.RELEASE,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE, gitlab_job=gitlab_job
+                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_job=gitlab_job,
+                            when="manual",
                         ),
                     ),
                 ),

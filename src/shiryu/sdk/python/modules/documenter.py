@@ -24,6 +24,7 @@ from ...common.scm import (
     GitHubWorkflowStepInputParameter,
     GitLabArtifacts,
     GitLabStageId,
+    GitLabStageJob,
     build_github_action,
     build_github_workflow_checkout_job,
     build_github_workflow_job,
@@ -101,6 +102,17 @@ class DocumenterInitializer(PythonModuleInitializer):
             ),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
+        gitlab_pages_stage_job = GitLabStageJob(
+            path=None,
+            name="pages",
+            extends=(),
+            variables=(),
+            stage=GitLabStageId.DOCUMENTATION.value.name,
+            needs=("documentation_documenter_document",),
+            rules=(),
+            script=('echo "Deploying site"',),
+            artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
+        )
         documentation_api_reference_path = (
             PROJECT_DOCUMENTATION_PATH / PROJECT_DOCUMENTATION_REFERENCE_FOLDER / "api-reference"
         )
@@ -157,16 +169,27 @@ class DocumenterInitializer(PythonModuleInitializer):
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.RELEASE,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE, gitlab_job=gitlab_job
+                            GitLabStageId.DOCUMENTATION,
+                            build_gitlab_stage_job(
+                                gitlab_stage_id=GitLabStageId.DOCUMENTATION,
+                                gitlab_job=gitlab_job,
+                            ),
+                        )
+                        .add(GitLabStageId.DOCUMENTATION, gitlab_pages_stage_job)
+                        .add(
+                            GitLabStageId.RELEASE,
+                            build_gitlab_stage_job(
+                                gitlab_stage_id=GitLabStageId.RELEASE,
+                                gitlab_job=gitlab_job,
+                                needs=("release_releaser_release",),
+                            ),
+                        )
+                        .add(
+                            GitLabStageId.QUALITY,
+                            build_gitlab_stage_job(
+                                gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
+                            ),
                         ),
-                    ).add(
-                        GitLabStageId.QUALITY,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
-                        ),
-                    ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
