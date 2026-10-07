@@ -13,7 +13,7 @@ inputs:
     description: "SDK programming language"
     default: "python"
   auth_token:
-    description: "Authorization token"
+    description: "Authorization token with write access to the repository and its releases (GitLab tokens need the api scope)."
   auth_user_name:
     description: "User name sent with the authorization token."
     default: "x-access-token"

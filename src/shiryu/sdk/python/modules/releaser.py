@@ -1,13 +1,14 @@
 """releaser module."""
 
 import asyncio
-from pathlib import Path
+import json
+from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import quote, urlsplit, urlunsplit
 
 import dagger
 
-from ....utils.dagger.client import container_git
+from ....utils.dagger.client import container_debian, container_git
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.dagger.function import SourceType
 from ....utils.template import Mapping, Template, TemplateFile
@@ -35,7 +36,13 @@ from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
-AuthTokenDaggerType = Annotated[dagger.Secret, dagger.Doc("Authorization token")]
+AuthTokenDaggerType = Annotated[
+    dagger.Secret,
+    dagger.Doc(
+        "Authorization token with write access to the repository and its releases (GitLab tokens "
+        "need the api scope)."
+    ),
+]
 AuthUserNameDaggerType = Annotated[
     str,
     dagger.Doc(
@@ -59,6 +66,37 @@ type PushUrls = list[str]
 
 CZ_NOTHING_TO_RELEASE_EXIT_CODES: Final = frozenset({3, 21})
 NOTHING_TO_RELEASE: Final = "Nothing to release"
+
+# Any other host is assumed to be a GitLab instance.
+GITHUB_HOSTNAME: Final = "github.com"
+GITHUB_API_URL: Final = "https://api.github.com"
+
+
+def build_release_request(push_url: str, tag: str, notes: str) -> tuple[str, str, str]:
+    """Build the request that creates a release in the SCM hosting a push URL.
+
+    Args:
+        push_url: Credential-free HTTPS push URL.
+        tag: The release tag.
+        notes: The release notes.
+
+    Returns:
+        The API endpoint, the authorization header prefix (the token is appended) and the JSON
+        payload.
+    """
+    parsed = urlsplit(push_url)
+    repository_path = parsed.path.strip("/").removesuffix(".git")
+    if parsed.hostname == GITHUB_HOSTNAME:
+        return (
+            f"{GITHUB_API_URL}/repos/{repository_path}/releases",
+            "Authorization: Bearer",
+            json.dumps({"tag_name": tag, "name": tag, "body": notes}),
+        )
+    return (
+        f"https://{parsed.netloc}/api/v4/projects/{quote(repository_path, safe='')}/releases",
+        "PRIVATE-TOKEN:",
+        json.dumps({"tag_name": tag, "name": tag, "description": notes}),
+    )
 
 
 class ReleaserInitializer(PythonModuleInitializer):
@@ -267,7 +305,7 @@ class Releaser(PythonModule):
             )
             .with_exec(["git", "add", "pyproject.toml", "uv.lock", "CHANGELOG.md"])
             .with_exec(["git", *git_identity, "commit", "-m", f"chore: release {tag}"])
-            .with_exec(["git", *git_identity, "tag", "--annotate", tag, f"-m={tag}"])
+            .with_exec(["git", *git_identity, "tag", "--annotate", tag, f"--message={tag}"])
         )
 
     @final
@@ -347,6 +385,64 @@ class Releaser(PythonModule):
         return container
 
     @final
+    @classmethod
+    async def __release_notes(cls, container: dagger.Container, tag: str) -> str:
+        """Get the release notes of a tag from the changelog.
+
+        Args:
+            container: Container with the release tag.
+            tag: The release tag.
+
+        Returns:
+            The changelog entries of the tag, without its version heading.
+        """
+        changelog = await container.with_exec(
+            cls._build_uv_run_command(
+                ["cz", "changelog", tag, "--dry-run"], execution_mode=ExecutionMode.SCRIPT
+            )
+        ).stdout()
+        _, _, notes = changelog.strip().partition("\n")
+        return notes.strip()
+
+    @final
+    @classmethod
+    def __create_releases(  # noqa: PLR0913, PLR0917
+        cls,
+        push_urls: PushUrls,
+        tag: str,
+        notes: str,
+        auth_token: dagger.Secret,
+        platform: PlatformType,
+    ) -> dagger.Container:
+        """Create the GitHub or GitLab release of a pushed tag in every push URL.
+
+        Args:
+            push_urls: Credential-free HTTPS push URLs.
+            tag: The pushed release tag.
+            notes: The release notes.
+            auth_token: Token with write access to the repository releases.
+            platform: The container platform.
+
+        Returns:
+            The container after creating the releases.
+        """
+        container = container_debian(
+            dagger.dag, platform, apt_packages={"ca-certificates", "curl"}
+        ).with_secret_variable("RELEASE_AUTH_TOKEN", auth_token)
+        curl_command = (
+            'curl --fail-with-body --silent --show-error --request POST '
+            '--header "$1 $RELEASE_AUTH_TOKEN" --header "Content-Type: application/json" '
+            '--data "@$2" "$3"'
+        )
+        for index, push_url in enumerate(push_urls):
+            endpoint, authorization_header, payload = build_release_request(push_url, tag, notes)
+            payload_path = str(PurePosixPath("/tmp") / f"release-{index}.json")  # noqa: S108
+            container = container.with_new_file(payload_path, payload).with_exec(
+                ["sh", "-c", curl_command, "sh", authorization_header, payload_path, endpoint]
+            )
+        return container
+
+    @final
     @dagger.function
     async def release(  # noqa: PLR0913
         self,
@@ -358,7 +454,7 @@ class Releaser(PythonModule):
         git_user_email: GitUserEmailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
-        """Bump version, update changelog, commit, tag and push the project.
+        """Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.
 
         Returns the release tag, or an empty string if there is nothing to release, so CI can
         decide whether to run the publishing jobs and which ref to check out.
@@ -374,7 +470,9 @@ class Releaser(PythonModule):
             return ""
         tag = f"v{version}"
         bump_container = self.__bump(container, version, git_user_name, git_user_email)
+        notes = await self.__release_notes(bump_container, tag)
         await self.__push(bump_container, push_urls, branch, tag, auth_user_name, auth_token).sync()
+        await self.__create_releases(push_urls, tag, notes, auth_token, platform).sync()
         return tag
 
     @final
