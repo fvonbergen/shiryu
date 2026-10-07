@@ -81,11 +81,11 @@ async def test_python_documenter_init(
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .documenter()()
+        await Shiryu(source=inputs.source)  # pyright: ignore[reportCallIssue]
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .documenter()
         .init(
             project_name=inputs.project_name,
-            project_directory=inputs.project_directory,
             is_update=inputs.is_update,
             scm=inputs.scm,
             platform=inputs.platform,
@@ -102,21 +102,22 @@ async def test_python_documenter_document(dagger_client: dagger.Client) -> None:
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
     """
+    source = dagger.dag.directory()
     project_name = PROJECT_NAME_DEFAULT
-    project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .documenter()()
-        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+        await Shiryu(source=source)  # pyright: ignore[reportCallIssue]
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .documenter()
+        .init(project_name=project_name, platform=platform)
     )
+    init_source = source.with_changes(init_changeset)
     document_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .documenter()()
-        .document(
-            project_directory=project_directory.with_changes(init_changeset), platform=platform
-        )
+        await Shiryu(source=init_source)  # pyright: ignore[reportCallIssue]
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .documenter()
+        .document(platform=platform)
     )
 
     expected_changeset_patterns = (

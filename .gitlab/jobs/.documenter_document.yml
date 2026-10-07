@@ -7,9 +7,8 @@ include:
     SHIRYU_VERSION: "feat/add-python-sdk-release"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
-    PROJECT_DIRECTORY: "."
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} documenter document --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}" export --path=./site
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} documenter document --platform="${PLATFORM}" export --path=./site
     - mkdir public
     - cp --recursive site/* public/
   artifacts:

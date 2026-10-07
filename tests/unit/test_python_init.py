@@ -40,12 +40,15 @@ async def test_python_init(dagger_client: dagger.Client, test_case: TestCaseInit
     """
     inputs = test_case.inputs
 
-    init_changeset = await Shiryu.python()().init(  # ty: ignore[unresolved-attribute]
-        project_name=inputs.project_name,
-        project_directory=inputs.project_directory,
-        is_update=inputs.is_update,
-        scm=inputs.scm,
-        platform=inputs.platform,
+    init_changeset = (
+        await Shiryu(source=inputs.source)  # pyright: ignore[reportCallIssue]
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .init(
+            project_name=inputs.project_name,
+            is_update=inputs.is_update,
+            scm=inputs.scm,
+            platform=inputs.platform,
+        )
     )
 
     assert tuple(await init_changeset.added_paths()) == test_case.output.paths

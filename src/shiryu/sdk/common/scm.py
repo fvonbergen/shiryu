@@ -15,8 +15,6 @@ from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
 
-PROJECT_DIRECTORY_DAGGER_TYPE_DOC: Final = dagger.Doc("Project directory path.")
-
 
 @final
 @dataclass(frozen=True, slots=True)
@@ -41,7 +39,7 @@ def __is_secret_type(param_type: Any) -> bool:
             `typing.Annotated[dagger.Secret, ...]`, or string representation).
 
     Returns:
-        bool: `True` if the type corresponds to a `dagger.Secret`, `False` otherwise.
+        `True` if the type corresponds to a `dagger.Secret`, `False` otherwise.
     """
     if get_origin(param_type) is not None and (args := get_args(param_type)):
         param_type = args[0]
@@ -75,7 +73,6 @@ def get_sdk_module_function_parameters(
                 f"Parameter {parameter_name} of function {sdk_module_function} has no annotations."
             )
             raise ValueError(exception_message)
-        parameter_type = getattr(parameter_annotation, "__origin__", parameter_annotation)
         parameter_annotation_metadata = getattr(parameter_annotation, "__metadata__", ())
         parameter_description: str
         if not parameter_annotation_metadata:
@@ -92,25 +89,11 @@ def get_sdk_module_function_parameters(
             raise TypeError(exception_message)
         parameter_description = parameter_annotation_metadata[0].documentation
         parameter_default: str | None
-        # TODO: dagger.DefaultPath doesn't work as expected. It defaults to the module directory
-        # context where the dagger.json lives. For this reason we set ".", to the specific project
-        # directory parameter which means that the current working directory.
-        if (
-            parameter_type is dagger.Directory
-            and parameter_annotation_metadata[0] == PROJECT_DIRECTORY_DAGGER_TYPE_DOC
-            # and isinstance(parameter_annotation_metadata[1], dagger.DefaultPath)
-        ):
-            # The dagger.Directory has a special default value: https://docs.dagger.io/api/default-paths/
-            # parameter_default = parameter_annotation_metadata[1].from_context
-            parameter_default = "."
-        else:
-            _parameter_default = parameter.default
-            # If default parameter is None the parameter is removed.
-            if _parameter_default is None:
-                continue
-            parameter_default = (
-                None if _parameter_default is Parameter.empty else _parameter_default
-            )
+        _parameter_default = parameter.default
+        # If default parameter is None the parameter is removed.
+        if _parameter_default is None:
+            continue
+        parameter_default = None if _parameter_default is Parameter.empty else _parameter_default
         sdk_module_function_parameters.add(
             SDKModuleFunctionParameter(
                 parameter_name,
@@ -789,7 +772,7 @@ def build_github_workflow_checkout_job(
         with_: A tuple of input parameters to pass to the checkout action.
 
     Returns:
-        GitHubWorkflowJobStep: A configured GitHub Actions step object for checking out code.
+        A configured GitHub Actions step object for checking out code.
     """
     return GitHubWorkflowJobStep("check_out_code", "Check out code", "actions/checkout@v7", with_)
 

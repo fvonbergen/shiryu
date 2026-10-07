@@ -5,12 +5,7 @@ from typing import Final, final
 import dagger
 
 from ...common.context import DaggerModuleMetadata
-from ...common.module import (
-    PLATFORM_DAGGER_DEFAULT,
-    PlatformDaggerType,
-    ProjectDirectoryDaggerType,
-    ProjectMetadata,
-)
+from ...common.module import PLATFORM_DAGGER_DEFAULT, PlatformDaggerType, ProjectMetadata
 from ...common.scm import (
     GitHubWorkflowId,
     GitLabStageId,
@@ -125,17 +120,17 @@ class Auditor(PythonModule):
 
     @final
     @dagger.function
+    @dagger.check
     async def audit(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    ) -> None:
         """Run security audit analysis in the project."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
         uv_audit_command = self._build_uv_run_command(["uv", "audit"])
         await container.with_exec(uv_audit_command).sync()
-        return "Security audit successful"
 
 
 sdk_module: Final = Auditor

@@ -11,11 +11,11 @@ from shiryu.sdk.common.module import (
     SCM,
     IsUpdateType,
     PlatformType,
-    ProjectDirectoryType,
     ProjectNameType,
     SCMType,
 )
 from shiryu.sdk.python.utils import get_package_name_canonical
+from shiryu.utils.dagger.function import SourceType
 
 from .common import DirectoryOutput, Paths, ignore_pytest
 
@@ -24,8 +24,8 @@ from .common import DirectoryOutput, Paths, ignore_pytest
 class TestCaseInitInputs(NamedTuple):
     """TestCaseInitInputs class."""
 
+    source: SourceType
     project_name: ProjectNameType
-    project_directory: ProjectDirectoryType
     is_update: IsUpdateType
     scm: SCMType
     platform: PlatformType
@@ -147,16 +147,16 @@ def build_test_cases_init(
     Returns:
         The test cases.
     """
+    source = dagger.dag.directory()
     # TODO: tests against more project names (e.g. test, test-test, etc.)
     project_name = PROJECT_NAME_DEFAULT
-    project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
     is_update_options = (False, True)
     scm_options = (SCM.GITLAB, SCM.GITHUB)
     test_cases_inputs = tuple(
         TestCaseInitInputs(
+            source=source,
             project_name=project_name,
-            project_directory=project_directory,
             is_update=is_update,
             scm=[scm],
             platform=platform,

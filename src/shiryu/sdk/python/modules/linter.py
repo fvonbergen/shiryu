@@ -13,7 +13,6 @@ from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
     ProjectMetadata,
     SCMType,
 )
@@ -294,7 +293,7 @@ class Linter(PythonModule):
         executed_container = container.with_exec(ruff_check_command, expect=expect_check).with_exec(
             ruff_format_command
         )
-        modified_dir = executed_container.directory(".").filter(exclude=[f"{ruff_cache_folder}/"])
+        modified_dir = executed_container.directory(".")
         return await modified_dir.changes(initial_dir).sync()
 
     @final
@@ -327,6 +326,11 @@ class Linter(PythonModule):
                 # Stop Git from complaining about folder ownership in Docker
                 #git config --global --add safe.directory /src
 
+                # Check if HEAD exist (e.g., newly initialized repo with no commits)
+                if ! git rev-parse --verify HEAD >/dev/null 2>&1; then
+                  echo "Repository has no commits yet. Skipping commit checks."
+                  exit 0
+                fi
                 # Gather all commits across history, ignoring merge commits
                 #shas=$(git rev-list --no-merges HEAD) || exit 1
                 # Gather only commits unique to the current branch vs origin/main
@@ -350,42 +354,36 @@ class Linter(PythonModule):
 
     @final
     @dagger.function
-    async def lint_code(
-        self,
-        project_directory: ProjectDirectoryDaggerType,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    @dagger.check
+    async def lint_code(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run linter analysis in the project code of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
         await self.__lint_fix_code(container, False)
-        return "Lint code successfull"
 
     @final
     @dagger.function
     async def fix_code(
-        self,
-        project_directory: ProjectDirectoryDaggerType,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+        self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
     ) -> dagger.Changeset:
         """Run linter fixes in the project code of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
         return await self.__lint_fix_code(container, True)
 
     @final
     @dagger.function
+    @dagger.check
     async def lint_vcs(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         *,
         branch_history: BranchHistoryDaggerType = BRANCH_HISTORY_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    ) -> None:
         """Run linter analysis in the project VCS of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = []
+        container = await self._exec_container(self.source, exclude, platform)
         await self.__lint_vcs(container, branch_history)
-        return "Lint VCS successfull"
 
 
 sdk_module: Final = Linter

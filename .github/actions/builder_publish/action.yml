@@ -15,9 +15,6 @@ inputs:
   platform:
     description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
-  project_directory:
-    description: "Project directory path."
-    default: "."
   repository_password:
     description: "Repository password"
   repository_url:
@@ -37,5 +34,5 @@ runs:
         version: "v1.0.0-beta.15"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: ${{ inputs.sdk_language }} builder publish --platform="${{ inputs.platform }}" --project-directory="${{ inputs.project_directory }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
+        args: ${{ inputs.sdk_language }} builder publish --platform="${{ inputs.platform }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}

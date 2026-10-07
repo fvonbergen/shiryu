@@ -60,11 +60,11 @@ async def test_python_auditor_init(dagger_client: dagger.Client, test_case: Test
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .auditor()()
+        await Shiryu(source=inputs.source)  # pyright: ignore[reportCallIssue]
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .auditor()
         .init(
             project_name=inputs.project_name,
-            project_directory=inputs.project_directory,
             is_update=inputs.is_update,
             scm=inputs.scm,
             platform=inputs.platform,

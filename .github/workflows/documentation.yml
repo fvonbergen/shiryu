@@ -37,7 +37,6 @@ jobs:
           shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
-          project: "."
       - id: upload_artifact
         name: Upload artifact
         uses: actions/upload-pages-artifact@v5

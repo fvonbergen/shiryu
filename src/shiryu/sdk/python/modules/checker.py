@@ -12,7 +12,6 @@ from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
     ProjectMetadata,
     SCMType,
 )
@@ -192,16 +191,12 @@ class Checker(PythonModule):
 
     @final
     @dagger.function
-    async def check(
-        self,
-        project_directory: ProjectDirectoryDaggerType,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    @dagger.check
+    async def check(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run type checks in the project of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
         await self.__check(container)
-        return "Check successfull"
 
 
 sdk_module: Final = Checker
