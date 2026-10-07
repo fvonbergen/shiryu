@@ -1,10 +1,13 @@
 """test_python_releaser module."""
 
+import json
+
 import dagger
 import pytest
 
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
+from shiryu.sdk.python.modules.releaser import build_release_request
 
 from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
@@ -75,3 +78,46 @@ async def test_python_releaser_init(dagger_client: dagger.Client, test_case: Tes
     )
 
     assert tuple(await init_changeset.added_paths()) == test_case.output.paths
+
+
+@pytest.mark.parametrize(
+    ("push_url", "endpoint", "authorization_header", "notes_key"),
+    [
+        (
+            "https://github.com/owner/repo.git",
+            "https://api.github.com/repos/owner/repo/releases",
+            "Authorization: Bearer",
+            "body",
+        ),
+        (
+            "https://gitlab.com/group/repo.git",
+            "https://gitlab.com/api/v4/projects/group%2Frepo/releases",
+            "PRIVATE-TOKEN:",
+            "description",
+        ),
+        (
+            "https://git.example.org:8443/group/subgroup/repo",
+            "https://git.example.org:8443/api/v4/projects/group%2Fsubgroup%2Frepo/releases",
+            "PRIVATE-TOKEN:",
+            "description",
+        ),
+    ],
+    ids=["github", "gitlab", "gitlab_self_managed"],
+)
+def test_build_release_request(
+    push_url: str, endpoint: str, authorization_header: str, notes_key: str
+) -> None:
+    """Test the release request built for each SCM.
+
+    Args:
+        push_url: Credential-free HTTPS push URL.
+        endpoint: Expected API endpoint.
+        authorization_header: Expected authorization header prefix.
+        notes_key: Expected payload key holding the release notes.
+    """
+    notes = '### Added\n\n- add "quoted" thing'
+
+    request = build_release_request(push_url, "v0.1.0", notes)
+
+    assert request[:2] == (endpoint, authorization_header)
+    assert json.loads(request[2]) == {"tag_name": "v0.1.0", "name": "v0.1.0", notes_key: notes}
