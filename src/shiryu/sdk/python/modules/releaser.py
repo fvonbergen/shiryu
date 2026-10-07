@@ -129,6 +129,10 @@ class ReleaserInitializer(PythonModuleInitializer):
                             job_environment=None,
                             pre_steps=pre_steps,
                             post_steps=(),
+                            outputs=(
+                                ("tag", "${{ steps.releaser_release.outputs.tag }}"),
+                            ),
+                            permissions=(("contents", "write"),),
                         ),
                     ),
                 ),

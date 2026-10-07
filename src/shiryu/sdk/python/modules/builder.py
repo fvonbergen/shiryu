@@ -15,6 +15,7 @@ from ...common.module import (
 )
 from ...common.scm import (
     GitHubWorkflowId,
+    GitHubWorkflowStepInputParameter,
     GitLabStageId,
     build_github_action,
     build_github_workflow_checkout_job,
@@ -101,6 +102,16 @@ class BuilderInitializer(PythonModuleInitializer):
             artifacts=None,
         )
         pre_steps = (build_github_workflow_checkout_job(),)
+        release_pre_steps = (
+            build_github_workflow_checkout_job(
+                (
+                    GitHubWorkflowStepInputParameter(
+                        "ref", "${{ needs.releaser_release.outputs.tag }}"
+                    ),
+                    GitHubWorkflowStepInputParameter("fetch-depth", "0"),
+                )
+            ),
+        )
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -118,8 +129,10 @@ class BuilderInitializer(PythonModuleInitializer):
                             github_action=github_action_builder_publish,
                             shiryu_version=shiryu_version,
                             job_environment=None,
-                            pre_steps=pre_steps,
+                            pre_steps=release_pre_steps,
                             post_steps=(),
+                            needs=("releaser_release",),
+                            condition="needs.releaser_release.outputs.tag != ''",
                         ),
                     ).add(
                         GitHubWorkflowId.QUALITY,

@@ -216,6 +216,8 @@ class GitHubWorkflowProperties:
 
     name: str
     on: GitHubWorkflowTriggerAction
+    permissions: tuple[tuple[str, str], ...] = ()
+    concurrency: tuple[str, bool] | None = None
 
 
 @final
@@ -223,11 +225,19 @@ class GitHubWorkflowProperties:
 class GitHubWorkflowId(Enum):
     """GitHubWorkflowId options."""
 
+    DOCUMENTATION = GitHubWorkflowProperties(
+        "documentation",
+        GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET),
+        permissions=(("contents", "read"), ("pages", "write"), ("id-token", "write")),
+        concurrency=("pages", False),
+    )
     QUALITY = GitHubWorkflowProperties(
         "quality", GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET)
     )
     RELEASE = GitHubWorkflowProperties(
-        "release", GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None)
+        "release",
+        GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None),
+        concurrency=("pages", False),
     )
 
 
@@ -249,6 +259,10 @@ class GitHubWorkflowJob:
     name: str
     environment: GitHubJobEnvironment | None
     steps: GitHubWorkflowJobSteps
+    needs: tuple[str, ...] = ()
+    condition: str | None = None
+    outputs: tuple[tuple[str, str], ...] = ()
+    permissions: tuple[tuple[str, str], ...] = ()
 
 
 @final
@@ -586,6 +600,8 @@ def github_init(
         github_workflow_yml_template_mapping: Mapping = {
             "name": github_workflow_name,
             "on": asdict(github_workflow.value.on),
+            "permissions": github_workflow.value.permissions,
+            "concurrency": github_workflow.value.concurrency,
             "jobs": github_workflow_jobs,
         }
         github_workflow_yml_template = Template(
@@ -722,6 +738,11 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     action_yml_template_mapping: Mapping = {
         "function": sdk_module_function_name,
         "module": sdk_module_name,
+        "release_tag_enabled": sdk_module_name == "releaser"
+        and sdk_module_function_name == "release",
+        "release_tag_output": "${{ steps.release_tag.outputs.tag }}",
+        "release_tag_step_output": "${{ steps.call_dagger_releaser_release.outputs.output }}",
+        "release_tag_command": 'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"',
         "shiryu_version": {"default": shiryu_version},
         "sdk_language": {"default": sdk_language},
         "parameters": sdk_module_function_parameters,
@@ -794,6 +815,10 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
     job_environment: GitHubJobEnvironment | None,
     pre_steps: GitHubWorkflowJobSteps,
     post_steps: GitHubWorkflowJobSteps,
+    needs: tuple[str, ...] = (),
+    condition: str | None = None,
+    outputs: tuple[tuple[str, str], ...] = (),
+    permissions: tuple[tuple[str, str], ...] = (),
 ) -> GitHubWorkflowJob:
     """Build a GitHub workflow job.
 
@@ -804,6 +829,10 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
         job_environment: GitHub job environment.
         pre_steps: GitHub workflow job pre action job steps.
         post_steps: GitHub workflow job post action job steps.
+        needs: GitHub workflow jobs that must complete first.
+        condition: GitHub Actions job condition.
+        outputs: GitHub workflow job outputs.
+        permissions: GitHub token permissions for this job.
 
     Returns:
         A GitHub workflow job.
@@ -833,7 +862,16 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
             *tuple(action_step_input_parameters_generator),
         ),
     )
-    return GitHubWorkflowJob(id_, name, job_environment, (*pre_steps, action_step, *post_steps))
+    return GitHubWorkflowJob(
+        id_,
+        name,
+        job_environment,
+        (*pre_steps, action_step, *post_steps),
+        needs,
+        condition,
+        outputs,
+        permissions,
+    )
 
 
 def build_gitlab_job(  # noqa: PLR0913, PLR0917

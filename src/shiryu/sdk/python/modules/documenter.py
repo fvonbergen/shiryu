@@ -117,6 +117,16 @@ class DocumenterInitializer(PythonModuleInitializer):
             PROJECT_DOCUMENTATION_PATH / PROJECT_DOCUMENTATION_REFERENCE_FOLDER / "api-reference"
         )
         pre_steps = (build_github_workflow_checkout_job(),)
+        release_pre_steps = (
+            build_github_workflow_checkout_job(
+                (
+                    GitHubWorkflowStepInputParameter(
+                        "ref", "${{ needs.releaser_release.outputs.tag }}"
+                    ),
+                    GitHubWorkflowStepInputParameter("fetch-depth", "0"),
+                )
+            ),
+        )
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -129,6 +139,40 @@ class DocumenterInitializer(PythonModuleInitializer):
                     | {github_action},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.RELEASE,
+                        build_github_workflow_job(
+                            sdk_language=sdk_language,
+                            github_action=github_action,
+                            shiryu_version=shiryu_version,
+                            job_environment=GITHUB_PAGES_ENVIRONMENT,
+                            pre_steps=release_pre_steps,
+                            post_steps=(
+                                GitHubWorkflowJobStep(
+                                    "upload_artifact",
+                                    "Upload artifact",
+                                    "actions/upload-pages-artifact@v5",
+                                    (
+                                        GitHubWorkflowStepInputParameter(
+                                            "path", f"{PROJECT_SITE_PATH}/"
+                                        ),
+                                    ),
+                                ),
+                                GitHubWorkflowJobStep(
+                                    "deploy_to_github_pages",
+                                    "Deploy to GitHub pages",
+                                    "actions/deploy-pages@v5",
+                                    (),
+                                ),
+                            ),
+                            needs=("releaser_release",),
+                            condition="needs.releaser_release.outputs.tag != ''",
+                            permissions=(
+                                ("contents", "read"),
+                                ("pages", "write"),
+                                ("id-token", "write"),
+                            ),
+                        ),
+                    ).add(
+                        GitHubWorkflowId.DOCUMENTATION,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
                             github_action=github_action,
