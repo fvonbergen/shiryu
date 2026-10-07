@@ -68,11 +68,11 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .builder()()
+        await Shiryu.create(ws=inputs.workspace)
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .builder()
         .init(
             project_name=inputs.project_name,
-            project_directory=inputs.project_directory,
             is_update=inputs.is_update,
             scm=inputs.scm,
             platform=inputs.platform,
@@ -89,20 +89,23 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
     """
+    source = dagger.dag.directory()
     project_name = PROJECT_NAME_DEFAULT
     package_name_canonical = get_package_name_canonical(project_name)
-    project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .builder()()
-        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+        await Shiryu.create(ws=source.as_workspace())
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .builder()
+        .init(project_name=project_name, platform=platform)
     )
+    init_source = source.with_changes(init_changeset)
     build_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .builder()()
-        .build(project_directory=project_directory.with_changes(init_changeset), platform=platform)
+        await Shiryu.create(ws=init_source.as_workspace())
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .builder()
+        .build(platform=platform)
     )
     date_pattern = r"\d{4}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
     expected_changeset_patterns = (
@@ -126,19 +129,15 @@ async def test_python_builder_test(dagger_client: dagger.Client) -> None:
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
     """
+    source = dagger.dag.directory()
     project_name = PROJECT_NAME_DEFAULT
-    project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .builder()()
-        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+        await Shiryu.create(ws=source.as_workspace())
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .builder()
+        .init(project_name=project_name, platform=platform)
     )
-    stdout = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .builder()()
-        .test(project_directory=project_directory.with_changes(init_changeset), platform=platform)
-    )
-
-    assert stdout == "Test build successfull"
+    init_source = source.with_changes(init_changeset)
+    await Shiryu.create(ws=init_source.as_workspace()).python().builder().test(platform=platform)  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]

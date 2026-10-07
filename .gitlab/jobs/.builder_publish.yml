@@ -7,9 +7,8 @@ include:
     SHIRYU_VERSION: "feat/add-python-sdk-release"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
-    PROJECT_DIRECTORY: "."
     REPOSITORY_PASSWORD: "env:REPOSITORY_PASSWORD"
     REPOSITORY_URL: "${REPOSITORY_URL}"
     REPOSITORY_USER: "${REPOSITORY_USER}"
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} builder publish --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}" --repository-password="${REPOSITORY_PASSWORD}" --repository-url="${REPOSITORY_URL}" --repository-user="${REPOSITORY_USER}"
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} builder publish --platform="${PLATFORM}" --repository-password="${REPOSITORY_PASSWORD}" --repository-url="${REPOSITORY_URL}" --repository-user="${REPOSITORY_USER}"

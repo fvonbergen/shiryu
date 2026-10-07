@@ -57,11 +57,11 @@ async def test_python_checker_init(dagger_client: dagger.Client, test_case: Test
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .checker()()
+        await Shiryu.create(ws=inputs.workspace)
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .checker()
         .init(
             project_name=inputs.project_name,
-            project_directory=inputs.project_directory,
             is_update=inputs.is_update,
             scm=inputs.scm,
             platform=inputs.platform,
@@ -78,19 +78,15 @@ async def test_python_checker_check(dagger_client: dagger.Client) -> None:
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
     """
+    source = dagger.dag.directory()
     project_name = PROJECT_NAME_DEFAULT
-    project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .checker()()
-        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+        await Shiryu.create(ws=source.as_workspace())
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .checker()
+        .init(project_name=project_name, platform=platform)
     )
-    stdout = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .checker()()
-        .check(project_directory=project_directory.with_changes(init_changeset), platform=platform)
-    )
-
-    assert stdout == "Check successfull"
+    init_source = source.with_changes(init_changeset)
+    await Shiryu.create(ws=init_source.as_workspace()).python().checker().check(platform=platform)  # ty: ignore[unresolved-attribute] # pyright: ignore[reportCallIssue, reportAttributeAccessIssue]

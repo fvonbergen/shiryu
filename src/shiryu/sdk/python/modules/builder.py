@@ -11,7 +11,6 @@ from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
     ProjectMetadata,
 )
 from ...common.scm import (
@@ -253,21 +252,23 @@ class Builder(PythonModule):
             .sync()
         )
 
+    @final
     @dagger.function
     async def build(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Changeset:
         """Build project distributable of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
-        return self.__build(container, platform).changes(project_directory)
+        source = self.source
+        exclude = []
+        container = await self._exec_container(source, exclude, platform)
+        return self.__build(container, platform).changes(source)
 
+    @final
     @dagger.function
     async def publish(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         repository_url: RepositoryUrlDaggerType,
         repository_user: RepositoryUserDaggerType,
         repository_password: RepositoryPasswordDaggerType,
@@ -275,23 +276,23 @@ class Builder(PythonModule):
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Build and publish project distributable of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = []
+        container = await self._exec_container(self.source, exclude, platform)
         await self.__publish(
             container, repository_url, repository_user, repository_password, platform
         )
         return "Publish successfull"
 
+    @final
     @dagger.function
-    async def test(
-        self,
-        project_directory: ProjectDirectoryDaggerType,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    @dagger.check
+    async def test(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Test the project installation process for the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        source = self.source
+        exclude = []
+        container = await self._exec_container(source, exclude, platform)
         directory = self.__build(container, platform)
-        project_metadata = await self._get_project_metadata(project_directory, platform)
+        project_metadata = await self._get_project_metadata(source, platform)
         package_name = project_metadata.name
         package_name_version = f"{package_name}=={project_metadata.version}"
         await (
@@ -311,7 +312,6 @@ class Builder(PythonModule):
             .with_exec(["uv", "pip", "uninstall", package_name])
             .sync()
         )
-        return "Test build successfull"
 
 
 sdk_module: Final = Builder

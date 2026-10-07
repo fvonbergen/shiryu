@@ -9,14 +9,13 @@ import dagger
 
 from ....utils.dagger.client import container_git
 from ....utils.dagger.directory import directory_with_new_file
+from ....utils.dagger.function import SourceType
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
-    ProjectDirectoryType,
     ProjectMetadata,
     SCMType,
 )
@@ -218,16 +217,14 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    async def __get_clean_push_urls(
-        cls, project_directory: ProjectDirectoryDaggerType, platform: PlatformType
-    ) -> PushUrls:
+    async def __get_clean_push_urls(cls, source: SourceType, platform: PlatformType) -> PushUrls:
         """Retrieve cleaned HTTPS Git push URLs for a project directory.
 
         Extracts 'origin' push URLs via Dagger and normalizes them to credential-free HTTPS
         endpoints.
 
         Args:
-            project_directory: Project directory.
+            source: Project source directory.
             platform: The container platform.
 
         Returns:
@@ -235,7 +232,7 @@ class Releaser(PythonModule):
         """
         raw_origin = await (
             container_git(dagger.dag, platform)
-            .with_directory(".", project_directory)
+            .with_directory(".", source)
             .with_exec(["git", "remote", "get-url", "--all", "--push", "origin"])
             .stdout()
         )
@@ -312,7 +309,7 @@ class Releaser(PythonModule):
     @classmethod
     async def __run_release_workflow(  # noqa: PLR0913, PLR0917
         cls,
-        project_directory: ProjectDirectoryType,
+        source: SourceType,
         auth_token: AuthTokenDaggerType,
         vcs_user_name: VCSUserNameDaggerType,
         vcs_user_email: VCSUserEMailDaggerType,
@@ -324,7 +321,7 @@ class Releaser(PythonModule):
         Coordinates parallel preparation tasks before invoking the execution stage.
 
         Args:
-            project_directory: Project directory.
+            source: Project source directory.
             auth_token: Authorization token.
             vcs_user_name: VCS user name.
             vcs_user_email: VCS user email.
@@ -334,9 +331,10 @@ class Releaser(PythonModule):
         Returns:
             Success summary message on real releases, or full command output log during dry runs.
         """
+        exclude = []
         container, clean_push_urls = await asyncio.gather(
-            cls._exec_container(project_directory, platform),
-            cls.__get_clean_push_urls(project_directory, platform),
+            cls._exec_container(source, exclude, platform),
+            cls.__get_clean_push_urls(source, platform),
         )
         output = await cls.__release(
             container, clean_push_urls, auth_token, vcs_user_name, vcs_user_email, dry_run=dry_run
@@ -347,7 +345,6 @@ class Releaser(PythonModule):
     @dagger.function
     async def release(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         auth_token: AuthTokenDaggerType,
         *,
         vcs_user_name: VCSUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
@@ -356,14 +353,13 @@ class Releaser(PythonModule):
     ) -> str:
         """Run release in the project."""
         return await self.__run_release_workflow(
-            project_directory, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=False
+            self.source, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=False
         )
 
     @final
     @dagger.function
     async def test(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         auth_token: AuthTokenDaggerType,
         *,
         vcs_user_name: VCSUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
@@ -372,7 +368,7 @@ class Releaser(PythonModule):
     ) -> str:
         """Run release dry run in the project."""
         return await self.__run_release_workflow(
-            project_directory, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=True
+            self.source, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=True
         )
 
 

@@ -13,7 +13,6 @@ from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
     ProjectMetadata,
     SCMType,
 )
@@ -165,13 +164,13 @@ class Jupyter(PythonModule):
     @dagger.function
     async def service(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         *,
         backend_port: PortDaggerType = PORT_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> dagger.Service:
         """Returns a jupyter notebooks service with the project of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = []
+        container = await self._exec_container(self.source, exclude, platform)
         return await self.__serve(container, backend_port)
 
     @final

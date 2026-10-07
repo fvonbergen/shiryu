@@ -10,12 +10,12 @@ import dagger
 
 from ...utils.dagger.client import container_uv
 from ...utils.dagger.directory import directory_with_new_file
+from ...utils.dagger.function import SourceType
 from ...utils.template import Mapping, Template, TemplateFile
 from ..common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
 from ..common.module import (
     PlatformType,
     ProjectAuthor,
-    ProjectDirectoryType,
     ProjectMetadata,
     SCMType,
     SDKModule,
@@ -178,21 +178,21 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     @final
     @classmethod
     async def _get_project_metadata(
-        cls, project_directory: ProjectDirectoryType, platform: PlatformType
+        cls, source: SourceType, platform: PlatformType
     ) -> ProjectMetadata:
         """Get project metadata.
 
         Args:
-            project_directory: Project directory.
+            source: Project source directory.
             platform: The container platform.
 
         Returns:
             The project metadata.
         """
         initializer = cls._initializer_cls()
-        project_metadata = await super()._get_project_metadata(project_directory, platform)
+        project_metadata = await super()._get_project_metadata(source, platform)
         project_container = container_uv(dagger.dag, platform, apt_packages={"git"}).with_directory(
-            ".", project_directory
+            ".", source
         )
         try:
             pyproject_toml_file_contents = await project_container.file(

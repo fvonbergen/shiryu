@@ -32,7 +32,6 @@ jobs:
           sdk_language: "python"
           auth_token: ${{ secrets.AUTH_TOKEN }}
           platform: "linux/amd64"
-          project_directory: "."
           vcs_user_email: "ci@shiryu.dev"
           vcs_user_name: "CI Release Bot"
   builder_publish:
@@ -54,7 +53,6 @@ jobs:
           shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
-          project_directory: "."
           repository_password: ${{ secrets.REPOSITORY_PASSWORD }}
           repository_url: ${{ secrets.REPOSITORY_URL }}
           repository_user: ${{ secrets.REPOSITORY_USER }}
@@ -85,7 +83,6 @@ jobs:
           shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           platform: "linux/amd64"
-          project_directory: "."
       - id: upload_artifact
         name: Upload artifact
         uses: actions/upload-pages-artifact@v5

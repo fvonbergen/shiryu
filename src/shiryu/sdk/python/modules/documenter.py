@@ -14,7 +14,6 @@ from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
     ProjectMetadata,
     SCMType,
 )
@@ -360,26 +359,25 @@ class Documenter(PythonModule):
     @final
     @dagger.function
     async def document(
-        self,
-        project_directory: ProjectDirectoryDaggerType,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+        self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
     ) -> dagger.Changeset:
         """Run documenter document in the project of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
-        return self.__document(container).changes(project_directory)
+        source = self.source
+        exclude = []
+        container = await self._exec_container(source, exclude, platform)
+        return self.__document(container).changes(source)
 
 
 #     @final
 #     @dagger.function
 #     async def audit(
 #         self,
-#         project_directory: ProjectDirectoryDaggerType,
 #         *,
 #         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
 #     ) -> str | None:
 #         """Audit source code docstrings."""
-#         workspace = await self._exec_container(project_directory, platform)
+#         exclude = []
+#         workspace = await self._exec_container(self.source, exclude, platform)
 #
 #         # Extract source code context before calling LLM
 #         source_code_dump = await workspace.with_exec(

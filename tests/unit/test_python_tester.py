@@ -61,11 +61,11 @@ async def test_python_tester_init(dagger_client: dagger.Client, test_case: TestC
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .tester()()
+        await Shiryu.create(ws=inputs.workspace)
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .tester()
         .init(
             project_name=inputs.project_name,
-            project_directory=inputs.project_directory,
             is_update=inputs.is_update,
             scm=inputs.scm,
             platform=inputs.platform,
@@ -82,19 +82,22 @@ async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
     Args:
         dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
     """
+    source = dagger.dag.directory()
     project_name = PROJECT_NAME_DEFAULT
-    project_directory = dagger.dag.directory()
     platform = dagger.Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .tester()()
-        .init(project_name=project_name, project_directory=project_directory, platform=platform)
+        await Shiryu.create(ws=source.as_workspace())
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .tester()
+        .init(project_name=project_name, platform=platform)
     )
+    init_source = source.with_changes(init_changeset)
     stdout = (
-        await Shiryu.python()  # ty: ignore[unresolved-attribute]
-        .tester()()
-        .unit(project_directory=project_directory.with_changes(init_changeset), platform=platform)
+        await Shiryu.create(ws=init_source.as_workspace())
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .tester()
+        .unit(platform=platform)
     )
     stdout_regex = re.compile(
         r"^============================= test session starts ==============================\n"

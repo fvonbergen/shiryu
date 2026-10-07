@@ -13,7 +13,6 @@ from ...common.module import (
     PLATFORM_DAGGER_DEFAULT,
     PlatformDaggerType,
     PlatformType,
-    ProjectDirectoryDaggerType,
     ProjectMetadata,
     SCMType,
 )
@@ -249,9 +248,7 @@ class Tester(PythonModule):
     @final
     @classmethod
     async def __unit(
-        cls,
-        container: dagger.Container,
-        keyword: OptionalKeywordDaggerType,
+        cls, container: dagger.Container, keyword: OptionalKeywordDaggerType
     ) -> dagger.Container:
         """Unit test pipeline.
 
@@ -287,13 +284,13 @@ class Tester(PythonModule):
     @dagger.function
     async def unit(
         self,
-        project_directory: ProjectDirectoryDaggerType,
         *,
         keyword: OptionalKeywordDaggerType = OPTIONAL_KEYWORD_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
         """Run unit tests in the project of the provided source Directory."""
-        container = await self._exec_container(project_directory, platform)
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
         container = await self.__unit(container, keyword)
         return await container.stdout()
 
@@ -301,7 +298,6 @@ class Tester(PythonModule):
     # @dagger.function
     # async def coverage(
     #     self,
-    #     project_directory: ProjectDirectoryType,
     #     *,
     #     platform: PlatformType = PLATFORM_DEFAULT
     # ) -> dagger.Directory:

@@ -10,8 +10,7 @@ include:
     GIT_DEPTH: "0"
     AUTH_TOKEN: "env:AUTH_TOKEN"
     PLATFORM: "linux/amd64"
-    PROJECT_DIRECTORY: "."
     VCS_USER_EMAIL: "ci@shiryu.dev"
     VCS_USER_NAME: "CI Release Bot"
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} releaser release --auth-token="${AUTH_TOKEN}" --platform="${PLATFORM}" --project-directory="${PROJECT_DIRECTORY}" --vcs-user-email="${VCS_USER_EMAIL}" --vcs-user-name="${VCS_USER_NAME}"
+    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} releaser release --auth-token="${AUTH_TOKEN}" --platform="${PLATFORM}" --vcs-user-email="${VCS_USER_EMAIL}" --vcs-user-name="${VCS_USER_NAME}"

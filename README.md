@@ -41,6 +41,18 @@ DO_NOT_TRACK=1 dagger api                                 \
   <shiryu_function>
 ```
 
+For initializing a project:
+```bash
+DO_NOT_TRACK=1 dagger generate  \
+  --verbose=4
+```
+
+For running checks:
+```bash
+DO_NOT_TRACK=1 dagger check \
+  --verbose=4
+```
+
 Alternatively, you can run functions directly from the remote reference without prior installation:
 
 ```bash
@@ -50,6 +62,19 @@ DO_NOT_TRACK=1 dagger api                                 \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   <shiryu_function>
 ```
+
+```bash
+DO_NOT_TRACK=1 dagger generate                      \
+  --verbose=4                                       \
+  --module=https://github.com/fvonbergen/shiryu.git
+```
+
+```bash
+DO_NOT_TRACK=1 dagger check                               \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git
+```
+
 
 ### Python SDK
 
@@ -71,16 +96,21 @@ DO_NOT_TRACK=1 dagger api                                 \
   python --help
 ```
 
-Initialize a new project:
+Initialize a new project using either of the following equivalent methods:
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
+do_not_track=1 dagger generate                            \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
+```
+
+```bash
+do_not_track=1 dagger api                                 \
   call                                                    \
   --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   python                                                  \
   init                                                    \
-    --project-directory=<project_directory_path>          \
     --project-name=<project_name>                         \
 ```
 
@@ -93,9 +123,15 @@ DO_NOT_TRACK=1 dagger api                                 \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   python                                                  \
   init                                                    \
-    --project-directory=<project_directory_path>          \
     --project-name=<project_name>                         \
     --is-update                                           \
+```
+
+Run project checks:
+```bash
+DO_NOT_TRACK=1 dagger check                               \
+  --verbose=4                                             \
+  --load-module=https://github.com/fvonbergen/shiryu.git  \
 ```
 
 ### With GitHub
