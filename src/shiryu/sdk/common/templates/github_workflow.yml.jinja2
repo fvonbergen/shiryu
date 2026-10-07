@@ -25,6 +25,18 @@ on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys
 env:
   DO_NOT_TRACK: "1"
 
+{% if permissions|length != 0 %}
+permissions:
+  {%- for permission, access in permissions %}
+  {{ permission }}: {{ access }}
+  {%- endfor %}
+{% endif %}
+{% if concurrency is not none %}
+concurrency:
+  group: "{{ concurrency[0] }}"
+  cancel-in-progress: {{ concurrency[1]|lower }}
+{% endif %}
+
 jobs:
   {%- for job in jobs|sort(attribute="id") %}
   {{ job.id }}:
@@ -36,6 +48,24 @@ jobs:
     {%- endif %}
     {%- endif %}
     runs-on: ubuntu-latest
+    {%- if job.needs|length != 0 %}
+    needs: {{ job.needs|join(", ") }}
+    {%- endif %}
+    {%- if job.condition is not none %}
+    if: {{ job.condition }}
+    {%- endif %}
+    {%- if job.outputs|length != 0 %}
+    outputs:
+      {%- for output_name, output_value in job.outputs %}
+      {{ output_name }}: {{ output_value }}
+      {%- endfor %}
+    {%- endif %}
+    {%- if job.permissions|length != 0 %}
+    permissions:
+      {%- for permission, access in job.permissions %}
+      {{ permission }}: {{ access }}
+      {%- endfor %}
+    {%- endif %}
     steps:
       {%- for step in job.steps %}
       - id: {{ step.id }}
