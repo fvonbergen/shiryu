@@ -113,11 +113,13 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
         .builder()
         .build(platform=platform)
     )
-    paths = await get_all_paths(directory)
     version = re.escape(PROJECT_VERSION_DEFAULT)
-    expected_paths_compiled_patterns = (
-        re.compile(rf"^dist/linux/amd64/{package_name_canonical}-{version}-py3-none-any\.whl$"),
-        re.compile(rf"^dist/linux/amd64/{package_name_canonical}-{version}\.tar\.gz$"),
+    expected_changeset_patterns = (
+        "^dist/$",
+        "^dist/linux/$",
+        "^dist/linux/amd64/$",
+        rf"^dist/linux/amd64/{package_name_canonical}-{version}-py3-none-any\.whl$",
+        rf"^dist/linux/amd64/{package_name_canonical}-{version}\.tar\.gz$",
     )
 
     for changeset, pattern in zip(

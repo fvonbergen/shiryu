@@ -145,7 +145,7 @@ class ReleaserInitializer(PythonModuleInitializer):
             post_script=(),
             artifacts=None,
             parameter_variable_names={"auth_token": "AUTH_TOKEN_REF"},
-            secret_reference_prefix="env://",
+            secret_reference_prefix="env://",  # noqa: S106
         )
         pre_steps = (
             build_github_workflow_checkout_job(
@@ -167,9 +167,7 @@ class ReleaserInitializer(PythonModuleInitializer):
                             job_environment=None,
                             pre_steps=pre_steps,
                             post_steps=(),
-                            outputs=(
-                                ("tag", "${{ steps.releaser_release.outputs.tag }}"),
-                            ),
+                            outputs=(("tag", "${{ steps.releaser_release.outputs.tag }}"),),
                             permissions=(("contents", "write"),),
                         ),
                     ),
@@ -406,7 +404,7 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    def __create_releases(  # noqa: PLR0913, PLR0917
+    def __create_releases(
         cls,
         push_urls: PushUrls,
         tag: str,
@@ -430,7 +428,7 @@ class Releaser(PythonModule):
             dagger.dag, platform, apt_packages={"ca-certificates", "curl"}
         ).with_secret_variable("RELEASE_AUTH_TOKEN", auth_token)
         curl_command = (
-            'curl --fail-with-body --silent --show-error --request POST '
+            "curl --fail-with-body --silent --show-error --request POST "
             '--header "$1 $RELEASE_AUTH_TOKEN" --header "Content-Type: application/json" '
             '--data "@$2" "$3"'
         )

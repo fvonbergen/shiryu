@@ -171,7 +171,8 @@ class DocumenterInitializer(PythonModuleInitializer):
                                 ("id-token", "write"),
                             ),
                         ),
-                    ).add(
+                    )
+                    .add(
                         GitHubWorkflowId.DOCUMENTATION,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
@@ -198,7 +199,8 @@ class DocumenterInitializer(PythonModuleInitializer):
                                 ),
                             ),
                         ),
-                    ).add(
+                    )
+                    .add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
@@ -213,27 +215,27 @@ class DocumenterInitializer(PythonModuleInitializer):
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                            GitLabStageId.DOCUMENTATION,
-                            build_gitlab_stage_job(
-                                gitlab_stage_id=GitLabStageId.DOCUMENTATION,
-                                gitlab_job=gitlab_job,
-                            ),
-                        )
-                        .add(GitLabStageId.DOCUMENTATION, gitlab_pages_stage_job)
-                        .add(
-                            GitLabStageId.RELEASE,
-                            build_gitlab_stage_job(
-                                gitlab_stage_id=GitLabStageId.RELEASE,
-                                gitlab_job=gitlab_job,
-                                needs=("release_releaser_release",),
-                            ),
-                        )
-                        .add(
-                            GitLabStageId.QUALITY,
-                            build_gitlab_stage_job(
-                                gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
-                            ),
+                        GitLabStageId.DOCUMENTATION,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.DOCUMENTATION,
+                            gitlab_job=gitlab_job,
                         ),
+                    )
+                    .add(GitLabStageId.DOCUMENTATION, gitlab_pages_stage_job)
+                    .add(
+                        GitLabStageId.RELEASE,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_job=gitlab_job,
+                            needs=("release_releaser_release",),
+                        ),
+                    )
+                    .add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
+                        ),
+                    ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(

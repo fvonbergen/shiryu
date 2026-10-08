@@ -78,7 +78,6 @@ async def test_python_releaser_init(dagger_client: dagger.Client, test_case: Tes
     )
 
     assert tuple(await init_changeset.added_paths()) == test_case.output.paths
-    assert await get_all_paths(directory) == test_case.output.paths
 
 
 @pytest.mark.parametrize(

@@ -742,7 +742,9 @@ def build_github_action(  # noqa: PLR0913, PLR0917
         and sdk_module_function_name == "release",
         "release_tag_output": "${{ steps.release_tag.outputs.tag }}",
         "release_tag_step_output": "${{ steps.call_dagger_releaser_release.outputs.output }}",
-        "release_tag_command": 'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"',
+        "release_tag_command": (
+            'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"'
+        ),
         "shiryu_version": {"default": shiryu_version},
         "sdk_language": {"default": sdk_language},
         "parameters": sdk_module_function_parameters,
@@ -886,7 +888,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     artifacts: GitLabArtifacts | None,
     gitlab_module_path: str = "gitlab.com/fvonbergen1/shiryu",
     parameter_variable_names: dict[str, str] | None = None,
-    secret_reference_prefix: str = "env:",
+    secret_reference_prefix: str = "env:",  # noqa: S107
 ) -> GitLabJob:
     """Build a GitLab job.
 
@@ -900,6 +902,11 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         export_path: Append export path after dagger call.
         post_script: GitLab commands to run after dagger module command in script section.
         artifacts: GitLab artifacts section.
+        gitlab_module_path: GitLab path of the shiryu dagger module.
+        parameter_variable_names: GitLab variable names by SDK module function parameter name,
+            defaults to the upper case parameter name.
+        secret_reference_prefix: Dagger secret reference prefix of the secret parameters
+            variables (e.g. `env://`).
 
     Returns:
         A GitLab job.
@@ -998,6 +1005,7 @@ def build_gitlab_stage_job(
         gitlab_stage_id: The GitLab stage id.
         gitlab_job: The GitLab job.
         needs: GitLab jobs that must complete before this job.
+        when: GitLab job condition, defaults to the GitLab stage one.
 
     Returns:
         A GitLab stage job.
