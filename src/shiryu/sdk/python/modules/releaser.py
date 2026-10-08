@@ -348,10 +348,10 @@ class Releaser(PythonModule):
 
     @final
     @dagger.function
-    async def release(  # noqa: PLR0913, PLR0917
+    async def release(  # noqa: PLR0913
         self,
-        project_directory: ProjectDirectoryDaggerType,
         auth_token: AuthTokenDaggerType,
+        *,
         auth_user_name: AuthUserNameDaggerType = AUTH_USER_NAME_DAGGER_DEFAULT,
         branch: BranchDaggerType = VCS_PRIMARY_BRANCH,
         git_user_name: GitUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
@@ -363,9 +363,10 @@ class Releaser(PythonModule):
         Returns the release tag, or an empty string if there is nothing to release, so CI can
         decide whether to run the publishing jobs and which ref to check out.
         """
+        exclude: list[str] = []
         container, push_urls = await asyncio.gather(
-            self._exec_container(project_directory, platform),
-            self.__get_clean_push_urls(project_directory, platform),
+            self._exec_container(self.source, exclude, platform),
+            self.__get_clean_push_urls(self.source, platform),
         )
         await self.__ensure_branch_head(container, branch)
         version = await self.__next_version(container)

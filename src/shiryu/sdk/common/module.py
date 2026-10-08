@@ -26,7 +26,7 @@ from .scm import GITLAB_FOLDER, GITLAB_JOBS_FOLDER, SCM, GitLabJob, github_init,
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAULT
 
-DAGGER_VERSION = "1.0.0-beta.15"
+DAGGER_VERSION = "1.0.0-beta.16"
 
 
 def warning(message: str) -> None:

@@ -31,7 +31,7 @@ runs:
       env:
         REPOSITORY_PASSWORD: "${{ inputs.repository_password }}"
       with:
-        version: "v1.0.0-beta.15"
+        version: "v1.0.0-beta.16"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder publish --platform="${{ inputs.platform }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"

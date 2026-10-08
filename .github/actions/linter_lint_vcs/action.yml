@@ -26,7 +26,7 @@ runs:
       name: Call Dagger Linter lint-vcs
       uses: dagger/dagger-for-github@v8.4.0
       with:
-        version: "v1.0.0-beta.15"
+        version: "v1.0.0-beta.16"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} linter lint-vcs --branch-history="${{ inputs.branch_history }}" --platform="${{ inputs.platform }}"

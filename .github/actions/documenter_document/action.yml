@@ -23,7 +23,7 @@ runs:
       name: Call Dagger Documenter document
       uses: dagger/dagger-for-github@v8.4.0
       with:
-        version: "v1.0.0-beta.15"
+        version: "v1.0.0-beta.16"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} documenter document --platform="${{ inputs.platform }}" export --path=./site
