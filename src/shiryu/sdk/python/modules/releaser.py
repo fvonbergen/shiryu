@@ -322,28 +322,18 @@ class Releaser(PythonModule):
         Returns:
             The container after pushing.
         """
-        credential_helper = (
-            '!f() { test "$1" = get && '
-            'printf "username=%s\\npassword=%s\\n" "$GIT_AUTH_USER_NAME" "$GIT_AUTH_TOKEN"; }; f'
+        repository = container.directory(".").as_git()
+        refs = (
+              (repository.head(), f"refs/heads/{branch}"),
+              (repository.tag(tag), f"refs/tags/{tag}"),
         )
-        container = container.with_env_variable(
-            "GIT_AUTH_USER_NAME", auth_user_name
-        ).with_secret_variable("GIT_AUTH_TOKEN", auth_token)
+
         for push_url in push_urls:
-            container = container.with_exec(
-                [
-                    "git",
-                    "-c",
-                    "credential.helper=",
-                    "-c",
-                    f"credential.helper={credential_helper}",
-                    "push",
-                    "--atomic",
-                    push_url,
-                    f"HEAD:refs/heads/{branch}",
-                    f"refs/tags/{tag}",
-                ]
+            destination = dagger.dag.git(
+                push_url, http_auth_username=auth_user_name, http_auth_token=auth_token
             )
+            for ref, remote_ref in refs:
+                ref.push(to=destination, branch=remote_ref).disposition()
         return container
 
     @final
