@@ -1,13 +1,14 @@
 """releaser module."""
 
 import asyncio
-from pathlib import Path
+import json
+from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import quote, urlsplit, urlunsplit
 
 import dagger
 
-from ....utils.dagger.client import container_git
+from ....utils.dagger.client import container_debian, container_git
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.dagger.function import SourceType
 from ....utils.template import Mapping, Template, TemplateFile
@@ -35,13 +36,67 @@ from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
-AuthTokenDaggerType = Annotated[dagger.Secret, dagger.Doc("Authorization token")]
+AuthTokenDaggerType = Annotated[
+    dagger.Secret,
+    dagger.Doc(
+        "Authorization token with write access to the repository and its releases (GitLab tokens "
+        "need the api scope)."
+    ),
+]
+AuthUserNameDaggerType = Annotated[
+    str,
+    dagger.Doc(
+        "User name sent with the authorization token (any non-empty value works with GitHub and "
+        "GitLab access tokens)."
+    ),
+]
+AUTH_USER_NAME_DAGGER_DEFAULT: Final = "x-access-token"
+GitUserNameDaggerType = Annotated[str, dagger.Doc("Git user name used for the release commit.")]
+GitUserEmailDaggerType = Annotated[str, dagger.Doc("Git user email used for the release commit.")]
+BranchDaggerType = Annotated[
+    str, dagger.Doc("Branch to release from and push the release commit to.")
+]
 VCSUserNameDaggerType = Annotated[str, dagger.Doc("VCS user name")]
+
 VCS_USER_NAME_DAGGER_DEFAULT: Final = "CI Release Bot"
 VCSUserEMailDaggerType = Annotated[str, dagger.Doc("VCS user email")]
 VCS_USER_EMAIL_DAGGER_DEFAULT: Final = "ci@shiryu.dev"
 
 type PushUrls = list[str]
+
+CZ_NOTHING_TO_RELEASE_EXIT_CODES: Final = frozenset({3, 21})
+NOTHING_TO_RELEASE: Final = "Nothing to release"
+
+# Any other host is assumed to be a GitLab instance.
+GITHUB_HOSTNAME: Final = "github.com"
+GITHUB_API_URL: Final = "https://api.github.com"
+
+
+def build_release_request(push_url: str, tag: str, notes: str) -> tuple[str, str, str]:
+    """Build the request that creates a release in the SCM hosting a push URL.
+
+    Args:
+        push_url: Credential-free HTTPS push URL.
+        tag: The release tag.
+        notes: The release notes.
+
+    Returns:
+        The API endpoint, the authorization header prefix (the token is appended) and the JSON
+        payload.
+    """
+    parsed = urlsplit(push_url)
+    repository_path = parsed.path.strip("/").removesuffix(".git")
+    if parsed.hostname == GITHUB_HOSTNAME:
+        return (
+            f"{GITHUB_API_URL}/repos/{repository_path}/releases",
+            "Authorization: Bearer",
+            json.dumps({"tag_name": tag, "name": tag, "body": notes}),
+        )
+    return (
+        f"https://{parsed.netloc}/api/v4/projects/{quote(repository_path, safe='')}/releases",
+        "PRIVATE-TOKEN:",
+        json.dumps({"tag_name": tag, "name": tag, "description": notes}),
+    )
 
 
 class ReleaserInitializer(PythonModuleInitializer):
@@ -89,6 +144,8 @@ class ReleaserInitializer(PythonModuleInitializer):
             export_path=None,
             post_script=(),
             artifacts=None,
+            parameter_variable_names={"auth_token": "AUTH_TOKEN_REF"},
+            secret_reference_prefix="env://",  # noqa: S106
         )
         pre_steps = (
             build_github_workflow_checkout_job(
@@ -110,6 +167,8 @@ class ReleaserInitializer(PythonModuleInitializer):
                             job_environment=None,
                             pre_steps=pre_steps,
                             post_steps=(),
+                            outputs=(("tag", "${{ steps.releaser_release.outputs.tag }}"),),
+                            permissions=(("contents", "write"),),
                         ),
                     ),
                 ),
@@ -118,7 +177,9 @@ class ReleaserInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.RELEASE,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE, gitlab_job=gitlab_job
+                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_job=gitlab_job,
+                            when="manual",
                         ),
                     ),
                 ),
@@ -185,6 +246,235 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
+    async def __next_version(cls, container: dagger.Container) -> str | None:
+        """Compute the next version from the commits since the last release tag.
+
+        Args:
+            container: Project container.
+
+        Returns:
+            The next version, or `None` if no commit is eligible for a release.
+
+        Raises:
+            RuntimeError: If commitizen fails for any other reason.
+        """
+        executed_container = container.with_exec(
+            cls._build_uv_run_command(
+                ["cz", "bump", "--get-next", "--yes"], execution_mode=ExecutionMode.SCRIPT
+            ),
+            expect=dagger.ReturnType.ANY,
+        )
+        exit_code = await executed_container.exit_code()
+        if exit_code in CZ_NOTHING_TO_RELEASE_EXIT_CODES:
+            return None
+        if exit_code != 0:
+            exception_message = (
+                f"{await executed_container.stdout()}{await executed_container.stderr()}"
+            )
+            raise RuntimeError(exception_message)
+        return (await executed_container.stdout()).strip()
+
+    @final
+    @classmethod
+    def __bump(
+        cls, container: dagger.Container, version: str, git_user_name: str, git_user_email: str
+    ) -> dagger.Container:
+        """Bump the project version, update the changelog, commit and tag.
+
+        Args:
+            container: Project container.
+            version: The new version.
+            git_user_name: Release commit author name.
+            git_user_email: Release commit author email.
+
+        Returns:
+            A container with the release commit and tag.
+        """
+        tag = f"v{version}"
+        git_identity = ["-c", f"user.name={git_user_name}", "-c", f"user.email={git_user_email}"]
+        return (
+            # Updates pyproject.toml and uv.lock together.
+            container.with_exec(["uv", "version", version, "--no-sync"])
+            .with_exec(
+                cls._build_uv_run_command(
+                    ["cz", "changelog", "--incremental", f"--unreleased-version={tag}"],
+                    execution_mode=ExecutionMode.SCRIPT,
+                )
+            )
+            .with_exec(["git", "add", "pyproject.toml", "uv.lock", "CHANGELOG.md"])
+            .with_exec(["git", *git_identity, "commit", "-m", f"chore: release {tag}"])
+            .with_exec(["git", *git_identity, "tag", "--annotate", tag, f"--message={tag}"])
+        )
+
+    @final
+    @classmethod
+    async def __ensure_branch_head(cls, container: dagger.Container, branch: str) -> None:
+        """Ensure the checked out commit is the tip of the remote release branch.
+
+        CI checkouts are usually in detached HEAD state (always in GitLab), so the current branch
+        name can't be used. Comparing against the remote-tracking ref prevents releasing (and
+        pushing to the release branch) from any other branch.
+
+        Args:
+            container: Project container.
+            branch: Release branch.
+
+        Raises:
+            RuntimeError: If HEAD is not the tip of the remote release branch.
+        """
+        remote_ref = f"refs/remotes/origin/{branch}"
+        executed_container = container.with_exec(
+            ["git", "rev-parse", "HEAD", remote_ref], expect=dagger.ReturnType.ANY
+        )
+        head_sha, _, remote_sha = (await executed_container.stdout()).strip().partition("\n")
+        if await executed_container.exit_code() != 0 or head_sha != remote_sha:
+            exception_message = (
+                f"Releases can only be made from the top of {branch} "
+                f"(HEAD={head_sha or 'unknown'}, {remote_ref}={remote_sha or 'missing'})"
+            )
+            raise RuntimeError(exception_message)
+
+    @final
+    @classmethod
+    def __push(  # noqa: PLR0913, PLR0917
+        cls,
+        container: dagger.Container,
+        push_urls: PushUrls,
+        branch: str,
+        tag: str,
+        auth_user_name: str,
+        auth_token: dagger.Secret,
+    ) -> dagger.Container:
+        """Push the release commit and tag atomically.
+
+        Args:
+            container: Container with the release commit and tag.
+            push_urls: Credential-free HTTPS push URLs.
+            branch: Release branch.
+            tag: The release tag.
+            auth_user_name: User name sent along with the token.
+            auth_token: Token with write access to the repository.
+
+        Returns:
+            The container after pushing.
+        """
+        credential_helper = (
+            '!f() { test "$1" = get && '
+            'printf "username=%s\\npassword=%s\\n" "$GIT_AUTH_USER_NAME" "$GIT_AUTH_TOKEN"; }; f'
+        )
+        container = container.with_env_variable(
+            "GIT_AUTH_USER_NAME", auth_user_name
+        ).with_secret_variable("GIT_AUTH_TOKEN", auth_token)
+        for push_url in push_urls:
+            container = container.with_exec(
+                [
+                    "git",
+                    "-c",
+                    "credential.helper=",
+                    "-c",
+                    f"credential.helper={credential_helper}",
+                    "push",
+                    "--atomic",
+                    push_url,
+                    f"HEAD:refs/heads/{branch}",
+                    f"refs/tags/{tag}",
+                ]
+            )
+        return container
+
+    @final
+    @classmethod
+    async def __release_notes(cls, container: dagger.Container, tag: str) -> str:
+        """Get the release notes of a tag from the changelog.
+
+        Args:
+            container: Container with the release tag.
+            tag: The release tag.
+
+        Returns:
+            The changelog entries of the tag, without its version heading.
+        """
+        changelog = await container.with_exec(
+            cls._build_uv_run_command(
+                ["cz", "changelog", tag, "--dry-run"], execution_mode=ExecutionMode.SCRIPT
+            )
+        ).stdout()
+        _, _, notes = changelog.strip().partition("\n")
+        return notes.strip()
+
+    @final
+    @classmethod
+    def __create_releases(
+        cls,
+        push_urls: PushUrls,
+        tag: str,
+        notes: str,
+        auth_token: dagger.Secret,
+        platform: PlatformType,
+    ) -> dagger.Container:
+        """Create the GitHub or GitLab release of a pushed tag in every push URL.
+
+        Args:
+            push_urls: Credential-free HTTPS push URLs.
+            tag: The pushed release tag.
+            notes: The release notes.
+            auth_token: Token with write access to the repository releases.
+            platform: The container platform.
+
+        Returns:
+            The container after creating the releases.
+        """
+        container = container_debian(
+            dagger.dag, platform, apt_packages={"ca-certificates", "curl"}
+        ).with_secret_variable("RELEASE_AUTH_TOKEN", auth_token)
+        curl_command = (
+            "curl --fail-with-body --silent --show-error --request POST "
+            '--header "$1 $RELEASE_AUTH_TOKEN" --header "Content-Type: application/json" '
+            '--data "@$2" "$3"'
+        )
+        for index, push_url in enumerate(push_urls):
+            endpoint, authorization_header, payload = build_release_request(push_url, tag, notes)
+            payload_path = str(PurePosixPath("/tmp") / f"release-{index}.json")  # noqa: S108
+            container = container.with_new_file(payload_path, payload).with_exec(
+                ["sh", "-c", curl_command, "sh", authorization_header, payload_path, endpoint]
+            )
+        return container
+
+    @final
+    @dagger.function
+    async def release(  # noqa: PLR0913
+        self,
+        auth_token: AuthTokenDaggerType,
+        *,
+        auth_user_name: AuthUserNameDaggerType = AUTH_USER_NAME_DAGGER_DEFAULT,
+        branch: BranchDaggerType = VCS_PRIMARY_BRANCH,
+        git_user_name: GitUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
+        git_user_email: GitUserEmailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> str:
+        """Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.
+
+        Returns the release tag, or an empty string if there is nothing to release, so CI can
+        decide whether to run the publishing jobs and which ref to check out.
+        """
+        exclude: list[str] = []
+        container, push_urls = await asyncio.gather(
+            self._exec_container(self.source, exclude, platform),
+            self.__get_clean_push_urls(self.source, platform),
+        )
+        await self.__ensure_branch_head(container, branch)
+        version = await self.__next_version(container)
+        if version is None:
+            return ""
+        tag = f"v{version}"
+        bump_container = self.__bump(container, version, git_user_name, git_user_email)
+        notes = await self.__release_notes(bump_container, tag)
+        await self.__push(bump_container, push_urls, branch, tag, auth_user_name, auth_token).sync()
+        await self.__create_releases(push_urls, tag, notes, auth_token, platform).sync()
+        return tag
+
+    @final
+    @classmethod
     def __normalize_to_https(cls, raw_url: str) -> str:
         """Normalize Git remote URLs to clean HTTPS format without credentials.
 
@@ -239,137 +529,6 @@ class Releaser(PythonModule):
 
         push_urls = [line.strip() for line in raw_origin.strip().splitlines() if line.strip()]
         return [cls.__normalize_to_https(url) for url in push_urls]
-
-    @final
-    @classmethod
-    async def __release(  # noqa: PLR0913, PLR0917
-        cls,
-        container: dagger.Container,
-        push_urls: PushUrls,
-        auth_token: AuthTokenDaggerType,
-        vcs_user_name: VCSUserNameDaggerType,
-        vcs_user_email: VCSUserEMailDaggerType,
-        dry_run: bool,
-    ) -> str:
-        """Run release steps inside the Dagger container with maximal security controls.
-
-        Configures Git identity, updates remote URLs to clean target endpoints, executes Commitizen
-        version bumping, and pushes upstream.
-
-        Args:
-            container: Execution container configured with runtime dependencies.
-            push_urls: List of clean HTTPS remote URLs for push targets.
-            auth_token: Authorization token.
-            vcs_user_name: VCS user name.
-            vcs_user_email: VCS user email.
-            dry_run: Flag indicating whether to skip upstream pushes and commitizen mutations.
-
-        Returns:
-            Captured stdout logs from the release execution.
-        """
-        initializer = cls._initializer_cls()
-        container = container.with_exec(
-            ["git", "config", "--global", "user.name", vcs_user_name]
-        ).with_exec(["git", "config", "--global", "user.email", vcs_user_email])
-
-        # Write clean HTTPS push URLs to repository config
-        if push_urls:
-            container = container.with_exec(["git", "remote", "set-url", "origin", push_urls[0]])
-            for next_url in push_urls[1:]:
-                container = container.with_exec(
-                    ["git", "remote", "set-url", "--add", "origin", next_url]
-                )
-
-        _cz_toml_file_name = initializer._cz_toml_template_file().file_name
-        cz_command = cls._build_uv_run_command(
-            ["cz", f"--config={_cz_toml_file_name}", "bump", "--changelog", "--yes"],
-            execution_mode=ExecutionMode.SCRIPT,
-        )
-        if dry_run:
-            cz_command = [*cz_command, "--dry-run"]
-
-        container = container.with_exec(cz_command)
-
-        if not dry_run:
-            # SECURITY:
-            # 1. Bind auth_token to secret environment variable `GIT_TOKEN`.
-            # 2. Use `GIT_CONFIG_KEY_0` and `GIT_CONFIG_VALUE_0` to inject HTTP authorization
-            #    header natively into Git.
-            # 3. Direct execution via array args ensures no shell parsing takes place.
-            container = (
-                container.with_secret_variable("GIT_TOKEN", auth_token)
-                .with_env_variable("GIT_CONFIG_KEY_0", "http.extraHeader")
-                .with_env_variable("GIT_CONFIG_VALUE_0", "Authorization: Bearer $GIT_TOKEN")
-                .with_exec(["git", "push", "origin", f"HEAD:{VCS_PRIMARY_BRANCH}", "--follow-tags"])
-            )
-
-        return await container.stdout()
-
-    @final
-    @classmethod
-    async def __run_release_workflow(  # noqa: PLR0913, PLR0917
-        cls,
-        source: SourceType,
-        auth_token: AuthTokenDaggerType,
-        vcs_user_name: VCSUserNameDaggerType,
-        vcs_user_email: VCSUserEMailDaggerType,
-        platform: PlatformType,
-        dry_run: bool,
-    ) -> str:
-        """Internal orchestrator executing the container release pipeline securely.
-
-        Coordinates parallel preparation tasks before invoking the execution stage.
-
-        Args:
-            source: Project source directory.
-            auth_token: Authorization token.
-            vcs_user_name: VCS user name.
-            vcs_user_email: VCS user email.
-            platform: The container platform.
-            dry_run: If True, execution in dry-run simulation mode without pushing upstream.
-
-        Returns:
-            Success summary message on real releases, or full command output log during dry runs.
-        """
-        exclude = []
-        container, clean_push_urls = await asyncio.gather(
-            cls._exec_container(source, exclude, platform),
-            cls.__get_clean_push_urls(source, platform),
-        )
-        output = await cls.__release(
-            container, clean_push_urls, auth_token, vcs_user_name, vcs_user_email, dry_run=dry_run
-        )
-        return output if dry_run else "Release successful"
-
-    @final
-    @dagger.function
-    async def release(
-        self,
-        auth_token: AuthTokenDaggerType,
-        *,
-        vcs_user_name: VCSUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
-        vcs_user_email: VCSUserEMailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
-        """Run release in the project."""
-        return await self.__run_release_workflow(
-            self.source, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=False
-        )
-
-    @final
-    @dagger.function
-    async def test(
-        self,
-        auth_token: AuthTokenDaggerType,
-        *,
-        vcs_user_name: VCSUserNameDaggerType = VCS_USER_NAME_DAGGER_DEFAULT,
-        vcs_user_email: VCSUserEMailDaggerType = VCS_USER_EMAIL_DAGGER_DEFAULT,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
-        """Run release dry run in the project."""
-        return await self.__run_release_workflow(
-            self.source, auth_token, vcs_user_name, vcs_user_email, platform, dry_run=True
-        )
 
 
 sdk_module: Final = Releaser

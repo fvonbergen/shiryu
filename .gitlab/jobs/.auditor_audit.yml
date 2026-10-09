@@ -4,7 +4,7 @@ include:
 .auditor_audit:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat/add-python-sdk-release"
+    SHIRYU_VERSION: "feat/add-python-sdk-release-add-some-new-things-1.0.0-beta.16"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
   script:

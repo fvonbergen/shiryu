@@ -8,12 +8,24 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat/add-python-sdk-release"
+    default: "feat/add-python-sdk-release-add-some-new-things-1.0.0-beta.16"
   sdk_language:
     description: "SDK programming language"
     default: "python"
   auth_token:
-    description: "Authorization token"
+    description: "Authorization token with write access to the repository and its releases (GitLab tokens need the api scope)."
+  auth_user_name:
+    description: "User name sent with the authorization token."
+    default: "x-access-token"
+  branch:
+    description: "Branch to release from and push the release commit to."
+    default: "main"
+  git_user_email:
+    description: "Git user email used for the release commit."
+    default: "ci@shiryu.dev"
+  git_user_name:
+    description: "Git user name used for the release commit."
+    default: "CI Release Bot"
   platform:
     description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
@@ -24,6 +36,11 @@ inputs:
     description: "VCS user name"
     default: "CI Release Bot"
 
+outputs:
+  tag:
+    description: "Release tag, empty if there was nothing to release"
+    value: ${{ steps.release_tag.outputs.tag }}
+
 runs:
   using: "composite"
   steps:
@@ -33,8 +50,14 @@ runs:
       env:
         AUTH_TOKEN: "${{ inputs.auth_token }}"
       with:
-        version: "v1.0.0-beta.15"
+        version: "v1.0.0-beta.16"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --platform="${{ inputs.platform }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+    - id: release_tag
+      name: Release tag
+      shell: bash
+      env:
+        OUTPUT: ${{ steps.call_dagger_releaser_release.outputs.output }}
+      run: echo "tag=$(printf '%s' "$OUTPUT" | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"

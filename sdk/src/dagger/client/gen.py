@@ -487,8 +487,8 @@ class LLMContentBlockInput(Input):
     content: "list[LLMContentBlockInput] | None" = None
     """Ordered TEXT or media blocks returned by a tool."""
 
-    data: str | None = ''
-    """Base64-encoded media bytes. Supply exactly one of data or file for media."""
+    data: Bytes | None = None
+    """Media bytes. Supply exactly one of data or file for media."""
 
     errored: bool | None = False
     """Whether the tool call resulted in an error (for TOOL_RESULT kind)."""
@@ -517,8 +517,8 @@ class LLMContentBlockInput(Input):
             raise _type_error("LLMContentBlockInput.__init__", "call_id", self.call_id, "str | None")
         if not (self.content is None or (isinstance(self.content, list) and all(isinstance(_v0, LLMContentBlockInput) for _v0 in self.content))):
             raise _type_error("LLMContentBlockInput.__init__", "content", self.content, "list[LLMContentBlockInput] | None")
-        if not (self.data is None or isinstance(self.data, str)):
-            raise _type_error("LLMContentBlockInput.__init__", "data", self.data, "str | None")
+        if not (self.data is None or isinstance(self.data, Bytes)):
+            raise _type_error("LLMContentBlockInput.__init__", "data", self.data, "Bytes | None")
         if not (self.errored is None or isinstance(self.errored, bool)):
             raise _type_error("LLMContentBlockInput.__init__", "errored", self.errored, "bool | None")
         if not (self.file is None or isinstance(self.file, File)):
@@ -769,14 +769,38 @@ class Address(Type):
     and other object types. Address format depends on the type, and is
     validated at type selection."""
 
-    def container(self) -> "Container":
-        """Load a container from the address."""
-        _args: list[Arg] = []
+    def container(self, *, no_lock: bool | None = False) -> "Container":
+        """Load a container from the address.
+
+        Parameters
+        ----------
+        no_lock:
+            Resolve the address's image tag live, ignoring the workspace
+            lockfile: neither read a pinned value nor record one.
+            A DAG address is unaffected: its module evaluates as usual.
+        """
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("Address.container", "no_lock", no_lock, "bool | None")
+        _args = [
+            Arg("noLock", no_lock, False),
+        ]
         _ctx = self._select("container", _args)
         return Container(_ctx)
 
-    def directory(self, *, exclude: list[str] | None = None, include: list[str] | None = None, gitignore: bool | None = False, no_cache: bool | None = False,) -> "Directory":
-        """Load a directory from the address."""
+    def directory(self, *, exclude: list[str] | None = None, include: list[str] | None = None, gitignore: bool | None = False, no_cache: bool | None = False, no_lock: bool | None = False,) -> "Directory":
+        """Load a directory from the address.
+
+        Parameters
+        ----------
+        exclude:
+        include:
+        gitignore:
+        no_cache:
+        no_lock:
+            Resolve the address's git ref live, ignoring the workspace
+            lockfile: neither read a pinned value nor record one.
+            A DAG address is unaffected: its module evaluates as usual.
+        """
         if not (exclude is None or (isinstance(exclude, list) and all(isinstance(_v0, str) for _v0 in exclude))):
             raise _type_error("Address.directory", "exclude", exclude, "list[str] | None")
         if not (include is None or (isinstance(include, list) and all(isinstance(_v0, str) for _v0 in include))):
@@ -785,17 +809,32 @@ class Address(Type):
             raise _type_error("Address.directory", "gitignore", gitignore, "bool | None")
         if not (no_cache is None or isinstance(no_cache, bool)):
             raise _type_error("Address.directory", "no_cache", no_cache, "bool | None")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("Address.directory", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("exclude", [] if exclude is None else exclude, []),
             Arg("include", [] if include is None else include, []),
             Arg("gitignore", gitignore, False),
             Arg("noCache", no_cache, False),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("directory", _args)
         return Directory(_ctx)
 
-    def file(self, *, exclude: list[str] | None = None, include: list[str] | None = None, gitignore: bool | None = False, no_cache: bool | None = False,) -> "File":
-        """Load a file from the address."""
+    def file(self, *, exclude: list[str] | None = None, include: list[str] | None = None, gitignore: bool | None = False, no_cache: bool | None = False, no_lock: bool | None = False,) -> "File":
+        """Load a file from the address.
+
+        Parameters
+        ----------
+        exclude:
+        include:
+        gitignore:
+        no_cache:
+        no_lock:
+            Resolve the address's git ref live, ignoring the workspace
+            lockfile: neither read a pinned value nor record one.
+            A DAG address is unaffected: its module evaluates as usual.
+        """
         if not (exclude is None or (isinstance(exclude, list) and all(isinstance(_v0, str) for _v0 in exclude))):
             raise _type_error("Address.file", "exclude", exclude, "list[str] | None")
         if not (include is None or (isinstance(include, list) and all(isinstance(_v0, str) for _v0 in include))):
@@ -804,18 +843,33 @@ class Address(Type):
             raise _type_error("Address.file", "gitignore", gitignore, "bool | None")
         if not (no_cache is None or isinstance(no_cache, bool)):
             raise _type_error("Address.file", "no_cache", no_cache, "bool | None")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("Address.file", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("exclude", [] if exclude is None else exclude, []),
             Arg("include", [] if include is None else include, []),
             Arg("gitignore", gitignore, False),
             Arg("noCache", no_cache, False),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("file", _args)
         return File(_ctx)
 
-    def git_ref(self) -> "GitRef":
-        """Load a git ref (branch, tag or commit) from the address."""
-        _args: list[Arg] = []
+    def git_ref(self, *, no_lock: bool | None = False) -> "GitRef":
+        """Load a git ref (branch, tag or commit) from the address.
+
+        Parameters
+        ----------
+        no_lock:
+            Resolve the address's git ref live, ignoring the workspace
+            lockfile: neither read a pinned value nor record one.
+            A DAG address is unaffected: its module evaluates as usual.
+        """
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("Address.git_ref", "no_lock", no_lock, "bool | None")
+        _args = [
+            Arg("noLock", no_lock, False),
+        ]
         _ctx = self._select("gitRef", _args)
         return GitRef(_ctx)
 
@@ -1200,6 +1254,24 @@ class Agent(Type):
         """
         _args: list[Arg] = []
         return await self._ctx.execute_sync(self, "resume", _args)
+
+    def seed(self) -> "LLM":
+        """The conversation the agent was spawned from: the tools, workspace and
+        message history its loop started with.
+
+        Fixed by the spawn; stepping does not move it (see snapshot for the
+        latest committed step). Its workspace is the baseline the agent's own
+        changes are measured from.
+
+        For an agent restored under a handle, this is the conversation it was
+        restored from.
+
+        .. caution::
+            Experimental: Agent APIs are likely to change.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("seed", _args)
+        return LLM(_ctx)
 
     async def send(self, message: str, *, reply_to: str | None = '', content: list[LLMContentBlockInput] | None = None,) -> str:
         """Enqueue a message, on the record: it is consumed at a step boundary,
@@ -1645,8 +1717,8 @@ class Artifact(Type):
         ----------
         absolute:
             Prefix the workspace's Git address and commit:
-            dag://<workspace>@<commit>:<path>. Fails if the workspace has no
-            Git address.
+            dag://<workspace>@<commit>:<path>. Fails if the artifact has no
+            workspace, or its workspace has no Git address.
         dimension_keys:
             Include the dimension keys as a query. Without them, the address
             is a path selector.
@@ -2525,7 +2597,7 @@ class Artifacts(Type):
         _ctx = self._select("uri", _args)
         return await _ctx.execute(str)
 
-    async def values(self, *, fail_fast: bool | None = False, arguments: JSON | None = '{}',) -> list[ArtifactResult]:
+    async def values(self, *, fail_fast: bool | None = False, arguments: JSON | None = '{}', max_concurrency: int | None = 0,) -> list[ArtifactResult]:
         """Evaluate the selection in parallel, retaining each result and error.
 
         Parameters
@@ -2534,14 +2606,21 @@ class Artifacts(Type):
             Cancel remaining work after the first failure.
         arguments:
             Field arguments applied to each artifact, as a JSON object.
+        max_concurrency:
+            Evaluate at most this many artifacts at once on this engine; the
+            rest wait. Checks that scale out to cloud engines are not counted.
+            0 means no limit.
         """
         if not (fail_fast is None or isinstance(fail_fast, bool)):
             raise _type_error("Artifacts.values", "fail_fast", fail_fast, "bool | None")
         if not (arguments is None or isinstance(arguments, JSON)):
             raise _type_error("Artifacts.values", "arguments", arguments, "JSON | None")
+        if not (max_concurrency is None or isinstance(max_concurrency, int)):
+            raise _type_error("Artifacts.values", "max_concurrency", max_concurrency, "int | None")
         _args = [
             Arg("failFast", fail_fast, False),
             Arg("arguments", arguments, '{}'),
+            Arg("maxConcurrency", max_concurrency, 0),
         ]
         _ctx = self._select("values", _args)
         return await _ctx.execute_object_list(ArtifactResult)
@@ -3319,7 +3398,7 @@ class Command(Type):
 class Container(Type):
     """An OCI-compatible container, also known as a Docker container."""
 
-    def as_service(self, *, args: list[str] | None = None, use_entrypoint: bool | None = False, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> "Service":
+    def as_service(self, *, args: list[str] | None = None, use_entrypoint: bool | None = False, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, dagger_in_dagger_new_session: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> "Service":
         """Turn the container into a Service.
 
         Be sure to set any exposed ports before this conversion.
@@ -3338,6 +3417,15 @@ class Container(Type):
         experimental_privileged_nesting:
             .. deprecated:: Commands can access Dagger by default. Use
             "disableDaggerInDagger" to opt out.
+        dagger_in_dagger_new_session:
+            Connect Dagger clients started by the command to the current
+            engine as new sessions, instead of as clients of the current
+            session. Each connection gets its own session, released when that
+            client closes.
+            The command reaches the engine through DAGGER_ENGINE, so SDKs run
+            a Dagger CLI: set _EXPERIMENTAL_DAGGER_CLI_BIN to one in the
+            container, or let the SDK download one.
+            Cannot be combined with "disableDaggerInDagger".
         insecure_root_capabilities:
             Execute the command with all root capabilities. This is similar to
             running a command with "sudo" or executing "docker run" with the "
@@ -3362,6 +3450,8 @@ class Container(Type):
             raise _type_error("Container.as_service", "disable_dagger_in_dagger", disable_dagger_in_dagger, "bool | None")
         if not (experimental_privileged_nesting is None or isinstance(experimental_privileged_nesting, bool)):
             raise _type_error("Container.as_service", "experimental_privileged_nesting", experimental_privileged_nesting, "bool | None")
+        if not (dagger_in_dagger_new_session is None or isinstance(dagger_in_dagger_new_session, bool)):
+            raise _type_error("Container.as_service", "dagger_in_dagger_new_session", dagger_in_dagger_new_session, "bool | None")
         if not (insecure_root_capabilities is None or isinstance(insecure_root_capabilities, bool)):
             raise _type_error("Container.as_service", "insecure_root_capabilities", insecure_root_capabilities, "bool | None")
         if not (expand is None or isinstance(expand, bool)):
@@ -3373,6 +3463,7 @@ class Container(Type):
             Arg("useEntrypoint", use_entrypoint, False),
             Arg("disableDaggerInDagger", disable_dagger_in_dagger, False),
             Arg("experimentalPrivilegedNesting", experimental_privileged_nesting, False),
+            Arg("daggerInDaggerNewSession", dagger_in_dagger_new_session, False),
             Arg("insecureRootCapabilities", insecure_root_capabilities, False),
             Arg("expand", expand, False),
             Arg("noInit", no_init, False),
@@ -3822,7 +3913,7 @@ class Container(Type):
         _ctx = self._select("file", _args)
         return File(_ctx)
 
-    def from_(self, address: str, *, version: str | None = '', registry_service: "Service | None" = None, protocol: RegistryProtocol | None = None, insecure_skip_tls_verify: bool | None = False,) -> Self:
+    def from_(self, address: str, *, version: str | None = '', registry_service: "Service | None" = None, protocol: RegistryProtocol | None = None, insecure_skip_tls_verify: bool | None = False, no_lock: bool | None = False,) -> Self:
         """Download a container image, and apply it to the container state. All
         previous state will be lost.
 
@@ -3846,6 +3937,8 @@ class Container(Type):
         insecure_skip_tls_verify:
             Allow HTTPS registry communication without verifying the server
             certificate.
+        no_lock:
+            Ignore the workspace lockfile for this lookup.
         """
         if not (isinstance(address, str)):
             raise _type_error("Container.from_", "address", address, "str")
@@ -3857,12 +3950,15 @@ class Container(Type):
             raise _type_error("Container.from_", "protocol", protocol, "RegistryProtocol | None")
         if not (insecure_skip_tls_verify is None or isinstance(insecure_skip_tls_verify, bool)):
             raise _type_error("Container.from_", "insecure_skip_tls_verify", insecure_skip_tls_verify, "bool | None")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("Container.from_", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("address", address),
             Arg("version", version, ''),
             Arg("registryService", registry_service, None),
             Arg("protocol", protocol, None),
             Arg("insecureSkipTLSVerify", insecure_skip_tls_verify, False),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("from", _args)
         return Container(_ctx)
@@ -4308,7 +4404,7 @@ class Container(Type):
         _ctx = self._select("terminal", _args)
         return Container(_ctx)
 
-    async def up(self, *, random: bool | None = False, ports: list[PortForward] | None = None, args: list[str] | None = None, use_entrypoint: bool | None = False, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> Void | None:
+    async def up(self, *, random: bool | None = False, ports: list[PortForward] | None = None, args: list[str] | None = None, use_entrypoint: bool | None = False, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, dagger_in_dagger_new_session: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> Void | None:
         """Starts a Service and creates a tunnel that forwards traffic from the
         caller's network to that service.
 
@@ -4334,6 +4430,15 @@ class Container(Type):
         experimental_privileged_nesting:
             .. deprecated:: Commands can access Dagger by default. Use
             "disableDaggerInDagger" to opt out.
+        dagger_in_dagger_new_session:
+            Connect Dagger clients started by the command to the current
+            engine as new sessions, instead of as clients of the current
+            session. Each connection gets its own session, released when that
+            client closes.
+            The command reaches the engine through DAGGER_ENGINE, so SDKs run
+            a Dagger CLI: set _EXPERIMENTAL_DAGGER_CLI_BIN to one in the
+            container, or let the SDK download one.
+            Cannot be combined with "disableDaggerInDagger".
         insecure_root_capabilities:
             Execute the command with all root capabilities. This is similar to
             running a command with "sudo" or executing "docker run" with the "
@@ -4375,6 +4480,8 @@ class Container(Type):
             raise _type_error("Container.up", "disable_dagger_in_dagger", disable_dagger_in_dagger, "bool | None")
         if not (experimental_privileged_nesting is None or isinstance(experimental_privileged_nesting, bool)):
             raise _type_error("Container.up", "experimental_privileged_nesting", experimental_privileged_nesting, "bool | None")
+        if not (dagger_in_dagger_new_session is None or isinstance(dagger_in_dagger_new_session, bool)):
+            raise _type_error("Container.up", "dagger_in_dagger_new_session", dagger_in_dagger_new_session, "bool | None")
         if not (insecure_root_capabilities is None or isinstance(insecure_root_capabilities, bool)):
             raise _type_error("Container.up", "insecure_root_capabilities", insecure_root_capabilities, "bool | None")
         if not (expand is None or isinstance(expand, bool)):
@@ -4388,6 +4495,7 @@ class Container(Type):
             Arg("useEntrypoint", use_entrypoint, False),
             Arg("disableDaggerInDagger", disable_dagger_in_dagger, False),
             Arg("experimentalPrivilegedNesting", experimental_privileged_nesting, False),
+            Arg("daggerInDaggerNewSession", dagger_in_dagger_new_session, False),
             Arg("insecureRootCapabilities", insecure_root_capabilities, False),
             Arg("expand", expand, False),
             Arg("noInit", no_init, False),
@@ -4700,7 +4808,7 @@ class Container(Type):
         _ctx = self._select("withError", _args)
         return Container(_ctx)
 
-    def with_exec(self, args: list[str], *, use_entrypoint: bool | None = False, stdin: str | None = '', redirect_stdin: str | None = '', redirect_stdout: str | None = '', redirect_stderr: str | None = '', expect: ReturnType | None = ReturnType.SUCCESS, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> Self:
+    def with_exec(self, args: list[str], *, use_entrypoint: bool | None = False, stdin: str | None = '', redirect_stdin: str | None = '', redirect_stdout: str | None = '', redirect_stderr: str | None = '', expect: ReturnType | None = ReturnType.SUCCESS, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, dagger_in_dagger_new_session: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> Self:
         """Execute a command in the container, and return a new snapshot of the
         container state after execution.
 
@@ -4724,10 +4832,10 @@ class Container(Type):
             container. Example: "./stdin.txt"
         redirect_stdout:
             Redirect the command's standard output to a file in the container.
-            Example: "./stdout.txt"
+            The redirected output is not logged. Example: "./stdout.txt"
         redirect_stderr:
             Redirect the command's standard error to a file in the container.
-            Example: "./stderr.txt"
+            The redirected output is not logged. Example: "./stderr.txt"
         expect:
             Exit codes this command is allowed to exit with without error
         disable_dagger_in_dagger:
@@ -4736,6 +4844,15 @@ class Container(Type):
         experimental_privileged_nesting:
             .. deprecated:: Commands can access Dagger by default. Use
             "disableDaggerInDagger" to opt out.
+        dagger_in_dagger_new_session:
+            Connect Dagger clients started by the command to the current
+            engine as new sessions, instead of as clients of the current
+            session. Each connection gets its own session, released when that
+            client closes.
+            The command reaches the engine through DAGGER_ENGINE, so SDKs run
+            a Dagger CLI: set _EXPERIMENTAL_DAGGER_CLI_BIN to one in the
+            container, or let the SDK download one.
+            Cannot be combined with "disableDaggerInDagger".
         insecure_root_capabilities:
             Execute the command with all root capabilities. Like --privileged
             in Docker
@@ -4770,6 +4887,8 @@ class Container(Type):
             raise _type_error("Container.with_exec", "disable_dagger_in_dagger", disable_dagger_in_dagger, "bool | None")
         if not (experimental_privileged_nesting is None or isinstance(experimental_privileged_nesting, bool)):
             raise _type_error("Container.with_exec", "experimental_privileged_nesting", experimental_privileged_nesting, "bool | None")
+        if not (dagger_in_dagger_new_session is None or isinstance(dagger_in_dagger_new_session, bool)):
+            raise _type_error("Container.with_exec", "dagger_in_dagger_new_session", dagger_in_dagger_new_session, "bool | None")
         if not (insecure_root_capabilities is None or isinstance(insecure_root_capabilities, bool)):
             raise _type_error("Container.with_exec", "insecure_root_capabilities", insecure_root_capabilities, "bool | None")
         if not (expand is None or isinstance(expand, bool)):
@@ -4786,6 +4905,7 @@ class Container(Type):
             Arg("expect", expect, ReturnType.SUCCESS),
             Arg("disableDaggerInDagger", disable_dagger_in_dagger, False),
             Arg("experimentalPrivilegedNesting", experimental_privileged_nesting, False),
+            Arg("daggerInDaggerNewSession", dagger_in_dagger_new_session, False),
             Arg("insecureRootCapabilities", insecure_root_capabilities, False),
             Arg("expand", expand, False),
             Arg("noInit", no_init, False),
@@ -10091,6 +10211,38 @@ class GitRef(Type):
         _ctx = self._select("commonAncestor", _args)
         return GitRef(_ctx)
 
+    async def contains(self, other: Self) -> bool:
+        """Return true when the other ref's commit equals this commit or is an
+        ancestor of it.
+
+        Compares commit history across branches, tags and detached refs.
+        Incomplete or unavailable history is an error.
+
+        Parameters
+        ----------
+        other:
+            The ref whose commit to look for in this ref's history.
+
+        Returns
+        -------
+        bool
+            The `Boolean` scalar type represents `true` or `false`.
+
+        Raises
+        ------
+        ExecuteTimeoutError
+            If the time to execute the query exceeds the configured timeout.
+        QueryError
+            If the API returns an error.
+        """
+        if not (isinstance(other, GitRef)):
+            raise _type_error("GitRef.contains", "other", other, "GitRef")
+        _args = [
+            Arg("other", other),
+        ]
+        _ctx = self._select("contains", _args)
+        return await _ctx.execute(bool)
+
     async def id(self) -> str:
         """A unique identifier for this GitRef.
 
@@ -10362,6 +10514,71 @@ class GitRef(Type):
 
 
 
+class GitRemote(Type):
+    """A named reference to a remote Git repository."""
+
+    async def id(self) -> str:
+        """A unique identifier for this GitRemote.
+
+        Note
+        ----
+        This is lazily evaluated, no operation is actually run.
+
+        Returns
+        -------
+        str
+            The `ID` scalar type represents a unique identifier, often used to
+            refetch an object or as key for a cache. The ID type appears in a
+            JSON response as a String; however, it is not intended to be
+            human-readable. When expected as an input type, any string (such
+            as `"4"`) or integer (such as `4`) input value will be accepted as
+            an ID.
+
+        Raises
+        ------
+        ExecuteTimeoutError
+            If the time to execute the query exceeds the configured timeout.
+        QueryError
+            If the API returns an error.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("id", _args)
+        return await _ctx.execute(str)
+
+    async def name(self) -> str:
+        """The remote's name.
+
+        Returns
+        -------
+        str
+            The `String` scalar type represents textual data, represented as
+            UTF-8 character sequences. The String type is most often used by
+            GraphQL to represent free-form human-readable text.
+
+        Raises
+        ------
+        ExecuteTimeoutError
+            If the time to execute the query exceeds the configured timeout.
+        QueryError
+            If the API returns an error.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("name", _args)
+        return await _ctx.execute(str)
+
+    def repository(self) -> "GitRepository":
+        """Access this remote's repository using its fetch URL and the caller's
+        credentials, or the source's existing capability for this exact
+        destination.
+
+        HEAD is the remote's HEAD, independent of the workspace's selected
+        commit. Remote registration alone does not grant credentials.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("repository", _args)
+        return GitRepository(_ctx)
+
+
 class GitRepository(Type):
     """A git repository."""
 
@@ -10386,18 +10603,23 @@ class GitRepository(Type):
         _ctx = self._select("asWorkspace", _args)
         return Workspace(_ctx)
 
-    def branch(self, name: str) -> GitRef:
+    def branch(self, name: str, *, no_lock: bool | None = False,) -> GitRef:
         """Returns details of a branch.
 
         Parameters
         ----------
         name:
             Branch's name (e.g., "main").
+        no_lock:
+            Ignore the workspace lockfile for this lookup.
         """
         if not (isinstance(name, str)):
             raise _type_error("GitRepository.branch", "name", name, "str")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("GitRepository.branch", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("name", name),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("branch", _args)
         return GitRef(_ctx)
@@ -10477,9 +10699,30 @@ class GitRepository(Type):
         _ctx = self._select("commit", _args)
         return GitCommit(_ctx)
 
-    def head(self) -> GitRef:
-        """Returns details for HEAD."""
+    def default_remote(self) -> GitRemote:
+        """Return the sole remote, otherwise origin, otherwise the selected
+        branch's upstream remote, otherwise null.
+
+        Frozen workspaces retain their captured upstream selection. Does not
+        contact remote servers.
+        """
         _args: list[Arg] = []
+        _ctx = self._select("defaultRemote", _args)
+        return GitRemote(_ctx)
+
+    def head(self, *, no_lock: bool | None = False) -> GitRef:
+        """Returns details for HEAD.
+
+        Parameters
+        ----------
+        no_lock:
+            Ignore the workspace lockfile for this lookup.
+        """
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("GitRepository.head", "no_lock", no_lock, "bool | None")
+        _args = [
+            Arg("noLock", no_lock, False),
+        ]
         _ctx = self._select("head", _args)
         return GitRef(_ctx)
 
@@ -10511,27 +10754,33 @@ class GitRepository(Type):
         _ctx = self._select("id", _args)
         return await _ctx.execute(str)
 
-    def latest(self, *, version: str | None = '') -> GitRef:
+    def latest(self, *, version: str | None = '', no_lock: bool | None = False,) -> GitRef:
         """Return the latest stable release tag, falling back to HEAD when no
         release exists.
 
         Release selection accepts an optional "v" prefix, incomplete versions,
-        and zero-padded numeric components. This operation is pinned.
+        and zero-padded numeric components. This operation is pinned unless
+        noLock is enabled.
 
         Parameters
         ----------
         version:
             Version query used to select the greatest matching release ref.
+        no_lock:
+            Ignore the workspace lockfile for this lookup.
         """
         if not (version is None or isinstance(version, str)):
             raise _type_error("GitRepository.latest", "version", version, "str | None")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("GitRepository.latest", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("version", version, ''),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("latest", _args)
         return GitRef(_ctx)
 
-    def ref(self, name: str) -> GitRef:
+    def ref(self, name: str, *, no_lock: bool | None = False,) -> GitRef:
         """Returns details of a ref.
 
         Parameters
@@ -10552,27 +10801,65 @@ class GitRepository(Type):
             the resulting commit; remote repositories fetch the history the
             walk needs. Other git revision syntax (`^{...}`, `@{...}`,
             `:path`, ranges) is not supported.
+            A repository derived from a remote one (e.g. a workspace's history
+            after a snapshot or commit) resolves names and commits it does not
+            contain itself through that remote, with its authentication. Its
+            branches and tags listings include the remote's.
+        no_lock:
+            Ignore the workspace lockfile for this lookup.
         """
         if not (isinstance(name, str)):
             raise _type_error("GitRepository.ref", "name", name, "str")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("GitRepository.ref", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("name", name),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("ref", _args)
         return GitRef(_ctx)
 
-    def tag(self, name: str) -> GitRef:
+    def remote(self, name: str) -> GitRemote:
+        """Look up a remote by name. Fails when the remote does not exist.
+
+        Parameters
+        ----------
+        name:
+            The remote's name.
+        """
+        if not (isinstance(name, str)):
+            raise _type_error("GitRepository.remote", "name", name, "str")
+        _args = [
+            Arg("name", name),
+        ]
+        _ctx = self._select("remote", _args)
+        return GitRemote(_ctx)
+
+    async def remotes(self) -> list[GitRemote]:
+        """List this repository's named remotes, with registered remotes
+        overriding configured ones. Does not contact remote servers.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("remotes", _args)
+        return await _ctx.execute_object_list(GitRemote)
+
+    def tag(self, name: str, *, no_lock: bool | None = False,) -> GitRef:
         """Returns details of a tag.
 
         Parameters
         ----------
         name:
             Tag's name (e.g., "v0.3.9").
+        no_lock:
+            Ignore the workspace lockfile for this lookup.
         """
         if not (isinstance(name, str)):
             raise _type_error("GitRepository.tag", "name", name, "str")
+        if not (no_lock is None or isinstance(no_lock, bool)):
+            raise _type_error("GitRepository.tag", "no_lock", no_lock, "bool | None")
         _args = [
             Arg("name", name),
+            Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("tag", _args)
         return GitRef(_ctx)
@@ -10669,6 +10956,10 @@ class GitRepository(Type):
         configuration; that configuration is not rewritten. Use
         Directory.asGit to open the supplied repository without retaining the
         receiver's routing.
+
+        When the receiver is a remote repository (or was derived from one),
+        that remote is retained with its authentication: refs the supplied
+        storage does not contain resolve through it.
 
         Parameters
         ----------
@@ -11407,6 +11698,47 @@ class LLM(Type):
         ]
         _ctx = self._select("agent", _args)
         return Agent(_ctx)
+
+    def artifacts(self, *, include: list[str] | None = None,) -> Artifacts:
+        """Discover every artifact this conversation can address, as one
+        selection, without evaluating their values.
+
+        Tool objects bound with withTools contribute their modules' artifacts,
+        rooted at their current values: evaluating one reads the live state of
+        the bound tools, not a fresh construction. If a module's main object
+        is bound, only its tree is included; otherwise each bound object of
+        that module contributes its own tree. Addresses start with the module
+        name. These artifacts have no workspace of their own: they evaluate in
+        the LLM's bound workspace, if any, whoever evaluates them.
+
+        The workspace part is the artifacts of the workspace bound with
+        withWorkspace, as returned by Workspace.artifacts; an LLM with no
+        bound workspace has none. A workspace module with the same name as a
+        module with bound tool objects is omitted: the bound tools shadow it.
+        Unless they are only a plain construction of the module, which has no
+        state of its own: then the workspace module's artifacts are kept
+        instead.
+
+        Tool arguments that take an address resolve it here: a DAG address to
+        one object, or, for Artifacts and Artifact arguments, a selection
+        filtered like filterUri.
+
+        .. caution::
+            Experimental: Agent APIs are likely to change.
+
+        Parameters
+        ----------
+        include:
+            Only include artifacts matching these path patterns, as with
+            Workspace.artifacts. A path selects that path and its children.
+        """
+        if not (include is None or (isinstance(include, list) and all(isinstance(_v0, str) for _v0 in include))):
+            raise _type_error("LLM.artifacts", "include", include, "list[str] | None")
+        _args = [
+            Arg("include", include, None),
+        ]
+        _ctx = self._select("artifacts", _args)
+        return Artifacts(_ctx)
 
     def compose(self, expertise: list[Expertise]) -> Self:
         """Run expertise in list order, passing this conversation through each
@@ -12221,6 +12553,117 @@ class LLM(Type):
 
 
 
+class LLMContent(Type):
+    """An ordered run of text and media content for a model to read, built
+    outside any conversation."""
+
+    async def blocks(self) -> list["LLMContentBlock"]:
+        """The ordered text and media blocks."""
+        _args: list[Arg] = []
+        _ctx = self._select("blocks", _args)
+        return await _ctx.execute_object_list(LLMContentBlock)
+
+    async def id(self) -> str:
+        """A unique identifier for this LLMContent.
+
+        Note
+        ----
+        This is lazily evaluated, no operation is actually run.
+
+        Returns
+        -------
+        str
+            The `ID` scalar type represents a unique identifier, often used to
+            refetch an object or as key for a cache. The ID type appears in a
+            JSON response as a String; however, it is not intended to be
+            human-readable. When expected as an input type, any string (such
+            as `"4"`) or integer (such as `4`) input value will be accepted as
+            an ID.
+
+        Raises
+        ------
+        ExecuteTimeoutError
+            If the time to execute the query exceeds the configured timeout.
+        QueryError
+            If the API returns an error.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("id", _args)
+        return await _ctx.execute(str)
+
+    def with_data(self, data: Bytes, mime_type: str) -> Self:
+        """Append image, audio, or PDF bytes as an inline media block. The media
+        kind follows the MIME type.
+
+        Prefer withFile for anything but small payloads: the bytes become part
+        of the content's identity, so they travel with every reference to it.
+
+        Parameters
+        ----------
+        data:
+            The media bytes.
+        mime_type:
+            The media MIME type, e.g. "image/png".
+        """
+        if not (isinstance(data, Bytes)):
+            raise _type_error("LLMContent.with_data", "data", data, "Bytes")
+        if not (isinstance(mime_type, str)):
+            raise _type_error("LLMContent.with_data", "mime_type", mime_type, "str")
+        _args = [
+            Arg("data", data),
+            Arg("mimeType", mime_type),
+        ]
+        _ctx = self._select("withData", _args)
+        return LLMContent(_ctx)
+
+    def with_file(self, file: File, *, mime_type: str | None = '',) -> Self:
+        """Append an image, audio, or PDF file as an inline media block. The
+        media kind follows the MIME type.
+
+        Parameters
+        ----------
+        file:
+            The media file. Its contents become the block's inline bytes.
+        mime_type:
+            The media MIME type, e.g. "image/png". Inferred from the file's
+            contents when omitted.
+        """
+        if not (isinstance(file, File)):
+            raise _type_error("LLMContent.with_file", "file", file, "File")
+        if not (mime_type is None or isinstance(mime_type, str)):
+            raise _type_error("LLMContent.with_file", "mime_type", mime_type, "str | None")
+        _args = [
+            Arg("file", file),
+            Arg("mimeType", mime_type, ''),
+        ]
+        _ctx = self._select("withFile", _args)
+        return LLMContent(_ctx)
+
+    def with_text(self, text: str) -> Self:
+        """Append a block of text.
+
+        Parameters
+        ----------
+        text:
+            The text.
+        """
+        if not (isinstance(text, str)):
+            raise _type_error("LLMContent.with_text", "text", text, "str")
+        _args = [
+            Arg("text", text),
+        ]
+        _ctx = self._select("withText", _args)
+        return LLMContent(_ctx)
+
+    def with_(self, cb: Callable[["LLMContent"], "LLMContent"]) -> "LLMContent":
+        """Call the provided callable with current LLMContent.
+
+        This is useful for reusability and readability by not breaking the calling chain.
+        """
+        return cb(self)
+
+
+
 class LLMContentBlock(Type):
     """A single piece of content within an LLM message."""
 
@@ -12272,15 +12715,13 @@ class LLMContentBlock(Type):
         _ctx = self._select("content", _args)
         return await _ctx.execute_object_list(LLMContentBlock)
 
-    async def data(self) -> str:
-        """Base64-encoded media bytes (for IMAGE, AUDIO, or DOCUMENT kinds).
+    async def data(self) -> Bytes:
+        """The media bytes (for IMAGE, AUDIO, or DOCUMENT kinds).
 
         Returns
         -------
-        str
-            The `String` scalar type represents textual data, represented as
-            UTF-8 character sequences. The String type is most often used by
-            GraphQL to represent free-form human-readable text.
+        Bytes
+            Arbitrary binary data, represented as a base64-encoded string.
 
         Raises
         ------
@@ -12291,7 +12732,7 @@ class LLMContentBlock(Type):
         """
         _args: list[Arg] = []
         _ctx = self._select("data", _args)
-        return await _ctx.execute(str)
+        return await _ctx.execute(Bytes)
 
     async def errored(self) -> bool:
         """Whether the tool call resulted in an error (for TOOL_RESULT kind).
@@ -14990,6 +15431,22 @@ class Query(Root):
         ]
         _ctx = self._select("llm", _args)
         return LLM(_ctx)
+
+    def llm_content(self) -> LLMContent:
+        """Start an empty run of text and media content, independent of any
+        conversation.
+
+        Add blocks with withText, withFile, and withData. A function exposed
+        as an LLM tool can return the content to give the model text and media
+        as the tool's result, e.g. a caption and a screenshot for the model to
+        look at.
+
+        .. caution::
+            Experimental: LLM support is not yet stabilized
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("llmContent", _args)
+        return LLMContent(_ctx)
 
     def module(self) -> Module:
         """Create a new module."""
@@ -18188,6 +18645,38 @@ class Workspace(Type):
         _ctx = self._select("withNewFile", _args)
         return Workspace(_ctx)
 
+    def with_patch_file(self, patch: File, *, on_conflict: PatchConflict | None = PatchConflict.FAIL,) -> Self:
+        """Return this workspace with the given Git-compatible patch file
+        applied, without mutating the source.
+
+        Paths in the patch are relative to the workspace root, whatever its
+        cwd, as `git diff` writes them. Patching a path at or under a mount is
+        an error.
+
+        .. caution::
+            Experimental: This API is highly experimental and may be removed
+            or replaced entirely.
+
+        Parameters
+        ----------
+        patch:
+            File containing the patch to apply
+        on_conflict:
+            How to handle hunks that no longer apply to the target content:
+            fail (default), or apply what fits and leave git-style conflict
+            markers where it doesn't.
+        """
+        if not (isinstance(patch, File)):
+            raise _type_error("Workspace.with_patch_file", "patch", patch, "File")
+        if not (on_conflict is None or isinstance(on_conflict, PatchConflict)):
+            raise _type_error("Workspace.with_patch_file", "on_conflict", on_conflict, "PatchConflict | None")
+        _args = [
+            Arg("patch", patch),
+            Arg("onConflict", on_conflict, PatchConflict.FAIL),
+        ]
+        _ctx = self._select("withPatchFile", _args)
+        return Workspace(_ctx)
+
     def with_reset(self, commit: str, *, hard: bool | None = False,) -> Self:
         """Move this workspace's Git HEAD to a commit and return the resulting
         stable workspace.
@@ -18315,8 +18804,9 @@ class Workspace(Type):
         _ctx = self._select("withUpdatedLock", _args)
         return Workspace(_ctx)
 
-    def with_updated_modules(self, *, names: list[str] | None = None, version: str | None = '',) -> Self:
-        """Return this workspace with updated module versions and lockfile state.
+    def with_updated_modules(self, *, names: list[str] | None = None, version: str | None = '', source: str | None = '',) -> Self:
+        """Return this workspace with updated module sources, versions and
+        lockfile state.
 
         An SDK client scope is regenerated when it targets an updated module.
 
@@ -18328,16 +18818,39 @@ class Workspace(Type):
         version:
             New version request for exactly one selected module. Cannot be
             combined with a version suffix.
+        source:
+            New source for exactly one selected module. Resolved like an
+            install source. Cannot be combined with a version or a version
+            suffix.
         """
         if not (names is None or (isinstance(names, list) and all(isinstance(_v0, str) for _v0 in names))):
             raise _type_error("Workspace.with_updated_modules", "names", names, "list[str] | None")
         if not (version is None or isinstance(version, str)):
             raise _type_error("Workspace.with_updated_modules", "version", version, "str | None")
+        if not (source is None or isinstance(source, str)):
+            raise _type_error("Workspace.with_updated_modules", "source", source, "str | None")
         _args = [
             Arg("names", [] if names is None else names, []),
             Arg("version", version, ''),
+            Arg("source", source, ''),
         ]
         _ctx = self._select("withUpdatedModules", _args)
+        return Workspace(_ctx)
+
+    def with_user_config(self) -> Self:
+        """Return this workspace with the calling client's user-level config re-
+        read and applied.
+
+        User-level config (the [workspaces.*] section of the Dagger config
+        file) is read when a session loads its workspace, and snapshots keep
+        that configuration. Call this to pick up edits made since, for example
+        when an agent reloads its modules.
+
+        The entry is matched by the workspace's git origin remote. A workspace
+        without one, or without a matching entry, gets no user-level config.
+        """
+        _args: list[Arg] = []
+        _ctx = self._select("withUserConfig", _args)
         return Workspace(_ctx)
 
     def with_workdir(self, path: str) -> Self:
@@ -18472,6 +18985,23 @@ class Workspace(Type):
             Arg("path", path),
         ]
         _ctx = self._select("withoutFile", _args)
+        return Workspace(_ctx)
+
+    def without_files(self, paths: list[str]) -> Self:
+        """Return this workspace with files removed, without mutating the source.
+
+        Parameters
+        ----------
+        paths:
+            Paths of the files to remove. Relative paths resolve from the
+            workspace cwd.
+        """
+        if not (isinstance(paths, list) and all(isinstance(_v0, str) for _v0 in paths)):
+            raise _type_error("Workspace.without_files", "paths", paths, "list[str]")
+        _args = [
+            Arg("paths", paths),
+        ]
+        _ctx = self._select("withoutFiles", _args)
         return Workspace(_ctx)
 
     def without_module(self, name: str, *, here: bool | None = False,) -> Self:
@@ -19360,6 +19890,7 @@ __all__ = [
     "GitPushDisposition",
     "GitPushResult",
     "GitRef",
+    "GitRemote",
     "GitRepository",
     "HTTPState",
     "HealthcheckConfig",
@@ -19370,6 +19901,7 @@ __all__ = [
     "JSON",
     "JSONValue",
     "LLM",
+    "LLMContent",
     "LLMContentBlock",
     "LLMContentBlockInput",
     "LLMContentBlockKind",
