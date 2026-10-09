@@ -1646,6 +1646,7 @@ wheels = [
 
 [[package]]
 name = "shiryu"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "dagger-io" },

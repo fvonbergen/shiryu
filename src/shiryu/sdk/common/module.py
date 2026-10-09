@@ -38,7 +38,7 @@ def warning(message: str) -> None:
     print(message, file=sys.stderr)
 
 
-PROJECT_VERSION_DEFAULT: Final = "0.0.0+unknown"
+PROJECT_VERSION_DEFAULT: Final = "0.1.0"
 ProjectNameType = str
 PROJECT_NAME_DEFAULT: Final = "no-project-name"
 ProjectNameDaggerType = Annotated[ProjectNameType | None, dagger.Doc("Project name")]
@@ -68,7 +68,7 @@ SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 
 
 @final
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, order=True)
 class ProjectAuthor:
     """ProjectAuthor."""
 
