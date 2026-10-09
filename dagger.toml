@@ -6,6 +6,9 @@ source = "github.com/dagger/python-sdk"
 [sdks.python]
 module = "python-sdk"
 
+[modules.shiryu]
+source = "./"
+
 [sdks.python.scopes."."]
 is-module = true
 name = "shiryu"

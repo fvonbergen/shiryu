@@ -4,12 +4,13 @@ import re
 
 import dagger
 import pytest
+from dagger_clients.core import Platform, core
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
+from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
 from shiryu.utils.dagger.client import WORKDIR_PATH
 
-from .utils.common import Paths
+from .utils.common import PROJECT_NAME_DEFAULT, Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -51,17 +52,17 @@ TEST_CASES = build_test_cases_init((python_tester_init_paths,))
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
-async def test_python_tester_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
+async def test_python_tester_init(dagger_session: dagger.Session, test_case: TestCaseInit) -> None:
     """Test python tester init function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.create(ws=inputs.workspace)
+        await (await Shiryu.create(ws=inputs.workspace))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .tester()
         .init(
@@ -76,25 +77,25 @@ async def test_python_tester_init(dagger_client: dagger.Client, test_case: TestC
 
 
 @pytest.mark.asyncio
-async def test_python_tester_unit(dagger_client: dagger.Client) -> None:
+async def test_python_tester_unit(dagger_session: dagger.Session) -> None:
     """Test python tester unit function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
     """
-    source = dagger.dag.directory()
+    source = core().directory()
     project_name = PROJECT_NAME_DEFAULT
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.create(ws=source.as_workspace())
+        await (await Shiryu.create(ws=source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .tester()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
     stdout = (
-        await Shiryu.create(ws=init_source.as_workspace())
+        await (await Shiryu.create(ws=init_source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .tester()
         .unit(platform=platform)

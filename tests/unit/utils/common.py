@@ -1,8 +1,10 @@
 """common module."""
 
-from typing import Any, NamedTuple, final
+from typing import Any, Final, NamedTuple, final
 
 Paths = tuple[str, ...]
+
+PROJECT_NAME_DEFAULT: Final = "no-project-name"
 
 
 @final
