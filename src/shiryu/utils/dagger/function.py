@@ -2,12 +2,16 @@
 
 from collections.abc import Callable
 from enum import Enum
+from pathlib import Path
 from types import FunctionType
 from typing import Self
+from urllib.parse import unquote, urlparse
 
 import dagger
+from dagger_clients.core import Directory, Workspace
 
-SourceType = dagger.Directory
+SourceType = Directory
+ProjectNameType = str
 
 
 @dagger.object_type
@@ -15,9 +19,10 @@ class DaggerBase:
     """DaggerBase class."""
 
     source: SourceType
+    project_name: ProjectNameType
 
     @classmethod
-    def create(cls, ws: dagger.Workspace) -> Self:
+    async def create(cls, ws: Workspace) -> Self:
         """
         Dagger factory class method.
 
@@ -29,6 +34,8 @@ class DaggerBase:
         Returns:
             An instance built with `cls(...)`.
         """
+        workspace_address_uri = await ws.address()
+        project_name = Path(unquote(urlparse(workspace_address_uri).path)).name
         return cls(
             source=ws.directory(
                 "/",
@@ -41,7 +48,8 @@ class DaggerBase:
                 #     "**/dist",
                 # ],
                 gitignore=True,
-            )
+            ),
+            project_name=project_name,
         )
 
 
@@ -87,7 +95,7 @@ def add_enum_values_as_methods(
                 Returns:
                     Enum value class.
                 """
-                return enum_option.value(source=self.source)
+                return enum_option.value(source=self.source, project_name=self.project_name)
 
             __enum_value_template.__name__ = enum_option.name.lower()
             __enum_value_template.__doc__ = enum_option.value.__doc__

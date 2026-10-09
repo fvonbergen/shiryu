@@ -3,10 +3,10 @@
 from pathlib import PurePosixPath
 from typing import NamedTuple, final
 
-from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, ProjectNameType
+from shiryu.sdk.common.module import ProjectNameType
 from shiryu.sdk.python.utils import get_package_name_canonical
 
-from .common import DirectoryOutput, ignore_pytest
+from .common import PROJECT_NAME_DEFAULT, DirectoryOutput, ignore_pytest
 
 
 @final

@@ -1,9 +1,11 @@
 """builder module."""
 
+import logging
 from pathlib import PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
+from dagger_clients.core import Changeset, Container, Directory, Secret
 
 from ....utils.dagger.client import container_uv
 from ...common.context import DaggerModuleMetadata
@@ -25,9 +27,11 @@ from ...common.scm import (
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 
+logger = logging.getLogger(__name__)
+
 RepositoryUrlDaggerType = Annotated[str, dagger.Doc("Repository to push distributable")]
 RepositoryUserDaggerType = Annotated[str, dagger.Doc("Repository user")]
-RepositoryPasswordDaggerType = Annotated[dagger.Secret, dagger.Doc("Repository password")]
+RepositoryPasswordDaggerType = Annotated[Secret, dagger.Doc("Repository password")]
 
 PROJECT_DISTRIBUTABLE_FOLDER: Final = "dist"
 
@@ -177,8 +181,8 @@ class Builder(PythonModule):
     @final
     @classmethod
     def __build_container(
-        cls, container: dagger.Container, platform: dagger.Platform, clean: bool
-    ) -> dagger.Container:
+        cls, container: Container, platform: PlatformType, clean: bool
+    ) -> Container:
         """Build wheel in the distributable directory container.
 
         Args:
@@ -198,7 +202,7 @@ class Builder(PythonModule):
 
     @final
     @classmethod
-    def __build(cls, container: dagger.Container, platform: dagger.Platform) -> dagger.Directory:
+    def __build(cls, container: Container, platform: PlatformType) -> Directory:
         """Build wheel in the distributable directory.
 
         Args:
@@ -218,7 +222,7 @@ class Builder(PythonModule):
     @classmethod
     async def __publish(
         cls,
-        container: dagger.Container,
+        container: Container,
         repository_url: RepositoryUrlDaggerType,
         repository_user: RepositoryUserDaggerType,
         repository_password: RepositoryPasswordDaggerType,
@@ -254,11 +258,7 @@ class Builder(PythonModule):
 
     @final
     @dagger.function
-    async def build(
-        self,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Changeset:
+    async def build(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> Changeset:
         """Build project distributable of the provided source Directory."""
         source = self.source
         exclude = []
@@ -288,30 +288,42 @@ class Builder(PythonModule):
     @dagger.check
     async def test(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Test the project installation process for the provided source Directory."""
-        source = self.source
-        exclude = []
-        container = await self._exec_container(source, exclude, platform)
-        directory = self.__build(container, platform)
-        project_metadata = await self._get_project_metadata(source, platform)
-        package_name = project_metadata.name
-        package_name_version = f"{package_name}=={project_metadata.version}"
-        await (
-            container_uv(dagger.dag, platform)
-            .with_directory(".", directory)
-            .with_exec(["uv", "venv"])
-            .with_exec(
-                [
-                    "uv",
-                    "pip",
-                    "install",
-                    "--no-build-isolation",
-                    f"--find-links={PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform}",
-                    package_name_version,
-                ]
+        try:
+            source = self.source
+            exclude = []
+            container = await self._exec_container(source, exclude, platform)
+            directory = self.__build(container, platform)
+            project_metadata = await self._get_project_metadata(source, self.project_name, platform)
+            package_name = project_metadata.name
+            package_name_version = f"{package_name}=={project_metadata.version}"
+            await (
+                container_uv(platform)
+                .with_directory(".", directory)
+                .with_exec(["uv", "venv"])
+                .with_exec(
+                    [
+                        "uv",
+                        "pip",
+                        "install",
+                        "--no-build-isolation",
+                        f"--find-links={PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform}",
+                        package_name_version,
+                    ]
+                )
+                .with_exec(["uv", "pip", "uninstall", package_name])
+                .sync()
             )
-            .with_exec(["uv", "pip", "uninstall", package_name])
-            .sync()
-        )
+        except dagger.ExecError as err:
+            class_name = self.name()
+            logger.error(
+                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
+            )
+            if err.stdout:
+                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
+            # if err.stderr:
+            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
+
+            raise
 
 
 sdk_module: Final = Builder

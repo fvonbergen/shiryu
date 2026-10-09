@@ -2,11 +2,12 @@
 
 import dagger
 import pytest
+from dagger_clients.core import Platform, core
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
+from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
 
-from .utils.common import Paths
+from .utils.common import PROJECT_NAME_DEFAULT, Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 from .utils.python_linter import (
     TestCaseFixCodeSuccess,
@@ -65,17 +66,17 @@ TEST_CASES_LINTER_INIT = build_test_cases_init((python_linter_init_paths,))
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES_LINTER_INIT, ids=lambda test_case: test_case.name)
-async def test_python_linter_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
+async def test_python_linter_init(dagger_session: dagger.Session, test_case: TestCaseInit) -> None:
     """Test python linter init function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.create(ws=inputs.workspace)
+        await (await Shiryu.create(ws=inputs.workspace))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(
@@ -97,21 +98,21 @@ TEST_CASES_LINTER_LINT_CODE_SUCCESS = build_test_cases_linter_lint_code_success(
     "test_case", TEST_CASES_LINTER_LINT_CODE_SUCCESS, ids=lambda test_case: test_case.name
 )
 async def test_python_linter_lint_code_success(
-    dagger_client: dagger.Client, test_case: TestCaseLintCodeSuccess
+    dagger_session: dagger.Session, test_case: TestCaseLintCodeSuccess
 ) -> None:
     """Test python linter lint code function module success calls.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     file = test_case.inputs.file
-    source = dagger.dag.directory()
+    source = core().directory()
     project_name = PROJECT_NAME_DEFAULT
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.create(ws=source.as_workspace())
+        await (await Shiryu.create(ws=source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(project_name=project_name, platform=platform)
@@ -120,7 +121,10 @@ async def test_python_linter_lint_code_success(
     if file is not None:
         init_source = init_source.with_new_file(path=str(file.path), contents=file.contents)
     await (
-        Shiryu.create(ws=init_source.as_workspace()).python().linter().lint_code(platform=platform)  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        (await Shiryu.create(ws=init_source.as_workspace()))
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .linter()
+        .lint_code(platform=platform)
     )
 
 
@@ -132,21 +136,21 @@ TEST_CASES_LINTER_LINT_CODE_FAILURE = build_test_cases_linter_lint_code_failure(
     "test_case", TEST_CASES_LINTER_LINT_CODE_FAILURE, ids=lambda test_case: test_case.name
 )
 async def test_python_linter_lint_code_failure(
-    dagger_client: dagger.Client, test_case: TestCaseLintCodeFailure
+    dagger_session: dagger.Session, test_case: TestCaseLintCodeFailure
 ) -> None:
     """Test python linter lint code function module failure calls.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     file = test_case.inputs.file
-    source = dagger.dag.directory()
+    source = core().directory()
     project_name = PROJECT_NAME_DEFAULT
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.create(ws=source.as_workspace())
+        await (await Shiryu.create(ws=source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(project_name=project_name, platform=platform)
@@ -156,7 +160,7 @@ async def test_python_linter_lint_code_failure(
         init_source = init_source.with_new_file(path=str(file.path), contents=file.contents)
     with pytest.raises(dagger.ExecError) as exc_info:
         await (
-            Shiryu.create(ws=init_source.as_workspace())
+            (await Shiryu.create(ws=init_source.as_workspace()))
             .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
             .linter()
             .lint_code(platform=platform)
@@ -173,21 +177,21 @@ TEST_CASES_LINTER_FIX_CODE_SUCCESS = build_test_cases_linter_fix_code_success()
     "test_case", TEST_CASES_LINTER_FIX_CODE_SUCCESS, ids=lambda test_case: test_case.name
 )
 async def test_python_linter_fix_success(
-    dagger_client: dagger.Client, test_case: TestCaseFixCodeSuccess
+    dagger_session: dagger.Session, test_case: TestCaseFixCodeSuccess
 ) -> None:
     """Test python linter fix code function module success calls.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     file = test_case.inputs.file
-    source = dagger.dag.directory()
+    source = core().directory()
     project_name = PROJECT_NAME_DEFAULT
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.create(ws=source.as_workspace())
+        await (await Shiryu.create(ws=source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(project_name=project_name, platform=platform)
@@ -196,7 +200,7 @@ async def test_python_linter_fix_success(
     if file is not None:
         init_source = init_source.with_new_file(path=str(file.path), contents=file.contents)
     changeset = (
-        await Shiryu.create(ws=init_source.as_workspace())
+        await (await Shiryu.create(ws=init_source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .fix_code(platform=platform)

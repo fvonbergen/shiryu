@@ -1,10 +1,12 @@
 """linter module."""
 
 import asyncio
+import logging
 from pathlib import Path
 from typing import Annotated, Final, final
 
 import dagger
+from dagger_clients.core import Changeset, Container, Directory, ReturnType, core
 
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
@@ -32,6 +34,8 @@ from ...common.vcs import VCS_PRIMARY_BRANCH
 from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+
+logger = logging.getLogger(__name__)
 
 BranchHistoryDaggerType = Annotated[
     bool, dagger.Doc("Whether to lint over branch VCS history or not")
@@ -207,12 +211,12 @@ class LinterInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -260,7 +264,7 @@ class Linter(PythonModule):
 
     @final
     @classmethod
-    async def __lint_fix_code(cls, container: dagger.Container, fix: bool) -> dagger.Changeset:
+    async def __lint_fix_code(cls, container: Container, fix: bool) -> Changeset:
         """Lint or fix code pipeline.
 
         Args:
@@ -273,7 +277,7 @@ class Linter(PythonModule):
         initializer = cls._initializer_cls()
         ruff_cache_folder = initializer._ruff_cache_folder()
         container = container.with_mounted_cache(
-            ruff_cache_folder, dagger.dag.cache_volume("shiryu-ruff-debian-trixie-slim")
+            ruff_cache_folder, core().cache_volume("shiryu-ruff-debian-trixie-slim")
         )
         ruff_toml_file_name = initializer._ruff_toml_template_file().file_name
         ruff_check_command = cls._build_uv_run_command(
@@ -282,9 +286,9 @@ class Linter(PythonModule):
         ruff_format_command = cls._build_uv_run_command(
             ["ruff", "format", f"--config={ruff_toml_file_name}", "."]
         )
-        expect_check = dagger.ReturnType.SUCCESS
+        expect_check = ReturnType.SUCCESS
         if fix:
-            expect_check = dagger.ReturnType.ANY
+            expect_check = ReturnType.ANY
             ruff_check_command = [*ruff_check_command, "--fix"]
         else:
             ruff_format_command = [*ruff_format_command, "--diff"]
@@ -294,11 +298,23 @@ class Linter(PythonModule):
             ruff_format_command
         )
         modified_dir = executed_container.directory(".")
-        return await modified_dir.changes(initial_dir).sync()
+        try:
+            return await modified_dir.changes(initial_dir).sync()
+        except dagger.ExecError as err:
+            class_name = cls.name()
+            logger.error(
+                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
+            )
+            if err.stdout:
+                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
+            # if err.stderr:
+            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
+
+            raise
 
     @final
     @classmethod
-    async def __lint_vcs(cls, container: dagger.Container, branch_history: bool) -> None:
+    async def __lint_vcs(cls, container: Container, branch_history: bool) -> None:
         """Lint VCS pipeline.
 
         Args:
@@ -365,7 +381,7 @@ class Linter(PythonModule):
     @dagger.function
     async def fix_code(
         self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
-    ) -> dagger.Changeset:
+    ) -> Changeset:
         """Run linter fixes in the project code of the provided source Directory."""
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)

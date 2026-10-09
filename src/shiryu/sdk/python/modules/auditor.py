@@ -121,11 +121,7 @@ class Auditor(PythonModule):
     @final
     @dagger.function
     @dagger.check
-    async def audit(
-        self,
-        *,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> None:
+    async def audit(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run security audit analysis in the project."""
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)

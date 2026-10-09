@@ -4,12 +4,13 @@ import re
 
 import dagger
 import pytest
+from dagger_clients.core import Platform, core
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
+from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
 from shiryu.sdk.python.utils import get_package_name_canonical
 
-from .utils.common import Paths
+from .utils.common import PROJECT_NAME_DEFAULT, Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
 
 
@@ -58,17 +59,17 @@ TEST_CASES = build_test_cases_init((python_builder_init_paths,))
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("test_case", TEST_CASES, ids=lambda test_case: test_case.name)
-async def test_python_builder_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
+async def test_python_builder_init(dagger_session: dagger.Session, test_case: TestCaseInit) -> None:
     """Test python builder init function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.create(ws=inputs.workspace)
+        await (await Shiryu.create(ws=inputs.workspace))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .init(
@@ -83,26 +84,26 @@ async def test_python_builder_init(dagger_client: dagger.Client, test_case: Test
 
 
 @pytest.mark.asyncio
-async def test_python_builder_build(dagger_client: dagger.Client) -> None:
+async def test_python_builder_build(dagger_session: dagger.Session) -> None:
     """Test python builder build function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
     """
-    source = dagger.dag.directory()
+    source = core().directory()
     project_name = PROJECT_NAME_DEFAULT
     package_name_canonical = get_package_name_canonical(project_name)
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.create(ws=source.as_workspace())
+        await (await Shiryu.create(ws=source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
     build_changeset = (
-        await Shiryu.create(ws=init_source.as_workspace())
+        await (await Shiryu.create(ws=init_source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .build(platform=platform)
@@ -123,21 +124,26 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
 
 
 @pytest.mark.asyncio
-async def test_python_builder_test(dagger_client: dagger.Client) -> None:
+async def test_python_builder_test(dagger_session: dagger.Session) -> None:
     """Test python builder test function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
     """
-    source = dagger.dag.directory()
+    source = core().directory()
     project_name = PROJECT_NAME_DEFAULT
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
 
     init_changeset = (
-        await Shiryu.create(ws=source.as_workspace())
+        await (await Shiryu.create(ws=source.as_workspace()))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
-    await Shiryu.create(ws=init_source.as_workspace()).python().builder().test(platform=platform)  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+    await (
+        (await Shiryu.create(ws=init_source.as_workspace()))
+        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .builder()
+        .test(platform=platform)
+    )

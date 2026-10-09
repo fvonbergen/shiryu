@@ -1,9 +1,11 @@
 """checker module."""
 
+import logging
 from pathlib import Path
 from typing import Final, final
 
 import dagger
+from dagger_clients.core import Container, Directory
 
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
@@ -28,6 +30,8 @@ from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+
+logger = logging.getLogger(__name__)
 
 
 class CheckerInitializer(PythonModuleInitializer):
@@ -130,12 +134,12 @@ class CheckerInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -177,7 +181,7 @@ class Checker(PythonModule):
 
     @final
     @classmethod
-    async def __check(cls, container: dagger.Container) -> None:
+    async def __check(cls, container: Container) -> None:
         """Check pipeline.
 
         Args:
@@ -187,7 +191,19 @@ class Checker(PythonModule):
         ty_command = cls._build_uv_run_command(
             ["ty", "check", f"--config-file={initializer._ty_toml_template_file().file_name}"]
         )
-        await container.with_exec(ty_command).sync()
+        try:
+            await container.with_exec(ty_command).sync()
+        except dagger.ExecError as err:
+            class_name = cls.name()
+            logger.error(
+                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
+            )
+            if err.stdout:
+                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
+            # if err.stderr:
+            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
+
+            raise
 
     @final
     @dagger.function

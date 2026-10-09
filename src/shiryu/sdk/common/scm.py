@@ -9,6 +9,7 @@ from types import FunctionType, MappingProxyType
 from typing import Any, Final, Self, final, get_args, get_origin
 
 import dagger
+from dagger_clients.core import Changeset, Directory, Secret
 
 from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
@@ -35,15 +36,16 @@ def __is_secret_type(param_type: Any) -> bool:
     """Check if a parameter type or annotation represents a Dagger Secret.
 
     Args:
-        param_type: The type annotation or object of the parameter (e.g., `dagger.Secret`,
-            `typing.Annotated[dagger.Secret, ...]`, or string representation).
+        param_type: The type annotation or object of the parameter (e.g.,
+        `dagger_clients.core.Secret`, `typing.Annotated[dagger_clients.core.Secret, ...]`, or string
+        representation).
 
     Returns:
-        `True` if the type corresponds to a `dagger.Secret`, `False` otherwise.
+        `True` if the type corresponds to a `dagger_clients.core.Secret`, `False` otherwise.
     """
     if get_origin(param_type) is not None and (args := get_args(param_type)):
         param_type = args[0]
-    return param_type is dagger.Secret or param_type == "dagger.Secret"
+    return param_type is Secret or param_type == "dagger_clients.core.Secret"
 
 
 def get_sdk_module_function_parameters(
@@ -555,8 +557,8 @@ GITHUB_FOLDER: Final = ".github"
 
 
 def github_init(
-    directory: dagger.Directory, github_actions_workflows: GitHubActionsWorkflows
-) -> dagger.Directory:
+    directory: Directory, github_actions_workflows: GitHubActionsWorkflows
+) -> Directory:
     """Initialize the directory with GitHub files and folders.
 
     Args:
@@ -598,9 +600,7 @@ def github_init(
 GITLAB_FOLDER: Final = ".gitlab"
 
 
-def gitlab_init(
-    directory: dagger.Directory, gitlab_jobs_stages: GitLabJobsStages
-) -> dagger.Directory:
+def gitlab_init(directory: Directory, gitlab_jobs_stages: GitLabJobsStages) -> Directory:
     """Initialize the directory with GitLab files and folders.
 
     Args:
@@ -673,7 +673,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
 
     Raises:
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
-            not `dagger.Directory`.
+            not `dagger_clients.core.Directory`.
     """
     sdk_module_name_title = sdk_module_name.title()
     sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
@@ -688,7 +688,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
         sdk_module_function_return_type = signature(sdk_module_function).return_annotation
         if (
             sdk_module_function_return_type is Parameter.empty
-            or sdk_module_function_return_type not in (dagger.Changeset, dagger.Directory)
+            or sdk_module_function_return_type not in (Changeset, Directory)
         ):
             exception_message = (
                 f"Invalid `export_path` argument for SDK module function "
@@ -867,7 +867,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         sdk_module_function_return_type = signature(sdk_module_function).return_annotation
         if (
             sdk_module_function_return_type is Parameter.empty
-            or sdk_module_function_return_type not in (dagger.Changeset, dagger.Directory)
+            or sdk_module_function_return_type not in (Changeset, Directory)
         ):
             exception_message = (
                 f"Invalid `export_path` argument for SDK module function "

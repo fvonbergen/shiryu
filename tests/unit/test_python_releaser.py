@@ -53,17 +53,19 @@ TEST_CASES_RELEASER_INIT = build_test_cases_init((python_releaser_init_paths,))
 @pytest.mark.parametrize(
     "test_case", TEST_CASES_RELEASER_INIT, ids=lambda test_case: test_case.name
 )
-async def test_python_releaser_init(dagger_client: dagger.Client, test_case: TestCaseInit) -> None:
+async def test_python_releaser_init(
+    dagger_session: dagger.Session, test_case: TestCaseInit
+) -> None:
     """Test python releaser init function module.
 
     Args:
-        dagger_client: The active Dagger engine client injected by the `dagger_client` fixture.
+        dagger_session: The active Dagger engine session fixture.
         test_case: A test case.
     """
     inputs = test_case.inputs
 
     init_changeset = (
-        await Shiryu.create(ws=inputs.workspace)
+        await (await Shiryu.create(ws=inputs.workspace))
         .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .releaser()
         .init(

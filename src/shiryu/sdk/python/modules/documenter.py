@@ -4,6 +4,7 @@ from pathlib import Path, PurePosixPath
 from typing import Final, final
 
 import dagger
+from dagger_clients.core import Changeset, Container, Directory
 
 from shiryu.sdk.common.utils import PROJECT_SOURCE_CODE_FOLDER
 
@@ -207,12 +208,12 @@ class DocumenterInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -334,7 +335,7 @@ class Documenter(PythonModule):
 
     @final
     @classmethod
-    def __document(cls, container: dagger.Container) -> dagger.Directory:
+    def __document(cls, container: Container) -> Directory:
         """Document pipeline.
 
         Args:
@@ -360,7 +361,7 @@ class Documenter(PythonModule):
     @dagger.function
     async def document(
         self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
-    ) -> dagger.Changeset:
+    ) -> Changeset:
         """Run documenter document in the project of the provided source Directory."""
         source = self.source
         exclude = []

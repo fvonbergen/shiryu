@@ -8,11 +8,12 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
+from dagger_clients.core import Changeset, Container, Directory, Platform, core
 
 from ...utils.class_name import ClassName
 from ...utils.dagger.client import container_git
 from ...utils.dagger.directory import directory_with_new_file
-from ...utils.dagger.function import SourceType, add_enum_values_as_methods
+from ...utils.dagger.function import ProjectNameType, SourceType, add_enum_values_as_methods
 from ...utils.enum import create_enum
 from ...utils.template import Mapping, Template, TemplateFile
 from .context import (
@@ -26,7 +27,7 @@ from .scm import GITLAB_FOLDER, GITLAB_JOBS_FOLDER, SCM, GitLabJob, github_init,
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAULT
 
-DAGGER_VERSION = "1.0.0-beta.15"
+DAGGER_VERSION = "1.0.0-beta.16"
 
 
 def warning(message: str) -> None:
@@ -39,19 +40,18 @@ def warning(message: str) -> None:
 
 
 PROJECT_VERSION_DEFAULT: Final = "0.0.0+unknown"
-ProjectNameType = str
 PROJECT_NAME_DEFAULT: Final = "no-project-name"
 ProjectNameDaggerType = Annotated[ProjectNameType | None, dagger.Doc("Project name")]
 PROJECT_NAME_DAGGER_DEFAULT: Final = None
-# dagger.Platform is build with: <os>/<platform_variant>
+# dagger_clients.core.Platform is built with: <os>/<platform_variant>
 # opencontainers image spec documentation: https://github.com/opencontainers/image-spec/blob/main/image-index.md#image-index-property-descriptions
 # Go Language documentation:
 # - GOOS/GOARCH: https://go.dev/doc/install/source#environment
-PlatformType = dagger.Platform
+PlatformType = Platform
 PlatformDaggerType = Annotated[
     PlatformType, dagger.Doc("Platform config OS and architecture in a Container")
 ]
-PLATFORM_DAGGER_DEFAULT: Final = dagger.Platform("linux/amd64")
+PLATFORM_DAGGER_DEFAULT: Final = Platform("linux/amd64")
 IsUpdateType = bool
 IsUpdateDaggerType = Annotated[
     IsUpdateType, dagger.Doc("Whether to update project directory files or not")
@@ -61,8 +61,7 @@ IS_UPDATE_DAGGER_DEFAULT: Final = False
 SCMType = list[SCM]
 """A list of Source Control Management (SCM) configurations."""
 SCMDaggerType = Annotated[
-    SCMType,
-    dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured"),
+    SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured")
 ]
 SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 
@@ -142,9 +141,9 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         cls,
         project_authors: frozenset[ProjectAuthor],
         init_context_vcs: SDKModuleInitContextDirectoryVcs,
-        directory: dagger.Directory,
+        directory: Directory,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Initialize the directory with the VCS folders and files.
 
         Args:
@@ -158,7 +157,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         """
         _project_authors = sorted(project_authors, key=lambda author: author.name)
         project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
-        container = container_git(dagger.dag, platform)
+        container = container_git(platform)
         _directory = (
             container.with_directory(".", directory)
             .with_exec(["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH])
@@ -180,10 +179,10 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
     @final
     @staticmethod
     def __scm_init(
-        directory: dagger.Directory,
+        directory: Directory,
         init_context_directory_scm: SDKModuleInitContextDirectoryScm,
         scm: SCMType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Initialize the directory with the SCM's files and folders.
 
         Args:
@@ -226,20 +225,18 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         """
         readme_md_template_mapping: Mapping = {"project_name": project_name.capitalize()}
         return Template(
-            COMMON_JINJA_ENVIRONMENT,
-            cls._readme_md_template_file(),
-            readme_md_template_mapping,
+            COMMON_JINJA_ENVIRONMENT, cls._readme_md_template_file(), readme_md_template_mapping
         )
 
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: SDKModuleInitContextDirectoryType,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -279,6 +276,7 @@ class SDKModule[
     """SDKModule class."""
 
     source: SourceType
+    project_name: ProjectNameType
 
     @staticmethod
     @abstractmethod
@@ -311,7 +309,7 @@ class SDKModule[
         Returns:
             Shiryu metadata.
         """
-        module_source = dagger.dag.current_module().source()
+        module_source = core().current_module().source()
         # Get locked dagger version.
         # Alternative 1
         # pylock.toml file: actually it is the dagger python sdk version not the dagger engine.
@@ -333,7 +331,7 @@ class SDKModule[
         # Read it from the dagger.json. It is the minimal dagger engine requirement. Not useful.
         # Alternative 3
         # Read it from the running engine
-        # dagger_version = await dagger.dag.version()
+        # dagger_version = await core().version()
         # Alternative 4
         # Use lockfile mechanism from next versions:
         # - https://github.com/dagger/dagger/pull/11995
@@ -342,7 +340,7 @@ class SDKModule[
         # Use a hard coded version
         dagger_version = DAGGER_VERSION
         # Get module exact git tag. Falls back to the branch name if the commit is not tagged.
-        container = container_git(dagger.dag, platform).with_directory(".", module_source)
+        container = container_git(platform).with_directory(".", module_source)
         try:
             module_tag = (
                 await container.with_exec(["git", "describe", "--tags", "--exact-match"]).stdout()
@@ -371,7 +369,7 @@ class SDKModule[
     @classmethod
     @abstractmethod
     async def _get_project_metadata(
-        cls, source: SourceType, platform: PlatformType
+        cls, source: SourceType, project_name: ProjectNameType, platform: PlatformType
     ) -> ProjectMetadata:
         """Get project metadata.
 
@@ -379,13 +377,14 @@ class SDKModule[
 
         Args:
             source: Project source directory.
+            project_name: Project name.
             platform: The container platform.
 
         Returns:
             The project metadata.
         """
         project_author = ProjectAuthor()
-        project_container = container_git(dagger.dag, platform).with_directory(".", source)
+        project_container = container_git(platform).with_directory(".", source)
         try:
             project_author_name = (
                 await project_container.with_exec(["git", "config", "user.name"]).stdout()
@@ -401,9 +400,7 @@ class SDKModule[
         except dagger.QueryError:
             ...
         return ProjectMetadata(
-            name=PROJECT_NAME_DEFAULT,
-            version=PROJECT_VERSION_DEFAULT,
-            authors=frozenset({project_author}),
+            name=project_name, version=PROJECT_VERSION_DEFAULT, authors=frozenset({project_author})
         )
 
     @final
@@ -422,7 +419,8 @@ class SDKModule[
             The shiryu module and project metadata.
         """
         shiryu_metadata, _project_metadata = await asyncio.gather(
-            cls.__get_shiryu_metadata(platform), cls._get_project_metadata(source, platform)
+            cls.__get_shiryu_metadata(platform),
+            cls._get_project_metadata(source, project_name, platform),
         )
         project_metadata = (
             replace(_project_metadata, name=project_name) if project_name else _project_metadata
@@ -444,7 +442,7 @@ class SDKModule[
         is_vcs_init: bool
         try:
             await (
-                container_git(dagger.dag, platform)
+                container_git(platform)
                 .with_directory(".", source)
                 .with_exec(["git", "rev-parse", "--is-inside-work-tree"])
                 .sync()
@@ -462,7 +460,7 @@ class SDKModule[
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Returns a SDK module initialized directory.
 
         Args:
@@ -481,7 +479,7 @@ class SDKModule[
             init_context_directory, shiryu_metadata, project_metadata
         )
         # Build initialized directory.
-        init_directory = dagger.dag.directory()
+        init_directory = core().directory()
         return await initializer_cls._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
@@ -490,11 +488,11 @@ class SDKModule[
     @classmethod
     async def __build_output_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         source: SourceType,
         is_update: IsUpdateType,
         platform: PlatformType,
-    ) -> dagger.Changeset:
+    ) -> Changeset:
         """Returns a project output directory merged with the SDK module initialized directory.
 
         Args:
@@ -524,7 +522,7 @@ class SDKModule[
         is_update: IsUpdateType,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Changeset:
+    ) -> Changeset:
         """Returns a changeset to initialize a project with the SDK module directory.
 
         Args:
@@ -554,9 +552,10 @@ class SDKModule[
         is_update: IsUpdateDaggerType = IS_UPDATE_DAGGER_DEFAULT,
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Changeset:
+    ) -> Changeset:
         """Returns a changeset to initialize a project with the SDK module directory."""
-        return await self._init(project_name, is_update, scm, platform)
+        _project_name = self.project_name if project_name is None else project_name
+        return await self._init(_project_name, is_update, scm, platform)
 
     @classmethod
     @abstractmethod
@@ -590,7 +589,7 @@ class SDKModule[
         cls,
         init_context_container: SDKModuleInitContextContainerType,
         platform: PlatformType,
-    ) -> dagger.Container:
+    ) -> Container:
         """Base container.
 
         Args:
@@ -610,7 +609,7 @@ class SDKModule[
         source: SourceType,
         exclude: list[str],
         platform: PlatformType,
-    ) -> dagger.Container:
+    ) -> Container:
         """Helper function to return an initialized container for the SDK module.
 
         Args:
@@ -630,7 +629,7 @@ class SDKModule[
     @classmethod
     async def _exec_container(
         cls, source: SourceType, exclude: list[str], platform: PlatformType
-    ) -> dagger.Container:
+    ) -> Container:
         """Helper function to return an initialized container for the SDK module.
 
         Args:
@@ -685,7 +684,7 @@ def get_sdk_language(
         is_update: IsUpdateDaggerType = IS_UPDATE_DAGGER_DEFAULT,
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Changeset:
+    ) -> Changeset:
         """Returns a changeset to initialize a project with the SDK module directory."""
         # Call the wrapped init method
         return await self._init(

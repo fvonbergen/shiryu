@@ -4,6 +4,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
+from dagger_clients.core import Container, Directory, Service, core
 
 from ....utils.dagger.client import container_debian
 from ....utils.dagger.directory import directory_with_new_file
@@ -25,7 +26,7 @@ PortDaggerType = Annotated[PortType, dagger.Doc("Jupyter notebooks port")]
 
 PROJECT_NOTEBOOKS_FOLDER: Final = "notebooks"
 PORT_DAGGER_DEFAULT: Final = 8888
-JUPYTER_NOTEBOOKS_CACHE_VOLUME = dagger.dag.cache_volume("shiryu-jupyter-debian-trixie")
+JUPYTER_NOTEBOOKS_CACHE_VOLUME = core().cache_volume("shiryu-jupyter-debian-trixie")
 
 
 class JupyterInitializer(PythonModuleInitializer):
@@ -62,12 +63,12 @@ class JupyterInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -121,7 +122,7 @@ class Jupyter(PythonModule):
 
     @final
     @classmethod
-    async def __serve(cls, container: dagger.Container, jupyter_port: PortType) -> dagger.Service:
+    async def __serve(cls, container: Container, jupyter_port: PortType) -> Service:
         """Jupyter pipeline.
 
         Args:
@@ -167,7 +168,7 @@ class Jupyter(PythonModule):
         *,
         backend_port: PortDaggerType = PORT_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> dagger.Service:
+    ) -> Service:
         """Returns a jupyter notebooks service with the project of the provided source Directory."""
         exclude = []
         container = await self._exec_container(self.source, exclude, platform)
@@ -175,15 +176,13 @@ class Jupyter(PythonModule):
 
     @final
     @dagger.function
-    def notebooks(
-        self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
-    ) -> dagger.Directory:
+    def notebooks(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> Directory:
         """Returns jupyter notebooks Directory."""
         jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
         export_path_str = "/export"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
         return (
-            container_debian(dagger.dag, platform)
+            container_debian(platform)
             .with_mounted_cache(jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME)
             .with_exec(
                 ["cp", "--archive", f"{jupyter_notebooks_cache_folder}/.", f"{export_path_str}/"]

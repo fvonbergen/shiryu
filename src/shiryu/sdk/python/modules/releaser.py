@@ -6,6 +6,7 @@ from typing import Annotated, Final, final
 from urllib.parse import urlsplit, urlunsplit
 
 import dagger
+from dagger_clients.core import Container, Directory, Secret
 
 from ....utils.dagger.client import container_git
 from ....utils.dagger.directory import directory_with_new_file
@@ -35,7 +36,7 @@ from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
-AuthTokenDaggerType = Annotated[dagger.Secret, dagger.Doc("Authorization token")]
+AuthTokenDaggerType = Annotated[Secret, dagger.Doc("Authorization token")]
 VCSUserNameDaggerType = Annotated[str, dagger.Doc("VCS user name")]
 VCS_USER_NAME_DAGGER_DEFAULT: Final = "CI Release Bot"
 VCSUserEMailDaggerType = Annotated[str, dagger.Doc("VCS user email")]
@@ -141,12 +142,12 @@ class ReleaserInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -231,7 +232,7 @@ class Releaser(PythonModule):
             A list of validated, credential-free HTTPS Git remote URLs.
         """
         raw_origin = await (
-            container_git(dagger.dag, platform)
+            container_git(platform)
             .with_directory(".", source)
             .with_exec(["git", "remote", "get-url", "--all", "--push", "origin"])
             .stdout()
@@ -244,7 +245,7 @@ class Releaser(PythonModule):
     @classmethod
     async def __release(  # noqa: PLR0913, PLR0917
         cls,
-        container: dagger.Container,
+        container: Container,
         push_urls: PushUrls,
         auth_token: AuthTokenDaggerType,
         vcs_user_name: VCSUserNameDaggerType,

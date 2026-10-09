@@ -7,10 +7,11 @@ from pathlib import Path, PurePosixPath
 from typing import Final, final
 
 import dagger
+from dagger_clients.core import Container, Directory
 
 from ...utils.dagger.client import container_uv
 from ...utils.dagger.directory import directory_with_new_file
-from ...utils.dagger.function import SourceType
+from ...utils.dagger.function import ProjectNameType, SourceType
 from ...utils.template import Mapping, Template, TemplateFile
 from ..common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
 from ..common.module import (
@@ -88,12 +89,12 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -122,9 +123,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             "dependency_groups": init_context_directory.dependency_groups,
         }
         pyproject_toml_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            pyproject_toml_template_file,
-            pyproject_toml_template_mapping,
+            PYTHON_JINJA_ENVIRONMENT, pyproject_toml_template_file, pyproject_toml_template_mapping
         )
         init_directory = directory_with_new_file(init_directory, pyproject_toml_template)
         source_code_package_name_canonical_path = (
@@ -135,8 +134,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         py_typed_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("py.typed"),
-                output_directory=source_code_package_name_canonical_path,
+                Path("py.typed"), output_directory=source_code_package_name_canonical_path
             ),
             py_typed_template_mapping,
         )
@@ -148,14 +146,13 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         __init___py_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
             TemplateFile(
-                Path("__init__.py"),
-                output_directory=source_code_package_name_canonical_path,
+                Path("__init__.py"), output_directory=source_code_package_name_canonical_path
             ),
             __init___py_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, __init___py_template)
         return (
-            container_uv(dagger.dag, platform)
+            container_uv(platform)
             .with_directory(".", init_directory)
             .with_exec(["uv", "lock"])
             .directory(".")
@@ -178,22 +175,21 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     @final
     @classmethod
     async def _get_project_metadata(
-        cls, source: SourceType, platform: PlatformType
+        cls, source: SourceType, project_name: ProjectNameType, platform: PlatformType
     ) -> ProjectMetadata:
         """Get project metadata.
 
         Args:
             source: Project source directory.
+            project_name: Project name.
             platform: The container platform.
 
         Returns:
             The project metadata.
         """
         initializer = cls._initializer_cls()
-        project_metadata = await super()._get_project_metadata(source, platform)
-        project_container = container_uv(dagger.dag, platform, apt_packages={"git"}).with_directory(
-            ".", source
-        )
+        project_metadata = await super()._get_project_metadata(source, project_name, platform)
+        project_container = container_uv(platform, apt_packages={"git"}).with_directory(".", source)
         try:
             pyproject_toml_file_contents = await project_container.file(
                 str(initializer._pyproject_toml_template_file().output_path)
@@ -234,10 +230,8 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     @final
     @classmethod
     def _base_container(
-        cls,
-        init_context_container: SDKModuleInitContextContainer,
-        platform: PlatformType,
-    ) -> dagger.Container:
+        cls, init_context_container: SDKModuleInitContextContainer, platform: PlatformType
+    ) -> Container:
         """Base container.
 
         Args:
@@ -247,7 +241,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         Returns:
             A base container.
         """
-        return container_uv(dagger.dag, platform, apt_packages=init_context_container.apt_packages)
+        return container_uv(platform, apt_packages=init_context_container.apt_packages)
 
     @final
     @classmethod

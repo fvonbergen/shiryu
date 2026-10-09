@@ -5,6 +5,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
+from dagger_clients.core import Container, Directory, ReturnType, core
 
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.template import Mapping, Template, TemplateFile
@@ -183,12 +184,12 @@ class TesterInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -228,7 +229,7 @@ class TesterInitializer(PythonModuleInitializer):
         )
         init_directory = directory_with_new_file(init_directory, _coveragerc_template)
         # <tests>/<tests unit>/
-        init_directory = init_directory.with_directory(tests_unit_path_str, dagger.dag.directory())
+        init_directory = init_directory.with_directory(tests_unit_path_str, core().directory())
         return init_directory
 
 
@@ -247,9 +248,7 @@ class Tester(PythonModule):
 
     @final
     @classmethod
-    async def __unit(
-        cls, container: dagger.Container, keyword: OptionalKeywordDaggerType
-    ) -> dagger.Container:
+    async def __unit(cls, container: Container, keyword: OptionalKeywordDaggerType) -> Container:
         """Unit test pipeline.
 
         Args:
@@ -272,7 +271,7 @@ class Tester(PythonModule):
             tests_unit_extension
         )
         is_tests_unit_files = len(tests_unit_files) != 0
-        expect = dagger.ReturnType.SUCCESS if is_tests_unit_files else dagger.ReturnType.FAILURE
+        expect = ReturnType.SUCCESS if is_tests_unit_files else ReturnType.FAILURE
         pytest_command = cls._build_uv_run_command(
             ["pytest", f"--config-file={pytest_unit_ini_output_path}"]
         )
