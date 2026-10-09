@@ -1,5 +1,6 @@
 """checker module."""
 
+import logging
 from pathlib import Path
 from typing import Final, final
 
@@ -29,6 +30,8 @@ from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+
+logger = logging.getLogger(__name__)
 
 
 class CheckerInitializer(PythonModuleInitializer):
@@ -188,7 +191,19 @@ class Checker(PythonModule):
         ty_command = cls._build_uv_run_command(
             ["ty", "check", f"--config-file={initializer._ty_toml_template_file().file_name}"]
         )
-        await container.with_exec(ty_command).sync()
+        try:
+            await container.with_exec(ty_command).sync()
+        except dagger.ExecError as err:
+            class_name = cls.name()
+            logger.error(
+                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
+            )
+            if err.stdout:
+                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
+            # if err.stderr:
+            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
+
+            raise
 
     @final
     @dagger.function
