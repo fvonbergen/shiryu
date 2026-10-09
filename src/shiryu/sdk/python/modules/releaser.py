@@ -33,7 +33,7 @@ from ...common.scm import (
 from ...common.vcs import VCS_PRIMARY_BRANCH
 from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
-from ..templavtes import PYTHON_JINJA_ENVIRONMENT
+from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 AuthTokenDaggerType = Annotated[dagger.Secret, dagger.Doc("Authorization token")]
 AuthUserNameDaggerType = Annotated[
@@ -322,35 +322,24 @@ class Releaser(PythonModule):
         Returns:
             The container after pushing.
         """
-        credential_helper = (
-            '!f() { test "$1" = get && '
-            'printf "username=%s\\npassword=%s\\n" "$GIT_AUTH_USER_NAME" "$GIT_AUTH_TOKEN"; }; f'
+        repository = container.directory(".").as_git()
+        refs = (
+              (repository.head(), f"refs/heads/{branch}"),
+              (repository.tag(tag), f"refs/tags/{tag}"),
         )
-        container = container.with_env_variable(
-            "GIT_AUTH_USER_NAME", auth_user_name
-        ).with_secret_variable("GIT_AUTH_TOKEN", auth_token)
+
         for push_url in push_urls:
-            container = container.with_exec(
-                [
-                    "git",
-                    "-c",
-                    "credential.helper=",
-                    "-c",
-                    f"credential.helper={credential_helper}",
-                    "push",
-                    "--atomic",
-                    push_url,
-                    f"HEAD:refs/heads/{branch}",
-                    f"refs/tags/{tag}",
-                ]
+            destination = dagger.dag.git(
+                push_url, http_auth_username=auth_user_name, http_auth_token=auth_token
             )
+            for ref, remote_ref in refs:
+                ref.push(to=destination, branch=remote_ref).disposition()
         return container
 
     @final
     @dagger.function
     async def release(  # noqa: PLR0913, PLR0917
         self,
-        project_directory: ProjectDirectoryDaggerType,
         auth_token: AuthTokenDaggerType,
         auth_user_name: AuthUserNameDaggerType = AUTH_USER_NAME_DAGGER_DEFAULT,
         branch: BranchDaggerType = VCS_PRIMARY_BRANCH,
@@ -363,9 +352,10 @@ class Releaser(PythonModule):
         Returns the release tag, or an empty string if there is nothing to release, so CI can
         decide whether to run the publishing jobs and which ref to check out.
         """
+        exclude: list[str] = []
         container, push_urls = await asyncio.gather(
-            self._exec_container(project_directory, platform),
-            self.__get_clean_push_urls(project_directory, platform),
+            self._exec_container(self.source, exclude, platform),
+            self.__get_clean_push_urls(self.source, platform),
         )
         await self.__ensure_branch_head(container, branch)
         version = await self.__next_version(container)
