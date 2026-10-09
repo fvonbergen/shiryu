@@ -1,5 +1,6 @@
 """builder module."""
 
+import logging
 from pathlib import PurePosixPath
 from typing import Annotated, Final, final
 
@@ -26,6 +27,8 @@ from ...common.scm import (
 )
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
+
+logger = logging.getLogger(__name__)
 
 RepositoryUrlDaggerType = Annotated[str, dagger.Doc("Repository to push distributable")]
 RepositoryUserDaggerType = Annotated[str, dagger.Doc("Repository user")]
