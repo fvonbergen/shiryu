@@ -7,6 +7,7 @@ from typing import Annotated, Final, final
 from urllib.parse import quote, urlsplit, urlunsplit
 
 import dagger
+from dagger_clients.core import Container, Directory, Secret
 
 from ....utils.dagger.client import container_debian, container_git
 from ....utils.dagger.directory import directory_with_new_file
@@ -202,12 +203,12 @@ class ReleaserInitializer(PythonModuleInitializer):
     @classmethod
     async def _init_directory(
         cls,
-        init_directory: dagger.Directory,
+        init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-    ) -> dagger.Directory:
+    ) -> Directory:
         """Build the initialization directory.
 
         Args:
@@ -292,7 +293,7 @@ class Releaser(PythonModule):
             A list of validated, credential-free HTTPS Git remote URLs.
         """
         raw_origin = await (
-            container_git(dagger.dag, platform)
+            container_git(platform)
             .with_directory(".", source)
             .with_exec(["git", "remote", "get-url", "--all", "--push", "origin"])
             .stdout()
@@ -415,7 +416,7 @@ class Releaser(PythonModule):
     @classmethod
     async def __push(  # noqa: PLR0913, PLR0917
         cls,
-        container: dagger.Container,
+        container: Container,
         push_urls: PushUrls,
         branch: BranchType,
         tag: str,

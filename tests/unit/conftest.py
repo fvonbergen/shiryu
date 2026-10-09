@@ -1,18 +1,21 @@
 """conftest module."""
 
+from collections.abc import AsyncGenerator
+
 import dagger
 import pytest_asyncio
 
 
 @pytest_asyncio.fixture(scope="function")
-async def dagger_client():
-    """Provides an initialized Dagger client connection for the duration of a test.
+async def dagger_session() -> AsyncGenerator[dagger.Session, None]:
+    """Provides an active Dagger session connection for the duration of a test.
 
-    This fixture establishes a connection to the background Dagger Engine, initializes the global
-    `dagger.dag` API client, and automatically handles resource cleanup after the test completes.
+    Establishes a connection context with the background Dagger Engine and yields the connected
+    session object, automatically closing the session after the test completes.
 
     Yields:
-        dagger.Client: A live, connected Dagger client instance.
+        dagger.Session: The active, connected Dagger session instance.
     """
-    async with await dagger.connect() as client:
-        yield client
+    config = dagger.Config()
+    async with dagger.connection(config) as session:
+        yield session

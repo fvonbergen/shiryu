@@ -4,26 +4,19 @@ from collections.abc import Callable
 from itertools import chain, product
 from typing import NamedTuple, final
 
-import dagger
+from dagger_clients.core import Platform, Workspace, core
 
-from shiryu.sdk.common.module import (
-    PROJECT_NAME_DEFAULT,
-    SCM,
-    IsUpdateType,
-    PlatformType,
-    ProjectNameType,
-    SCMType,
-)
+from shiryu.sdk.common.module import SCM, IsUpdateType, PlatformType, ProjectNameType, SCMType
 from shiryu.sdk.python.utils import get_package_name_canonical
 
-from .common import DirectoryOutput, Paths, ignore_pytest
+from .common import PROJECT_NAME_DEFAULT, DirectoryOutput, Paths, ignore_pytest
 
 
 @final
 class TestCaseInitInputs(NamedTuple):
     """TestCaseInitInputs class."""
 
-    workspace: dagger.Workspace
+    workspace: Workspace
     project_name: ProjectNameType
     is_update: IsUpdateType
     scm: SCMType
@@ -146,10 +139,10 @@ def build_test_cases_init(
     Returns:
         The test cases.
     """
-    workspace = dagger.dag.directory().as_workspace()
+    workspace = core().directory().as_workspace()
     # TODO: tests against more project names (e.g. test, test-test, etc.)
     project_name = PROJECT_NAME_DEFAULT
-    platform = dagger.Platform("linux/amd64")
+    platform = Platform("linux/amd64")
     is_update_options = (False, True)
     scm_options = (SCM.GITLAB, SCM.GITHUB)
     test_cases_inputs = tuple(

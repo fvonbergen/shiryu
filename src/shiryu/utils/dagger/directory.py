@@ -1,11 +1,11 @@
 """directory module."""
 
-import dagger
+from dagger_clients.core import Directory
 
 from ..template import Template
 
 
-def directory_with_new_file(directory: dagger.Directory, template: Template) -> dagger.Directory:
+def directory_with_new_file(directory: Directory, template: Template) -> Directory:
     """Return the input directory with the template file.
 
     Args:
