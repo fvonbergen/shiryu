@@ -40,7 +40,6 @@ def warning(message: str) -> None:
 
 
 PROJECT_VERSION_DEFAULT: Final = "0.0.0"
-PROJECT_NAME_DEFAULT: Final = "no-project-name"
 ProjectNameDaggerType = Annotated[ProjectNameType | None, dagger.Doc("Project name")]
 PROJECT_NAME_DAGGER_DEFAULT: Final = None
 # dagger_clients.core.Platform is built with: <os>/<platform_variant>

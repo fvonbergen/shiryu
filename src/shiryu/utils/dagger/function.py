@@ -36,6 +36,8 @@ class DaggerBase:
         """
         workspace_address_uri = await ws.address()
         project_name = Path(unquote(urlparse(workspace_address_uri).path)).name
+        # TODO: Type checkers cannot infer dataclass __init__ signatures when instantiating via
+        # class variable 'cls'
         return cls(
             source=ws.directory(
                 "/",
@@ -48,8 +50,8 @@ class DaggerBase:
                 #     "**/dist",
                 # ],
                 gitignore=True,
-            ),
-            project_name=project_name,
+            ),  # ty: ignore[unknown-argument]
+            project_name=project_name,  # ty: ignore[unknown-argument]
         )
 
 
