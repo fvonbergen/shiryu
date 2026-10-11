@@ -531,6 +531,11 @@ class Module:
             repr=init,  # default repr shows field as an __init__ argument
             **kwargs,
         )
+    @overload
+    def check(self, func: Func[P, R]) -> Func[P, R]: ...
+
+    @overload
+    def check(self) -> Callable[[Func[P, R]], Func[P, R]]: ...
 
     def check(
         self,
@@ -650,15 +655,18 @@ class Module:
         *,
         name: APIName | None = None,
         doc: str | None = None,
+        cache: str | None = None,
         deprecated: str | None = None,
     ) -> Func[P, R]: ...
 
     @overload
     def function(
         self,
+        func: None = None,
         *,
         name: APIName | None = None,
         doc: str | None = None,
+        cache: str | None = None,
         deprecated: str | None = None,
     ) -> Callable[[Func[P, R]], Func[P, R]]: ...
 
