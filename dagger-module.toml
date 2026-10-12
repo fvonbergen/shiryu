@@ -1,4 +1,5 @@
 name = "shiryu"
+engineVersion = "v1.0.0-beta.17"
 
 [entrypoint]
   kind = "dang"

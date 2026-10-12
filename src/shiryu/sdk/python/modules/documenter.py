@@ -435,7 +435,12 @@ class Documenter(PythonModule):
         source = self.source
         exclude = []
         container = await self._exec_container(source, exclude, platform)
-        return self.__document(container).changes(source)
+        try:
+            return self.__document(container).changes(source)
+        except dagger.ExecError as exception:
+            self.log(exception)
+
+            raise
 
 
 #     @final

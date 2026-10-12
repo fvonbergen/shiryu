@@ -1,6 +1,8 @@
 """module package."""
 
 import asyncio
+import inspect
+import logging
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
@@ -26,6 +28,8 @@ from .context import (
 from .scm import GITLAB_FOLDER, GITLAB_JOBS_FOLDER, SCM, GitLabJob, github_init, gitlab_init
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAULT
+
+logger = logging.getLogger(__name__)
 
 DAGGER_VERSION = "1.0.0-beta.16"
 
@@ -169,9 +173,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             "exclude": sorted(init_context_vcs.exclude_files_folders)
         }
         _gitignore_template = Template(
-            COMMON_JINJA_ENVIRONMENT,
-            TemplateFile(Path(".gitignore")),
-            _gitignore_template_mapping,
+            COMMON_JINJA_ENVIRONMENT, TemplateFile(Path(".gitignore")), _gitignore_template_mapping
         )
         return directory_with_new_file(_directory, _gitignore_template)
 
@@ -309,33 +311,11 @@ class SDKModule[
             Shiryu metadata.
         """
         module_source = core().current_module().source()
-        # Get locked dagger version.
-        # Alternative 1
-        # pylock.toml file: actually it is the dagger python sdk version not the dagger engine.
-        # py_lock_file_contents = module_source.file("pylock.toml").contents()
-        # py_lock_file = tomllib.loads(py_lock_file_contents)
-        # dagger_pkg = next(
-        #     (
-        #         package
-        #         for package in py_lock_file.get("packages", [])
-        #         if package.get("name") == "dagger-io"
-        #     ),
-        #     None,
-        # )
-        # if dagger_pkg is None:
-        #     exception_message = "dagger-io not found in py.lock"
-        #     raise Exception(exception_message)
-        # dagger_version = dagger_pkg.get("version")
-        # Alternative 2
-        # Read it from the dagger.json. It is the minimal dagger engine requirement. Not useful.
-        # Alternative 3
-        # Read it from the running engine
-        # dagger_version = await core().version()
-        # Alternative 4
-        # Use lockfile mechanism from next versions:
-        # - https://github.com/dagger/dagger/pull/11995
-        # - https://github.com/dagger/dagger/pull/12046
-        # Alternative 5
+        # TODO: I suppose this is a dagger issue. Getting engine version is failing:
+        #   dagger.QueryError: failed to compute cache key for Query.currentModule: failed to get
+        #   current module: no current module
+        # Get locked dagger engine version.
+        # dagger_version = await module_source.as_module_source().engine_version()
         # Use a hard coded version
         dagger_version = DAGGER_VERSION
         # Get module exact git tag. Falls back to the branch name if the commit is not tagged.
@@ -356,8 +336,7 @@ class SDKModule[
                     await container.with_exec(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout()
                 ).strip()
                 return DaggerModuleMetadata(
-                    dagger_version=dagger_version,
-                    git_tag_or_branch=module_branch.strip(),
+                    dagger_version=dagger_version, git_tag_or_branch=module_branch.strip()
                 )
             except dagger.QueryError:
                 git_tag_or_branch = "undefined"
@@ -542,6 +521,34 @@ class SDKModule[
         )
         # Merge the SDK module initialized directory with the project output directory.
         return await self.__build_output_directory(init_directory, source, is_update, platform)
+
+    def log(self, exception: dagger.ExecError) -> None:
+        """Logs a Dagger execution error with context on where it failed.
+
+        Automatically inspects the call stack to determine the calling method's name, retrieves the
+        class name via `self.name()`, and logs both stdout and exit codes.
+
+        Args:
+            exception: The Dagger `ExecError` caught during execution.
+        """  # Get the stack frame of the function that called this log() method
+        class_name = self.name()
+        func_name = "Unknown"
+        current_frame = inspect.currentframe()
+        if current_frame is not None:
+            caller_frame = current_frame.f_back
+            if caller_frame is not None:
+                func_name = caller_frame.f_code.co_name
+
+        logger.error(
+            "[%s - %s] Execution failed with exit code %s",
+            class_name,
+            func_name,
+            exception.exit_code,
+        )
+        if exception.stdout:
+            logger.error("STDOUT:\n%s", exception.stdout)
+        # if exception.stderr:
+        #     logger.error("STDERR:\n%s", exception.stderr)
 
     @dagger.function
     async def init(
