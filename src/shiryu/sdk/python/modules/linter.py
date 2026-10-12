@@ -1,7 +1,6 @@
 """linter module."""
 
 import asyncio
-import logging
 from pathlib import Path
 from typing import Annotated, Final, final
 
@@ -34,8 +33,6 @@ from ...common.vcs import VCS_PRIMARY_BRANCH
 from ..context import PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
-
-logger = logging.getLogger(__name__)
 
 BranchHistoryDaggerType = Annotated[
     bool, dagger.Doc("Whether to lint over branch VCS history or not")
@@ -298,19 +295,7 @@ class Linter(PythonModule):
             ruff_format_command
         )
         modified_dir = executed_container.directory(".")
-        try:
-            return await modified_dir.changes(initial_dir).sync()
-        except dagger.ExecError as err:
-            class_name = cls.name()
-            logger.error(
-                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
-            )
-            if err.stdout:
-                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
-            # if err.stderr:
-            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
-
-            raise
+        return await modified_dir.changes(initial_dir).sync()
 
     @final
     @classmethod
@@ -376,7 +361,12 @@ class Linter(PythonModule):
         """Run linter analysis in the project code of the provided source Directory."""
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        await self.__lint_fix_code(container, False)
+        try:
+            await self.__lint_fix_code(container, False)
+        except dagger.ExecError as exception:
+            self.log(exception)
+
+            raise
 
     @final
     @dagger.function
@@ -386,7 +376,12 @@ class Linter(PythonModule):
         """Run linter fixes in the project code of the provided source Directory."""
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        return await self.__lint_fix_code(container, True)
+        try:
+            return await self.__lint_fix_code(container, True)
+        except dagger.ExecError as exception:
+            self.log(exception)
+
+            raise
 
     @final
     @dagger.function
@@ -401,7 +396,12 @@ class Linter(PythonModule):
         """Run linter analysis in the project VCS of the provided source Directory."""
         exclude = []
         container = await self._exec_container(self.source, exclude, platform)
-        await self.__lint_vcs(container, branch_history)
+        try:
+            await self.__lint_vcs(container, branch_history)
+        except dagger.ExecError as exception:
+            self.log(exception)
+
+            raise
 
 
 sdk_module: Final = Linter

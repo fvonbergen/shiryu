@@ -291,7 +291,12 @@ class Tester(PythonModule):
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         container = await self.__unit(container, keyword)
-        return await container.stdout()
+        try:
+            return await container.stdout()
+        except dagger.ExecError as exception:
+            self.log(exception)
+
+            raise
 
     # @final
     # @dagger.function

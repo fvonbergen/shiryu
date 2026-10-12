@@ -1,6 +1,5 @@
 """builder module."""
 
-import logging
 from pathlib import PurePosixPath
 from typing import Annotated, Final, final
 
@@ -27,8 +26,6 @@ from ...common.scm import (
 )
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
-
-logger = logging.getLogger(__name__)
 
 RepositoryUrlDaggerType = Annotated[str, dagger.Doc("Repository to push distributable")]
 RepositoryUserDaggerType = Annotated[str, dagger.Doc("Repository user")]
@@ -303,14 +300,14 @@ class Builder(PythonModule):
     # @dagger.check
     async def test(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Test the project installation process for the provided source Directory."""
+        source = self.source
+        exclude = []
+        container = await self._exec_container(source, exclude, platform)
+        project_metadata = await self._get_project_metadata(source, self.project_name, platform)
+        package_name = project_metadata.name
+        package_name_version = f"{package_name}=={project_metadata.version}"
         try:
-            source = self.source
-            exclude = []
-            container = await self._exec_container(source, exclude, platform)
             directory = self.__build(container, platform)
-            project_metadata = await self._get_project_metadata(source, self.project_name, platform)
-            package_name = project_metadata.name
-            package_name_version = f"{package_name}=={project_metadata.version}"
             await (
                 container_uv(platform)
                 .with_directory(".", directory)
@@ -328,15 +325,8 @@ class Builder(PythonModule):
                 .with_exec(["uv", "pip", "uninstall", package_name])
                 .sync()
             )
-        except dagger.ExecError as err:
-            class_name = self.name()
-            logger.error(
-                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
-            )
-            if err.stdout:
-                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
-            # if err.stderr:
-            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
+        except dagger.ExecError as exception:
+            self.log(exception)
 
             raise
 

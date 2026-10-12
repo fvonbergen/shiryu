@@ -126,8 +126,13 @@ class Auditor(PythonModule):
         """Run security audit analysis in the project."""
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        uv_audit_command = self._build_uv_run_command(["uv", "audit"])
-        await container.with_exec(uv_audit_command).sync()
+        try:
+            uv_audit_command = self._build_uv_run_command(["uv", "audit"])
+            await container.with_exec(uv_audit_command).sync()
+        except dagger.ExecError as exception:
+            self.log(exception)
+
+            raise
 
 
 sdk_module: Final = Auditor

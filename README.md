@@ -36,21 +36,18 @@ Once installed, invoke functions directly via the Dagger CLI:
 ```bash
 DO_NOT_TRACK=1 dagger api                                 \
   call                                                    \
-  --verbose=4                                             \
   shiryu                                                  \
   <shiryu_function>
 ```
 
 For initializing a project:
 ```bash
-DO_NOT_TRACK=1 dagger generate  \
-  --verbose=4
+DO_NOT_TRACK=1 dagger generate
 ```
 
 For running checks:
 ```bash
-DO_NOT_TRACK=1 dagger check \
-  --verbose=4
+DO_NOT_TRACK=1 dagger check
 ```
 
 Alternatively, you can run functions directly from the remote reference without prior installation:
@@ -58,20 +55,17 @@ Alternatively, you can run functions directly from the remote reference without 
 ```bash
 DO_NOT_TRACK=1 dagger api                                 \
   call                                                    \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   <shiryu_function>
 ```
 
 ```bash
 DO_NOT_TRACK=1 dagger generate                      \
-  --verbose=4                                       \
   --module=https://github.com/fvonbergen/shiryu.git
 ```
 
 ```bash
 DO_NOT_TRACK=1 dagger check                               \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git
 ```
 
@@ -91,7 +85,6 @@ List commands:
 ```bash
 DO_NOT_TRACK=1 dagger api                                 \
   call                                                    \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   python --help
 ```
@@ -99,15 +92,13 @@ DO_NOT_TRACK=1 dagger api                                 \
 Initialize a new project using either of the following equivalent methods:
 
 ```bash
-do_not_track=1 dagger generate                            \
-  --verbose=4                                             \
+DO_NOT_TRACK=1 dagger generate                            \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
 ```
 
 ```bash
-do_not_track=1 dagger api                                 \
+DO_NOT_TRACK=1 dagger api                                 \
   call                                                    \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   python                                                  \
   init                                                    \
