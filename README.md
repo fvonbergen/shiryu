@@ -110,7 +110,6 @@ Update a project:
 ```bash
 DO_NOT_TRACK=1 dagger api                                 \
   call                                                    \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   python                                                  \
   init                                                    \
@@ -121,7 +120,6 @@ DO_NOT_TRACK=1 dagger api                                 \
 Run project checks:
 ```bash
 DO_NOT_TRACK=1 dagger check                               \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
 ```
 
@@ -146,7 +144,6 @@ git clone https://github.com/fvonbergen/shiryu.git
 cd shiryu
 DO_NOT_TRACK=1 dagger api \
   call                    \
-  --verbose=4             \
   --load-module=.         \
   <shiryu_function>
 ```
@@ -156,7 +153,6 @@ To run Shiryu directly from the remote repository:
 ```bash
 DO_NOT_TRACK=1 dagger api                                 \
   call                                                    \
-  --verbose=4                                             \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
   <shiryu_function>
 ```
