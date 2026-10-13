@@ -107,13 +107,12 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
         .builder()
         .build(platform=platform)
     )
-    date_pattern = r"\d{4}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])"
     expected_changeset_patterns = (
         "^dist/$",
         "^dist/linux/$",
         "^dist/linux/amd64/$",
-        rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}-py3-none-any\.whl$",
-        rf"^dist/linux/amd64/{package_name_canonical}-0\.0\.1\.dev0\+unknown\.d{date_pattern}\.tar\.gz$",
+        rf"^dist/linux/amd64/{package_name_canonical}-0\.1\.0-py3-none-any\.whl$",
+        rf"^dist/linux/amd64/{package_name_canonical}-0\.1\.0\.tar\.gz$",
     )
 
     for changeset, pattern in zip(
