@@ -242,14 +242,15 @@ class DocumenterInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
-                    # All versions supported
-                    "mkdocs-autorefs",
-                    # https://github.com/mkdocstrings/python/releases/tag/1.11.0
-                    # >= 1.11.0: Hook into autorefs to provide context around cross-ref errors
-                    "mkdocstrings-python >= 1.11.0",
+                    # https://github.com/zensical/zensical/releases/tag/v0.0.11
+                    # # >= 0.0.11: Support mkdocstrings plugin
                     # https://github.com/zensical/zensical/releases/tag/v0.0.22
                     # # >= 0.0.22: Support autorefs plugin
-                    "zensical >= 0.0.22",
+                    # https://github.com/zensical/zensical/releases/tag/v0.0.58
+                    # # >= 0.0.58: Support literate-nav plugin
+                    # https://github.com/zensical/zensical/releases/tag/v0.0.66
+                    # # >= 0.0.66: Support api-autonav plugin
+                    "zensical >= 0.0.66",
                 },
             ),
         )
@@ -263,16 +264,6 @@ class DocumenterInitializer(PythonModuleInitializer):
             The zensical.toml template file.
         """
         return TemplateFile(Path("zensical.toml"))
-
-    @final
-    @classmethod
-    def _gen_ref_pages_py_template_file(cls) -> TemplateFile:
-        """gen_ref_pages.py template file.
-
-        Returns:
-            The gen_ref_pages.py template file.
-        """
-        return TemplateFile(Path("gen_ref_pages.py"), output_directory=PROJECT_SCRIPTS_PATH)
 
     @classmethod
     async def _init_directory(
@@ -378,14 +369,6 @@ class DocumenterInitializer(PythonModuleInitializer):
             tutorials_md_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, tutorials_md_template)
-        # scripts/gen_ref_pages.py
-        gen_ref_pages_py_template_mapping: Mapping = {}
-        gen_ref_pages_py_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            cls._gen_ref_pages_py_template_file(),
-            gen_ref_pages_py_template_mapping,
-        )
-        init_directory = directory_with_new_file(init_directory, gen_ref_pages_py_template)
         return init_directory
 
 
@@ -418,13 +401,7 @@ class Documenter(PythonModule):
         zensical_command = cls._build_uv_run_command(
             ["zensical", "build", f"--config-file={zensical_toml_file_name}"]
         )
-        return (
-            container.with_exec(
-                ["python3", str(initializer._gen_ref_pages_py_template_file().output_path)]
-            )
-            .with_exec(zensical_command)
-            .directory(PROJECT_SITE_FOLDER)
-        )
+        return container.with_exec(zensical_command).directory(PROJECT_SITE_FOLDER)
 
     @final
     @dagger.function
