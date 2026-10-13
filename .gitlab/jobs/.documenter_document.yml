@@ -8,7 +8,7 @@ include:
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} documenter document --platform="${PLATFORM}" export --path=./site
+    - dagger --load-module=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} documenter document --platform="${PLATFORM}" export --path=./site
     - mkdir public
     - cp --recursive site/* public/
   artifacts:
