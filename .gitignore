@@ -3,6 +3,5 @@
 /.ruff_cache/
 /.venv/
 /dist/
-/docs/reference/api-reference/
 /site/
 __pycache__/

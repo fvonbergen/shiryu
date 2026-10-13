@@ -65,7 +65,6 @@ scheme = "slate"
 # ==============================================================================
 
 [project.plugins]
-
 # Markdown cross-referencing (autorefs)
 # Automatically cross-links Markdown references, e.g. [MyClass][]
 autorefs = {}
@@ -124,7 +123,6 @@ api_root_uri = "reference/api-reference"
 docstring_style = "google"      # Parse module docstrings using Google style format
 heading_level = 1               # Starting markdown heading level for generated module pages
 show_symbol_type_heading = true # Include symbol type badges in generated headings
-
 
 # ==============================================================================
 # Markdown Extensions (PyMdown)

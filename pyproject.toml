@@ -55,7 +55,7 @@ build-backend = "hatchling.build"
 auditor = ["uv >= 0.11.0"]
 builder = ["hatch"]
 checker = ["pytest >= 7.4.0", "pytest-asyncio >= 0.24.0", "ty >= 0.0.1-alpha.8"]
-documenter = ["zensical >= 0.0.66"]
+documenter = ["mkdocstrings-python >= 1.11.0", "zensical >= 0.0.66"]
 linter = [
   "commit-check >= 2.0.0",
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160

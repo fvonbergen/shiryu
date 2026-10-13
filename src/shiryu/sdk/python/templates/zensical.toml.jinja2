@@ -1,6 +1,9 @@
 # zensical.toml options: https://zensical.org/docs/setup/basics/
 
-# Project metadata & navigation
+# ==============================================================================
+# Project Metadata & Navigation
+# ==============================================================================
+
 [project]
 site_name = "{{ project_name }}"
 site_description = ""
@@ -9,16 +12,10 @@ site_dir = "{{ project_site_path }}"
 # site_url = "https://your-domain.com/" # Canonical URL for SEO and social preview cards
 docs_dir = "{{ project_docs_path }}"
 
-# Navigation structure following the Diátaxis documentation framework
-# TODO: missing plugins literate-nav, awesome-nav (https://zensical.org/compatibility/plugins/)
-# Navigation sorted is not working as expected.
-# We would like to have sections sorted as:
-# - Tutorials
-# - How-To Guides
-# - Reference
-# - Explanation
+# ==============================================================================
+# Theme & Appearance (Material for MkDocs)
+# ==============================================================================
 
-# Theme & appearance (Material for MkDocs)
 [project.theme]
 name = "material"
 # logo = "docs/assets/logo.png"       # Path to logo displayed in header
@@ -47,32 +44,45 @@ features = [
   "search.highlight", # Highlight searched terms on target pages
   "toc.integrate",    # Embed Table of Contents into left sidebar
 ]
+
 # Google Fonts integration
 [project.theme.font]
 text = "Inter"     # Main body font
 code = "Fira Code" # Monospace font for code snippets and signatures
+
 # Automatic Light / Dark Mode Toggle based on OS preferences
 [[project.theme.palette]]
 media = "(prefers-color-scheme: light)"
 scheme = "default"
+
 [[project.theme.palette]]
 media = "(prefers-color-scheme: dark)"
 scheme = "slate"
 
-# Global plugins
+# ==============================================================================
+# Global Plugins
+# ==============================================================================
+
 [project.plugins]
 # Markdown cross-referencing (autorefs)
 # Automatically cross-links Markdown references, e.g. [MyClass][]
 autorefs = {}
 
-# Python documentation generator (mkdocstrings)
-# Configures the Python handler, source directories, and external documentation inventory links
+# Literate navigation plugin (reads navigation structure from SUMMARY.md)
+[project.plugins.literate-nav]
+nav_file = "{{ nav_file }}"
+
+# ------------------------------------------------------------------------------
+# Python Documentation Generator (mkdocstrings)
+# ------------------------------------------------------------------------------
+
 [project.plugins.mkdocstrings.handlers.python]
 # Load inventory files to enable cross-linking to external documentation
 inventories = [
   "https://docs.python.org/3/objects.inv",
 ]
 paths = ["{{ project_src_path }}"] # Root directory containing Python source packages
+
 # Global display preferences for extracted docstrings, code signatures, and type annotations
 [project.plugins.mkdocstrings.handlers.python.options]
 # Style and formatting
@@ -92,14 +102,37 @@ signature_crossrefs = true        # Convert type hint names in signatures into a
 show_signature_annotations = true # Keep type annotations visible in function signatures
 unwrap_annotated = true           # Unwraps Annotated[T, ...] to link directly to T
 
-# Markdown extensions (PyMdown)
+# ------------------------------------------------------------------------------
+# API Auto-Navigation Plugin (api-autonav)
+# ------------------------------------------------------------------------------
+
+[project.plugins.api-autonav]
+# List of source paths or Python packages to automatically scan and build navigation for
+modules = ["{{ project_src_module_path }}"]
+# Title of the navigation section generated in the sidebar
+nav_section_title = "{{ api_reference_title }}"
+# Root URI path where the generated API documentation files will be placed
+api_root_uri = "{{ reference_api_reference_path }}"
+
+# Default configuration options applied to all matched modules using a regex selector
+[project.plugins.api-autonav.module_options.".*"]
+docstring_style = "google"      # Parse module docstrings using Google style format
+heading_level = 1               # Starting markdown heading level for generated module pages
+show_symbol_type_heading = true # Include symbol type badges in generated headings
+
+# ==============================================================================
+# Markdown Extensions (PyMdown)
+# ==============================================================================
+
 # Code block highlighting configuration
 [project.markdown_extensions."pymdownx.highlight"]
 anchor_linenums = true     # Clickable line numbers with anchor tags
 line_spans = "line"        # Wrap lines in spans to allow highlighting individual lines
 pygments_lang_class = true # Add CSS class for language name on code blocks
+
 # Enable advanced fenced code blocks (ASCII trees, diagrams, nested code)
 [project.markdown_extensions."pymdownx.superfences"]
+
 # Tabbed content blocks (`=== "Tab Title"`)
 [project.markdown_extensions."pymdownx.tabbed"]
 alternate_style = true # Modern tabbed UI style provided by Material theme

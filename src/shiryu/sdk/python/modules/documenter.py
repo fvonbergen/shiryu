@@ -1,5 +1,6 @@
 """documenter module."""
 
+from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Final, final
 
@@ -36,6 +37,7 @@ from ...common.templates import COMMON_JINJA_ENVIRONMENT
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
+from ..utils import get_package_name_canonical
 
 GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
     "github-pages", "${{ steps.deployment.outputs.page_url }}"
@@ -43,11 +45,24 @@ GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
 
 PROJECT_DOCUMENTATION_FOLDER: Final = "docs"
 PROJECT_DOCUMENTATION_PATH: Final = PurePosixPath(PROJECT_DOCUMENTATION_FOLDER)
-PROJECT_DOCUMENTATION_REFERENCE_FOLDER: Final = "reference"
 PROJECT_SITE_FOLDER: Final = "site"
 PROJECT_SITE_PATH: Final = PurePosixPath(PROJECT_SITE_FOLDER)
 PROJECT_SCRIPTS_FOLDER: Final = "scripts"
 PROJECT_SCRIPTS_PATH: Final = PurePosixPath(PROJECT_SCRIPTS_FOLDER)
+
+
+@final
+@dataclass(frozen=True, slots=True)
+class NavItem:
+    """Represents a single navigation menu item.
+
+    Attributes:
+        title: The display text for the navigation link.
+        url: The destination URL or path for the navigation link.
+    """
+
+    title: str
+    url: str
 
 
 class DocumenterInitializer(PythonModuleInitializer):
@@ -114,9 +129,6 @@ class DocumenterInitializer(PythonModuleInitializer):
             script=('echo "Deploying site"',),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
-        documentation_api_reference_path = (
-            PROJECT_DOCUMENTATION_PATH / PROJECT_DOCUMENTATION_REFERENCE_FOLDER / "api-reference"
-        )
         pre_steps = (build_github_workflow_checkout_job(),)
         release_pre_steps = (
             build_github_workflow_checkout_job(
@@ -132,7 +144,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
                 exclude_files_folders=init_context_directory.vcs.exclude_files_folders
-                | {f"/{PROJECT_SITE_PATH}/", f"/{documentation_api_reference_path}/"}
+                | {f"/{PROJECT_SITE_PATH}/"}
             ),
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
@@ -242,6 +254,9 @@ class DocumenterInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # https://github.com/mkdocstrings/python/releases/tag/1.11.0
+                    # >= 1.11.0: Hook into autorefs to provide context around cross-ref errors
+                    "mkdocstrings-python >= 1.11.0",
                     # https://github.com/zensical/zensical/releases/tag/v0.0.11
                     # # >= 0.0.11: Support mkdocstrings plugin
                     # https://github.com/zensical/zensical/releases/tag/v0.0.22
@@ -289,24 +304,8 @@ class DocumenterInitializer(PythonModuleInitializer):
         init_directory = await super()._init_directory(
             init_directory, init_context_directory, project_metadata, scm, platform
         )
-        project_name = project_metadata.name
-        project_authors_names = ", ".join([author.name for author in project_metadata.authors])
-        project_documentation_path = PROJECT_DOCUMENTATION_PATH
-        # zensical.toml
-        zensical_toml_template_mapping: Mapping = {
-            "project_name": project_name,
-            "project_authors_names": project_authors_names,
-            "project_site_path": PROJECT_SITE_FOLDER,
-            "project_docs_path": PROJECT_DOCUMENTATION_FOLDER,
-            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
-        }
-        zensical_toml_template = Template(
-            PYTHON_JINJA_ENVIRONMENT,
-            cls._zensical_toml_template_file(),
-            zensical_toml_template_mapping,
-        )
-        init_directory = directory_with_new_file(init_directory, zensical_toml_template)
         # <documentation>/**/index.md
+        project_documentation_path = PROJECT_DOCUMENTATION_PATH
         index_md_file_path = PurePosixPath("index.md")
         # <documentation>/index.md
         documentation_md_template_mapping: Mapping = {}
@@ -321,54 +320,135 @@ class DocumenterInitializer(PythonModuleInitializer):
         )
         init_directory = directory_with_new_file(init_directory, documentation_md_template)
         # <documentation>/explanation/index.md
-        explanation_md_template_mapping: Mapping = {}
+        explanation_title = "Explanation"
+        explanation_path = PurePosixPath("explanation")
+        explanation_md_template_mapping: Mapping = {"title": explanation_title}
         explanation_md_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("explanation.md"),
-                output_directory=project_documentation_path / PurePosixPath("explanation"),
+                output_directory=project_documentation_path / explanation_path,
                 output_file_name=index_md_file_path,
             ),
             explanation_md_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, explanation_md_template)
         # <documentation>/how-to-guides/index.md
-        how_to_guides_md_template_mapping: Mapping = {}
+        how_to_guides_title = "How-To Guides"
+        how_to_guides_path = PurePosixPath("how-to-guides")
+        how_to_guides_md_template_mapping: Mapping = {"title": how_to_guides_title}
         how_to_guides_md_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("how_to_guides.md"),
-                output_directory=project_documentation_path / PurePosixPath("how-to-guides"),
+                output_directory=project_documentation_path / how_to_guides_path,
                 output_file_name=index_md_file_path,
             ),
             how_to_guides_md_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, how_to_guides_md_template)
         # <documentation>/reference/index.md
-        reference_md_template_mapping: Mapping = {}
+        reference_title = "Reference"
+        reference_path = PurePosixPath("reference")
+        reference_md_template_mapping: Mapping = {"title": reference_title}
         reference_md_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("reference.md"),
-                output_directory=project_documentation_path
-                / PurePosixPath(PROJECT_DOCUMENTATION_REFERENCE_FOLDER),
+                output_directory=project_documentation_path / reference_path,
                 output_file_name=index_md_file_path,
             ),
             reference_md_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, reference_md_template)
+        # <documentation>/reference/api-reference/index.md
+        api_reference_title = "API Reference"
+        reference_api_reference_path = reference_path / PurePosixPath("api-reference")
+        api_reference_md_template_mapping: Mapping = {"title": api_reference_title}
+        api_reference_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(
+                Path("api-reference.md"),
+                output_directory=project_documentation_path / reference_api_reference_path,
+                output_file_name=index_md_file_path,
+            ),
+            api_reference_md_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, api_reference_md_template)
         # <documentation>/tutorials/index.md
-        tutorials_md_template_mapping: Mapping = {}
+        tutorials_title = "Tutorials"
+        tutorials_path = PurePosixPath("tutorials")
+        tutorials_md_template_mapping: Mapping = {"title": tutorials_title}
         tutorials_md_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(
                 Path("tutorials.md"),
-                output_directory=project_documentation_path / PurePosixPath("tutorials"),
+                output_directory=project_documentation_path / tutorials_path,
                 output_file_name=index_md_file_path,
             ),
             tutorials_md_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, tutorials_md_template)
+        # <documentation>/SUMMARY.md
+        summary_md_path = Path("SUMMARY.md")
+        summary_md_template_mapping: Mapping = {
+            "nav": (
+                (NavItem(title="Home", url=str(index_md_file_path)), None),
+                (
+                    NavItem(title=tutorials_title, url=str(tutorials_path / index_md_file_path)),
+                    None,
+                ),
+                (
+                    NavItem(
+                        title=how_to_guides_title, url=str(how_to_guides_path / index_md_file_path)
+                    ),
+                    None,
+                ),
+                (
+                    NavItem(title=reference_title, url=str(reference_path / index_md_file_path)),
+                    (
+                        NavItem(
+                            title=api_reference_title,
+                            url=str(reference_api_reference_path / index_md_file_path),
+                        ),
+                    ),
+                ),
+                (
+                    NavItem(
+                        title=explanation_title, url=str(explanation_path / index_md_file_path)
+                    ),
+                    None,
+                ),
+            )
+        }
+        summary_md_template = Template(
+            COMMON_JINJA_ENVIRONMENT,
+            TemplateFile(summary_md_path, output_directory=project_documentation_path),
+            summary_md_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, summary_md_template)
+        # zensical.toml
+        project_name = project_metadata.name
+        project_authors_names = ", ".join([author.name for author in project_metadata.authors])
+        zensical_toml_template_mapping: Mapping = {
+            "project_name": project_name,
+            "project_authors_names": project_authors_names,
+            "project_site_path": PROJECT_SITE_FOLDER,
+            "project_docs_path": PROJECT_DOCUMENTATION_FOLDER,
+            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
+            "nav_file": str(summary_md_path),
+            "project_src_module_path": str(
+                PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / get_package_name_canonical(project_name)
+            ),
+            "api_reference_title": api_reference_title,
+            "reference_api_reference_path": reference_api_reference_path,
+        }
+        zensical_toml_template = Template(
+            PYTHON_JINJA_ENVIRONMENT,
+            cls._zensical_toml_template_file(),
+            zensical_toml_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, zensical_toml_template)
         return init_directory
 
 
