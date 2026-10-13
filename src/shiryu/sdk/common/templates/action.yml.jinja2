@@ -20,6 +20,13 @@ inputs:
     {%- endif %}
   {%- endfor %}
 
+{% if release_tag_enabled %}
+outputs:
+  tag:
+    description: "Release tag, empty if there was nothing to release"
+    value: {{ release_tag_output }}
+{% endif %}
+
 runs:
   using: "composite"
   steps:
@@ -40,3 +47,11 @@ runs:
         {%- endfor %}
       {%- endif %}
     {%- endfor %}
+    {% if release_tag_enabled %}
+    - id: release_tag
+      name: Release tag
+      shell: bash
+      env:
+        OUTPUT: {{ release_tag_step_output }}
+      run: {{ release_tag_command }}
+    {% endif %}
