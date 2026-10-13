@@ -12,4 +12,4 @@ include:
     PLATFORM: "linux/amd64"
   script:
     - git fetch origin main:refs/remotes/origin/main || true
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint-vcs --branch-history="${BRANCH_HISTORY}" --platform="${PLATFORM}"
+    - dagger --load-module=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} linter lint-vcs --branch-history="${BRANCH_HISTORY}" --platform="${PLATFORM}"

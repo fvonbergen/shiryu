@@ -8,4 +8,4 @@ include:
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
   script:
-    - dagger --mod=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --platform="${PLATFORM}"
+    - dagger --load-module=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} tester unit --platform="${PLATFORM}"
