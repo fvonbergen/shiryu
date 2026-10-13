@@ -322,19 +322,36 @@ class Releaser(PythonModule):
         Returns:
             The container after pushing.
         """
-        repository = container.directory(".").as_git()
-        refs = (
-              (repository.head(), f"refs/heads/{branch}"),
-              (repository.tag(tag), f"refs/tags/{tag}"),
+        # Security: the token is a Dagger secret env var, so it is masked in logs and excluded
+        # from the cache key. The inline helper only references $GIT_AUTH_TOKEN, so the value
+        # never reaches the process arguments, .git/config, the remote URL or the disk. The empty
+        # `credential.helper=` resets any configured helper (e.g. `store`) so the token can't be
+        # persisted, and the helper only answers `get` requests during this push.
+        # TODO: This can be changed aftware Dagger devs dagger.dag.Git add a non-interactive
+        # feature.
+        credential_helper = (
+            '!f() { test "$1" = get && '
+            'printf "username=%s\\npassword=%s\\n" "$GIT_AUTH_USER_NAME" "$GIT_AUTH_TOKEN"; }; f'
         )
-
+        container = container.with_env_variable(
+            "GIT_AUTH_USER_NAME", auth_user_name
+        ).with_secret_variable("GIT_AUTH_TOKEN", auth_token)
         for push_url in push_urls:
-            destination = dagger.dag.git(
-                push_url, http_auth_username=auth_user_name, http_auth_token=auth_token
+            container = container.with_exec(
+                [
+                    "git",
+                    "-c",
+                    "credential.helper=",
+                    "-c",
+                    f"credential.helper={credential_helper}",
+                    "push",
+                    "--atomic",
+                    push_url,
+                    f"HEAD:refs/heads/{branch}",
+                    f"refs/tags/{tag}",
+                ]
             )
-            for ref, remote_ref in refs:
-                await ref.push(to=destination, branch=remote_ref).disposition()
-        return container
+        return await container.sync()
 
     @final
     @dagger.function
