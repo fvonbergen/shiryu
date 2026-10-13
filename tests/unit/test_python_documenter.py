@@ -8,6 +8,7 @@ from dagger_clients.core import Platform, core
 
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
+from shiryu.sdk.python.utils import get_package_name_canonical
 
 from .utils.common import PROJECT_NAME_DEFAULT, Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
@@ -51,17 +52,18 @@ def python_documenter_init_paths(project_name: ProjectNameType, scm: SCMType) ->
         ),
         *(
             "docs/",
+            "docs/SUMMARY.md",
             "docs/explanation/",
             "docs/explanation/index.md",
             "docs/how-to-guides/",
             "docs/how-to-guides/index.md",
             "docs/reference/",
+            "docs/reference/api-reference/",
+            "docs/reference/api-reference/index.md",
             "docs/reference/index.md",
             "docs/tutorials/",
             "docs/tutorials/index.md",
             "docs/index.md",
-            "scripts/",
-            "scripts/gen_ref_pages.py",
             "zensical.toml",
         ),
     )
@@ -123,8 +125,11 @@ async def test_python_documenter_document(dagger_session: dagger.Session) -> Non
         .document(platform=platform)
     )
 
+    package_name_canonical = get_package_name_canonical(project_name)
     expected_changeset_patterns = (
         r"^404\.html$",
+        r"^SUMMARY/$",
+        r"^SUMMARY/index\.html$",
         r"^assets/$",
         r"^assets/images/$",
         r"^assets/images/favicon\.png$",
@@ -149,6 +154,8 @@ async def test_python_documenter_document(dagger_session: dagger.Session) -> Non
         r"^reference/$",
         r"^reference/api-reference/$",
         r"^reference/api-reference/index\.html$",
+        rf"^reference/api-reference/{package_name_canonical}/$",
+        rf"^reference/api-reference/{package_name_canonical}/index\.html$",
         r"^reference/index\.html$",
         r"^search\.json$",
         r"^sitemap\.xml$",
