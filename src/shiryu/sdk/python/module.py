@@ -216,7 +216,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
             ...
         try:
             project_version = (
-                await project_container.with_exec(["uvx", "hatch", "version"]).stdout()
+                await project_container.with_exec(["uv", "version", "--short"]).stdout()
             ).strip()
             project_metadata = replace(project_metadata, version=project_version)
         except dagger.QueryError:
