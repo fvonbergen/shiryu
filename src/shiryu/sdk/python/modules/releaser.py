@@ -300,7 +300,7 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    def __push(  # noqa: PLR0913, PLR0917
+    async def __push(  # noqa: PLR0913, PLR0917
         cls,
         container: dagger.Container,
         push_urls: PushUrls,
@@ -333,7 +333,7 @@ class Releaser(PythonModule):
                 push_url, http_auth_username=auth_user_name, http_auth_token=auth_token
             )
             for ref, remote_ref in refs:
-                ref.push(to=destination, branch=remote_ref).disposition()
+                await ref.push(to=destination, branch=remote_ref).disposition()
         return container
 
     @final
@@ -363,7 +363,7 @@ class Releaser(PythonModule):
             return ""
         tag = f"v{version}"
         bump_container = self.__bump(container, version, git_user_name, git_user_email)
-        await self.__push(bump_container, push_urls, branch, tag, auth_user_name, auth_token).sync()
+        await self.__push(bump_container, push_urls, branch, tag, auth_user_name, auth_token)
         return tag
 
     @final
