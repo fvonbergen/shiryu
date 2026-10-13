@@ -6,7 +6,13 @@ import dagger
 import pytest
 
 from shiryu.main import Shiryu
-from shiryu.sdk.common.module import PROJECT_NAME_DEFAULT, SCM, ProjectNameType, SCMType
+from shiryu.sdk.common.module import (
+    PROJECT_NAME_DEFAULT,
+    PROJECT_VERSION_DEFAULT,
+    SCM,
+    ProjectNameType,
+    SCMType,
+)
 from shiryu.sdk.python.utils import get_package_name_canonical
 
 from .utils.common import Paths
@@ -107,12 +113,13 @@ async def test_python_builder_build(dagger_client: dagger.Client) -> None:
         .builder()
         .build(platform=platform)
     )
+    version = re.escape(PROJECT_VERSION_DEFAULT)
     expected_changeset_patterns = (
         "^dist/$",
         "^dist/linux/$",
         "^dist/linux/amd64/$",
-        rf"^dist/linux/amd64/{package_name_canonical}-0\.1\.0-py3-none-any\.whl$",
-        rf"^dist/linux/amd64/{package_name_canonical}-0\.1\.0\.tar\.gz$",
+        rf"^dist/linux/amd64/{package_name_canonical}-{version}-py3-none-any\.whl$",
+        rf"^dist/linux/amd64/{package_name_canonical}-{version}\.tar\.gz$",
     )
 
     for changeset, pattern in zip(
