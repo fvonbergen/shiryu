@@ -409,12 +409,16 @@ class GitLabVariable:
 
     name: str
     value: str
+    is_secret: bool = False
 
+    @property
+    def value(self) -> str:
+        return f"env://{self.value}" if self.is_secret else self.value
 
 type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
-type GitLabStageWhen = str | None
+type GitLabJobWhen = str | None
 
 
 @final
@@ -429,7 +433,7 @@ class GitLabStageJob:
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
-    when: GitLabStageWhen = None
+    when: GitLabJobWhen = None
     script: GitLabScript = ()
     artifacts: GitLabArtifacts | None = None
 
@@ -441,7 +445,6 @@ class GitLabStageProperties:
 
     name: GitLabStageName
     rules: GitLabStageRules
-    when: GitLabStageWhen = None
 
 
 @final
@@ -884,9 +887,6 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     export_path: PurePosixPath | None,
     post_script: GitLabScript,
     artifacts: GitLabArtifacts | None,
-    gitlab_module_path: str = "gitlab.com/fvonbergen1/shiryu",
-    parameter_variable_names: dict[str, str] | None = None,
-    secret_reference_prefix: str = "env:",
 ) -> GitLabJob:
     """Build a GitLab job.
 
@@ -931,19 +931,14 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     job_name = f".{id_}"
     shiryu_version_gitlab_variable = GitLabVariable("SHIRYU_VERSION", shiryu_version)
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
-    _parameter_variable_names = parameter_variable_names or {}
-    parameter_variable_names_by_parameter = {
-        parameter.name: _parameter_variable_names.get(parameter.name, parameter.name.upper())
-        for parameter in sdk_module_function_parameters
-    }
     variables = (
         shiryu_version_gitlab_variable,
         sdk_language_gitlab_variable,
         *variables,
         *tuple(
             GitLabVariable(
-                parameter_variable_names_by_parameter[sdk_module_function_parameter.name],
-                f"{secret_reference_prefix}{sdk_module_function_parameter.name.upper()}"
+                sdk_module_function_parameter.name.upper(),
+                f"env://{sdk_module_function_parameter.name.upper()}"
                 if sdk_module_function_parameter.is_secret
                 else sdk_module_function_parameter.default
                 if sdk_module_function_parameter.default is not None
@@ -953,14 +948,16 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         ),
     )
     formatted_parameters = [
-        f'{parameter.option}="${{{parameter_variable_names_by_parameter[parameter.name]}}}"'
+        f'{parameter.option}="${{{parameter.name.upper()}}}"'
         for parameter in sdk_module_function_parameters
     ]
+
+    # TODO: we can look for best ways to know where the url of the module is located
     dagger_call_script = " ".join(
         [
             (
                 "dagger "
-                f"--mod={gitlab_module_path}@${{{shiryu_version_gitlab_variable.name}}} "
+                f"--load-module=gitlab.com/fvonbergen1/shiryu@${{{shiryu_version_gitlab_variable.name}}} "
                 f"call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
                 f"{sdk_module_function_name}"
             ),
@@ -990,7 +987,7 @@ def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
     needs: GitLabArrayType = (),
-    when: GitLabStageWhen = None,
+    when: GitLabJobWhen = None,
 ) -> GitLabStageJob:
     """Build a GitLab stage job.
 
@@ -998,6 +995,7 @@ def build_gitlab_stage_job(
         gitlab_stage_id: The GitLab stage id.
         gitlab_job: The GitLab job.
         needs: GitLab jobs that must complete before this job.
+        when: The condition for when the job should run.
 
     Returns:
         A GitLab stage job.
@@ -1011,5 +1009,5 @@ def build_gitlab_stage_job(
         stage=gitlab_stage_name,
         needs=needs,
         rules=gitlab_stage_id.value.rules,
-        when=when if when is not None else gitlab_stage_id.value.when,
+        when=when
     )
