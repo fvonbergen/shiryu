@@ -17,4 +17,4 @@ include:
     VCS_USER_EMAIL: "ci@shiryu.dev"
     VCS_USER_NAME: "CI Release Bot"
   script:
-    - dagger --load-module=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} releaser release --auth-token="${AUTH_TOKEN}" --platform="${PLATFORM}" --branch="${BRANCH}" --vcs-user-email="${VCS_USER_EMAIL}" --vcs-user-name="${VCS_USER_NAME}"
+    - dagger --load-module=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} call ${SDK_LANGUAGE} releaser release --auth-token="${AUTH_TOKEN_REF}" --platform="${PLATFORM}" --branch="${BRANCH}" --vcs-user-email="${VCS_USER_EMAIL}" --vcs-user-name="${VCS_USER_NAME}"

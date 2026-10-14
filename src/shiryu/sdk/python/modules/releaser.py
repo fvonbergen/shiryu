@@ -142,7 +142,6 @@ class ReleaserInitializer(PythonModuleInitializer):
             variables=(
                 GitLabVariable("GIT_STRATEGY", "fetch"),
                 GitLabVariable("GIT_DEPTH", "0"),
-                GitLabVariable("AUTH_TOKEN_REF", "AUTH_TOKEN", is_secret=True),
             ),
             pre_script=(),
             export_path=None,

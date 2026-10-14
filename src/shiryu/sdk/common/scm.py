@@ -27,6 +27,11 @@ class SDKModuleFunctionParameter:
     default: str | None
     is_secret: bool
 
+    @property
+    def value(self) -> str:
+        """Parameter value, using `env://` for secrets."""
+        return f"env://{self.name.upper()}" if self.is_secret else self.name
+
 
 SDKModuleFunctionParameters = tuple[SDKModuleFunctionParameter, ...]
 
@@ -409,11 +414,7 @@ class GitLabVariable:
 
     name: str
     value: str
-    is_secret: bool = False
 
-    @property
-    def value(self) -> str:
-        return f"env://{self.value}" if self.is_secret else self.value
 
 type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
@@ -731,7 +732,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
         (
             f"{parameter.option}="
             f"""{
-                f"env://{parameter.name.upper()}"
+                parameter.value
                 if parameter.is_secret
                 else f'"${{{{ inputs.{parameter.name} }}}}"'
             }"""
@@ -937,8 +938,10 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         *variables,
         *tuple(
             GitLabVariable(
-                sdk_module_function_parameter.name.upper(),
-                f"env://{sdk_module_function_parameter.name.upper()}"
+                f"{sdk_module_function_parameter.name.upper()}_REF"
+                if sdk_module_function_parameter.is_secret
+                else sdk_module_function_parameter.name.upper(),
+                sdk_module_function_parameter.value
                 if sdk_module_function_parameter.is_secret
                 else sdk_module_function_parameter.default
                 if sdk_module_function_parameter.default is not None
@@ -948,7 +951,9 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         ),
     )
     formatted_parameters = [
-        f'{parameter.option}="${{{parameter.name.upper()}}}"'
+        f'{parameter.option}="${{{parameter.name.upper()}_REF}}"'
+        if parameter.is_secret
+        else f'{parameter.option}="${{{parameter.name.upper()}}}"'
         for parameter in sdk_module_function_parameters
     ]
 
