@@ -938,9 +938,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         *variables,
         *tuple(
             GitLabVariable(
-                f"{sdk_module_function_parameter.name.upper()}_REF"
-                if sdk_module_function_parameter.is_secret
-                else sdk_module_function_parameter.name.upper(),
+                sdk_module_function_parameter.name.upper(),
                 sdk_module_function_parameter.value
                 if sdk_module_function_parameter.is_secret
                 else sdk_module_function_parameter.default
@@ -951,9 +949,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         ),
     )
     formatted_parameters = [
-        f'{parameter.option}="${{{parameter.name.upper()}_REF}}"'
-        if parameter.is_secret
-        else f'{parameter.option}="${{{parameter.name.upper()}}}"'
+        f'{parameter.option}="${{{parameter.name.upper()}}}"'
         for parameter in sdk_module_function_parameters
     ]
 
