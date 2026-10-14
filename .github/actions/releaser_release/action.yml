@@ -15,27 +15,20 @@ inputs:
   auth_token:
     description: "Authorization token with write access to the repository and its releases (GitLab tokens need the api scope)."
   auth_user_name:
-    description: "User name sent with the authorization token."
+    description: "User name sent with the authorization token (any non-empty value works with GitHub and GitLab access tokens)"
     default: "x-access-token"
   branch:
-    description: "Branch to release from and push the release commit to."
+    description: "Branch to release from and push the release commit to"
     default: "main"
-  git_user_email:
-    description: "Git user email used for the release commit."
-    default: "ci@shiryu.dev"
-  git_user_name:
-    description: "Git user name used for the release commit."
-    default: "CI Release Bot"
   platform:
     description: "Platform config OS and architecture in a Container"
     default: "linux/amd64"
   vcs_user_email:
-    description: "VCS user email"
+    description: "VCS user email used for the release commit"
     default: "ci@shiryu.dev"
   vcs_user_name:
-    description: "VCS user name"
+    description: "VCS user name used for the release commit"
     default: "CI Release Bot"
-
 outputs:
   tag:
     description: "Release tag, empty if there was nothing to release"
@@ -53,8 +46,9 @@ runs:
         version: "v1.0.0-beta.15"
         verb: call
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
-        args: -y ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --platform="${{ inputs.platform }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
+        args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --auth-user-name="${{ inputs.auth_user_name }}" --branch="${{ inputs.branch }}" --platform="${{ inputs.platform }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+    
     - id: release_tag
       name: Release tag
       shell: bash

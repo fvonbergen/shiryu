@@ -36,3 +36,4 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} builder publish --platform="${{ inputs.platform }}" --repository-password=env://REPOSITORY_PASSWORD --repository-url="${{ inputs.repository_url }}" --repository-user="${{ inputs.repository_user }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+    

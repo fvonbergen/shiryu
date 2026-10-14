@@ -28,3 +28,4 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} auditor audit --platform="${{ inputs.platform }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
+    

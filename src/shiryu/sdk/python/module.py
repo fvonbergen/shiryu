@@ -72,7 +72,11 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         )
         return init_context_directory.evolve(
             source_code_files_folders=init_context_directory.source_code_files_folders
-            | {PROJECT_SOURCE_CODE_FOLDER}
+            | {PROJECT_SOURCE_CODE_FOLDER},
+            vcs=init_context_directory.vcs.evolve(
+                exclude_files_folders=init_context_directory.vcs.exclude_files_folders
+                | {"__pycache__/"},
+            ),
         )
 
     @final

@@ -191,7 +191,8 @@ class Checker(PythonModule):
 
     @final
     @dagger.function
-    @dagger.check
+    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
+    # @dagger.check
     async def check(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run type checks in the project of the provided source Directory."""
         exclude = [".git/"]

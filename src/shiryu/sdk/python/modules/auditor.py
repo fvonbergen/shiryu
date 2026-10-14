@@ -120,7 +120,8 @@ class Auditor(PythonModule):
 
     @final
     @dagger.function
-    @dagger.check
+    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
+    # @dagger.check
     async def audit(
         self,
         *,

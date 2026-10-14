@@ -354,7 +354,8 @@ class Linter(PythonModule):
 
     @final
     @dagger.function
-    @dagger.check
+    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
+    # @dagger.check
     async def lint_code(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run linter analysis in the project code of the provided source Directory."""
         exclude = [".git/"]
@@ -373,7 +374,8 @@ class Linter(PythonModule):
 
     @final
     @dagger.function
-    @dagger.check
+    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
+    # @dagger.check
     async def lint_vcs(
         self,
         *,

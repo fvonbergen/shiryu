@@ -3,9 +3,9 @@ include:
   {%- if job.path is not none %}
   - local: "{{ job.path }}"
   {%- endif %}
-  {%- endfor %}
-
-{% for job in jobs|sort(attribute="name") %}
+  {%- endfor -%}
+{{ '\n' }}
+{%- for job in jobs|sort(attribute="name") %}
 {{ job.name }}:{% if job.extends|length == 1 %}
   extends: {{ job.extends|first }}{% elif job.extends|length > 1 %}
   extends:
@@ -29,7 +29,7 @@ include:
     {%- endfor %}
   {%- endif %}
   {%- if job.when %}
-  when: {{ job.when }}
+  when: {{ job.when.value }}
   {%- endif %}
   {%- if job.artifacts is not none %}
   artifacts:

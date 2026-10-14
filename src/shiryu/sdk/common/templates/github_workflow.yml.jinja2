@@ -1,7 +1,7 @@
 name: {{ name }}
-on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys()|list|first }}{% else %}
+
+on:{%- if on.keys()|length == 1 and on.values()|list|first is not none %} {{ on.keys()|list|first }}{% else %}
   {%- for action, action_properties in on|dictsort -%}
-  {% if action_properties is not sameas action_properties.UNSET %}
   {% if action_properties is none %}
   {{ action }}:
   {%- else %}
@@ -18,24 +18,24 @@ on:{%- if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys
     {%- endif %}
     {%- endfor -%}
   {%- endif -%}
-  {%- endif -%}
   {%- endfor %}
 {%- endif %}
-
-env:
-  DO_NOT_TRACK: "1"
-
-{% if permissions|length != 0 %}
+{{ '\n' }}
+{%- if concurrency is not none -%}
+concurrency:
+  group: "{{ concurrency[0] }}"
+  cancel-in-progress: {{ concurrency[1]|lower }}
+{{ '\n' }}
+{%- endif -%}
+{%- if permissions|length != 0 -%}
 permissions:
   {%- for permission, access in permissions %}
   {{ permission }}: {{ access }}
   {%- endfor %}
-{% endif %}
-{% if concurrency is not none %}
-concurrency:
-  group: "{{ concurrency[0] }}"
-  cancel-in-progress: {{ concurrency[1]|lower }}
-{% endif %}
+{{ '\n' }}
+{%- endif -%}
+env:
+  DO_NOT_TRACK: "1"
 
 jobs:
   {%- for job in jobs|sort(attribute="id") %}

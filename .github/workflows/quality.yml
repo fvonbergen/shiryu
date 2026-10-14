@@ -1,5 +1,7 @@
 name: quality
-on: push
+
+on:
+  push:
 
 env:
   DO_NOT_TRACK: "1"

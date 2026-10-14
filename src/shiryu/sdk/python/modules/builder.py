@@ -299,7 +299,8 @@ class Builder(PythonModule):
 
     @final
     @dagger.function
-    @dagger.check
+    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
+    # @dagger.check
     async def test(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Test the project installation process for the provided source Directory."""
         source = self.source

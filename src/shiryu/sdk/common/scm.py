@@ -27,11 +27,6 @@ class SDKModuleFunctionParameter:
     default: str | None
     is_secret: bool
 
-    @property
-    def value(self) -> str:
-        """Parameter value, using `env://` for secrets."""
-        return f"env://{self.name.upper()}" if self.is_secret else self.name
-
 
 SDKModuleFunctionParameters = tuple[SDKModuleFunctionParameter, ...]
 
@@ -212,6 +207,27 @@ class GitHubWorkflowTriggerAction:
 
     push: GitHubWorkflowTriggerActionPush | UnsetType | None
     workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | UnsetType | None
+
+    def asdict(self) -> dict[str, Any]:
+        """Converts the trigger action to a dictionary, excluding any fields set to UNSET.
+
+        Returns:
+            A clean dictionary containing only set properties.
+        """
+
+        def _drop_unset_factory(data: list[tuple[str, Any]]) -> dict[str, Any]:
+            """Internal factory to drop UNSET values during serialization.
+
+            Args:
+                data: A list of key-value tuples provided by dataclasses.asdict() during
+                    serialization.
+
+            Returns:
+                A dictionary containing only the fields where the value is not UNSET.
+            """
+            return {k: v for k, v in data if v is not UNSET}
+
+        return asdict(self, dict_factory=_drop_unset_factory)
 
 
 @final
@@ -419,7 +435,20 @@ class GitLabVariable:
 type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
-type GitLabJobWhen = str | None
+
+
+# https://docs.gitlab.com/ci/yaml/#when
+@final
+@unique
+class GitLabJobWhen(StrEnum):
+    """GitLabJobWhen options."""
+
+    ON_SUCCESS = "on_success"
+    ON_FAILURE = "on_failure"
+    NEVER = "never"
+    ALWAYS = "always"
+    MANUAL = "manual"
+    DELAYED = "delayed"
 
 
 @final
@@ -434,7 +463,7 @@ class GitLabStageJob:
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
-    when: GitLabJobWhen = None
+    when: GitLabJobWhen | None = None
     script: GitLabScript = ()
     artifacts: GitLabArtifacts | None = None
 
@@ -603,7 +632,7 @@ def github_init(
         workflow_name = f"{github_workflow_name}.yml"
         github_workflow_yml_template_mapping: Mapping = {
             "name": github_workflow_name,
-            "on": asdict(github_workflow.value.on),
+            "on": github_workflow.value.on.asdict(),
             "permissions": github_workflow.value.permissions,
             "concurrency": github_workflow.value.concurrency,
             "jobs": github_workflow_jobs,
@@ -732,7 +761,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
         (
             f"{parameter.option}="
             f"""{
-                parameter.value
+                f"env://{parameter.name.upper()}"
                 if parameter.is_secret
                 else f'"${{{{ inputs.{parameter.name} }}}}"'
             }"""
@@ -746,7 +775,9 @@ def build_github_action(  # noqa: PLR0913, PLR0917
         and sdk_module_function_name == "release",
         "release_tag_output": "${{ steps.release_tag.outputs.tag }}",
         "release_tag_step_output": "${{ steps.call_dagger_releaser_release.outputs.output }}",
-        "release_tag_command": 'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"',
+        "release_tag_command": (
+            'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"'
+        ),
         "shiryu_version": {"default": shiryu_version},
         "sdk_language": {"default": sdk_language},
         "parameters": sdk_module_function_parameters,
@@ -938,10 +969,8 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         *variables,
         *tuple(
             GitLabVariable(
-                f"{sdk_module_function_parameter.name.upper()}_REF"
-                if sdk_module_function_parameter.is_secret
-                else sdk_module_function_parameter.name.upper(),
-                sdk_module_function_parameter.value
+                sdk_module_function_parameter.name.upper(),
+                f"env:{sdk_module_function_parameter.name.upper()}"
                 if sdk_module_function_parameter.is_secret
                 else sdk_module_function_parameter.default
                 if sdk_module_function_parameter.default is not None
@@ -951,18 +980,17 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         ),
     )
     formatted_parameters = [
-        f'{parameter.option}="${{{parameter.name.upper()}_REF}}"'
-        if parameter.is_secret
-        else f'{parameter.option}="${{{parameter.name.upper()}}}"'
+        f'{parameter.option}="${{{parameter.name.upper()}}}"'
         for parameter in sdk_module_function_parameters
     ]
 
     # TODO: we can look for best ways to know where the url of the module is located
+    gitlab_shiryu_module = "gitlab.com/fvonbergen1/shiryu"
     dagger_call_script = " ".join(
         [
             (
                 "dagger "
-                f"--load-module=gitlab.com/fvonbergen1/shiryu@${{{shiryu_version_gitlab_variable.name}}} "
+                f"--load-module={gitlab_shiryu_module}@${{{shiryu_version_gitlab_variable.name}}} "
                 f"call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
                 f"{sdk_module_function_name}"
             ),
@@ -992,7 +1020,7 @@ def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
     needs: GitLabArrayType = (),
-    when: GitLabJobWhen = None,
+    when: GitLabJobWhen | None = None,
 ) -> GitLabStageJob:
     """Build a GitLab stage job.
 
@@ -1014,5 +1042,5 @@ def build_gitlab_stage_job(
         stage=gitlab_stage_name,
         needs=needs,
         rules=gitlab_stage_id.value.rules,
-        when=when
+        when=when,
     )
