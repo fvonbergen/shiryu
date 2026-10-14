@@ -139,13 +139,15 @@ class ReleaserInitializer(PythonModuleInitializer):
             sdk_module_name=sdk_module_name,
             sdk_module_function=sdk_module_function,
             shiryu_version=shiryu_metadata.git_tag_or_branch,
-            variables=(GitLabVariable("GIT_STRATEGY", "fetch"), GitLabVariable("GIT_DEPTH", "0")),
+            variables=(
+                GitLabVariable("GIT_STRATEGY", "fetch"),
+                GitLabVariable("GIT_DEPTH", "0"),
+                GitLabVariable("AUTH_TOKEN_REF", "AUTH_TOKEN", is_secret=True),
+            ),
             pre_script=(),
             export_path=None,
             post_script=(),
             artifacts=None,
-            parameter_variable_names={"auth_token": "AUTH_TOKEN_REF"},
-            secret_reference_prefix="env://",
         )
         pre_steps = (
             build_github_workflow_checkout_job(
