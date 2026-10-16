@@ -43,6 +43,11 @@ dependencies = []
 requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
 
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "uv"
+tag_format = "v$version"
+
 [tool.uv]
 # linked to [project] requires-python
 environments = [

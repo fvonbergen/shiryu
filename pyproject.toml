@@ -79,6 +79,11 @@ tester = [
 # "Community" = ""
 # "Twitter" = ""
 
+[tool.commitizen]
+name = "cz_conventional_commits"
+version_provider = "uv"
+tag_format = "v$version"
+
 [tool.uv.sources]
 dagger-io = { path = "sdk", editable = true }
 
