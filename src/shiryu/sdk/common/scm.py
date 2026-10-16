@@ -908,6 +908,17 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
         permissions,
     )
 
+@staticmethod
+def _gitlab_param_manage(param: SDKModuleFunctionParameter) -> tuple[GitLabVariable, str]:
+    env_name = param.name.upper()
+    if param.is_secret:
+        var_name, value = f"{env_name}_", f"env:{env_name}"
+    elif param.default is not None:
+        var_name, value = env_name, str(param.default)
+    else:
+        var_name, value = env_name, f"${{{env_name}}}"
+    return GitLabVariable(var_name, value), f'{param.option}="${{{var_name}}}"'
+
 
 def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_language: str,
@@ -963,26 +974,15 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     job_name = f".{id_}"
     shiryu_version_gitlab_variable = GitLabVariable("SHIRYU_VERSION", shiryu_version)
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
+
+    param_variables, formatted_parameters = (zip(*map(_gitlab_param_manage, sdk_module_function_parameters)))
+
     variables = (
         shiryu_version_gitlab_variable,
         sdk_language_gitlab_variable,
         *variables,
-        *tuple(
-            GitLabVariable(
-                sdk_module_function_parameter.name.upper(),
-                f"env:{sdk_module_function_parameter.name.upper()}"
-                if sdk_module_function_parameter.is_secret
-                else sdk_module_function_parameter.default
-                if sdk_module_function_parameter.default is not None
-                else f"${{{sdk_module_function_parameter.name.upper()}}}",
-            )
-            for sdk_module_function_parameter in sdk_module_function_parameters
-        ),
+        *param_variables,
     )
-    formatted_parameters = [
-        f'{parameter.option}="${{{parameter.name.upper()}}}"'
-        for parameter in sdk_module_function_parameters
-    ]
 
     # TODO: we can look for best ways to know where the url of the module is located
     gitlab_shiryu_module = "gitlab.com/fvonbergen1/shiryu"
