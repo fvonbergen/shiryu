@@ -31,6 +31,9 @@ def test_template_file() -> None:
     )
 
 
+# TODO: We should move this test to a suite of tests that validates the logic in jinja templates.
+# This should be a test that validates the pyproject.toml file generation and not just a test on
+# multiple authors.
 def test_pyproject_toml_multiple_authors() -> None:
     """Test rendering mulitple authors."""
     authors = frozenset(

@@ -437,7 +437,6 @@ class GitLabVariable:
 type GitLabVariables = tuple[GitLabVariable, ...]
 type GitLabStageRules = GitLabArrayType
 type GitLabStageName = str
-type GitLabStageWhen = str | None
 
 
 # https://docs.gitlab.com/ci/yaml/#when
@@ -466,7 +465,7 @@ class GitLabStageJob:
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
-    when: GitLabStageWhen = None
+    when: GitLabJobWhen | None = None
     script: GitLabScript = ()
     artifacts: GitLabArtifacts | None = None
 
@@ -478,7 +477,6 @@ class GitLabStageProperties:
 
     name: GitLabStageName
     rules: GitLabStageRules
-    when: GitLabStageWhen = None
 
 
 @final
@@ -910,6 +908,7 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
         permissions,
     )
 
+
 @staticmethod
 def _gitlab_param_manage(param: SDKModuleFunctionParameter) -> tuple[GitLabVariable, str]:
     env_name = param.name.upper()
@@ -951,7 +950,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
 
     Raises:
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
-            not `dagger.Directory`.
+            not `dagger_clients.core.Directory`.
     """
     sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
     id_ = to_snake_case(
@@ -977,7 +976,9 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     shiryu_version_gitlab_variable = GitLabVariable("SHIRYU_VERSION", shiryu_version)
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
 
-    param_variables, formatted_parameters = (zip(*map(_gitlab_param_manage, sdk_module_function_parameters)))
+    param_variables, formatted_parameters = zip(
+        *map(_gitlab_param_manage, sdk_module_function_parameters)
+    )
 
     variables = (
         shiryu_version_gitlab_variable,
@@ -1022,7 +1023,7 @@ def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
     needs: GitLabArrayType = (),
-    when: GitLabStageWhen = None,
+    when: GitLabJobWhen | None = None,
 ) -> GitLabStageJob:
     """Build a GitLab stage job.
 
