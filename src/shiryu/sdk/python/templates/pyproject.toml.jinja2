@@ -4,7 +4,7 @@ version = "{{ project_version }}"
 description = ""
 readme = "{{ readme_file_name }}"
 authors = [
-  {%- for project_author in project_authors|sort %}
+  {%- for project_author in project_authors|sort(attribute="name") %}
   { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
   {%- endfor %}
 ]
@@ -42,11 +42,6 @@ dependencies = []
 [build-system]
 requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
-
-[tool.commitizen]
-name = "cz_conventional_commits"
-version_provider = "uv"
-tag_format = "v$version"
 
 [tool.uv]
 # linked to [project] requires-python

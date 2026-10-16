@@ -153,8 +153,6 @@ class ReleaserInitializer(PythonModuleInitializer):
             export_path=None,
             post_script=(),
             artifacts=None,
-            parameter_variable_names={"auth_token": "AUTH_TOKEN_REF"},
-            secret_reference_prefix="env://",
         )
         pre_steps = (
             build_github_workflow_checkout_job(
@@ -453,8 +451,7 @@ class Releaser(PythonModule):
         # never reaches the process arguments, .git/config, the remote URL or the disk. The empty
         # `credential.helper=` resets any configured helper (e.g. `store`) so the token can't be
         # persisted, and the helper only answers `get` requests during this push.
-        # TODO: This can be changed aftware Dagger devs dagger.dag.Git add a non-interactive
-        # feature.
+        # TODO: This can be changed after Dagger devs dagger.dag.Git add a non-interactive feature.
         credential_helper = (
             '!f() { test "$1" = get && '
             'printf "username=%s\\npassword=%s\\n" "$GIT_AUTH_USER_NAME" "$GIT_AUTH_TOKEN"; }; f'

@@ -230,8 +230,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.DOCUMENTATION,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.DOCUMENTATION,
-                            gitlab_job=gitlab_job,
+                            gitlab_stage_id=GitLabStageId.DOCUMENTATION, gitlab_job=gitlab_job
                         ),
                     )
                     .add(GitLabStageId.DOCUMENTATION, gitlab_pages_stage_job)

@@ -60,7 +60,6 @@ IsUpdateDaggerType = Annotated[
     IsUpdateType, dagger.Doc("Whether to update project directory files or not")
 ]
 IS_UPDATE_DAGGER_DEFAULT: Final = False
-
 SCMType = list[SCM]
 """A list of Source Control Management (SCM) configurations."""
 SCMDaggerType = Annotated[

@@ -46,7 +46,7 @@ runs:
         {%- endfor %}
       {%- endif %}
     {%- endfor %}
-    {% if release_tag_enabled %}
+    {%- if release_tag_enabled %}
     - id: release_tag
       name: Release tag
       shell: bash
