@@ -105,7 +105,6 @@ signature_crossrefs = true        # Convert type hint names in signatures into a
 show_signature_annotations = true # Keep type annotations visible in function signatures
 unwrap_annotated = true           # Unwraps Annotated[T, ...] to link directly to T
 
-
 # ------------------------------------------------------------------------------
 # API Auto-Navigation Plugin (api-autonav)
 # ------------------------------------------------------------------------------

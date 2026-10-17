@@ -1,8 +1,8 @@
 {%- for item, children in nav %}
 * [{{ item.title }}]({{ item.url }})
-  {%- if children is not none %}
-  {%- for child in children %}
-  * [{{ child.title }}]({{ child.url }})
-  {%- endfor %}
-  {%- endif %}
+    {%- if children is not none %}
+    {%- for child in children %}
+    * [{{ child.title }}]({{ child.url }})
+    {%- endfor %}
+    {%- endif %}
 {%- endfor %}

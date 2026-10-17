@@ -48,7 +48,6 @@ runs:
         module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} releaser release --auth-token=env://AUTH_TOKEN --auth-user-name="${{ inputs.auth_user_name }}" --branch="${{ inputs.branch }}" --platform="${{ inputs.platform }}" --vcs-user-email="${{ inputs.vcs_user_email }}" --vcs-user-name="${{ inputs.vcs_user_name }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
-
     - id: release_tag
       name: Release tag
       shell: bash

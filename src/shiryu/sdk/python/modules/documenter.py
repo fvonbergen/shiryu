@@ -405,12 +405,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                 ),
                 (
                     NavItem(title=reference_title, url=str(reference_path / index_md_file_path)),
-                    (
-                        NavItem(
-                            title=api_reference_title,
-                            url=str(reference_api_reference_path / index_md_file_path),
-                        ),
-                    ),
+                    (NavItem(title=api_reference_title, url=f"{reference_api_reference_path}/"),),
                 ),
                 (
                     NavItem(
