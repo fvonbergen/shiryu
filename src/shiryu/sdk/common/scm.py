@@ -977,7 +977,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
 
     param_variables, formatted_parameters = zip(
-        *map(_gitlab_param_manage, sdk_module_function_parameters)
+        *map(_gitlab_param_manage, sdk_module_function_parameters), strict=True
     )
 
     variables = (
