@@ -8,7 +8,7 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat/add-python-sdk-release-dagger-v1.0.0-beta.16"
+    default: "feat/add-python-sdk-release"
   sdk_language:
     description: "SDK programming language"
     default: "python"
