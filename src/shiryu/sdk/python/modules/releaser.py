@@ -7,7 +7,7 @@ from typing import Annotated, Final, final
 from urllib.parse import quote, urlsplit, urlunsplit
 
 import dagger
-from dagger_clients.core import Container, Directory, Secret
+from dagger_clients.core import Container, Directory, ReturnType, Secret
 
 from ....utils.dagger.client import container_debian, container_git
 from ....utils.dagger.directory import directory_with_new_file
@@ -326,7 +326,7 @@ class Releaser(PythonModule):
         """
         remote_ref = f"refs/remotes/origin/{branch}"
         executed_container = container.with_exec(
-            ["git", "rev-parse", "HEAD", remote_ref], expect=dagger.ReturnType.ANY
+            ["git", "rev-parse", "HEAD", remote_ref], expect=ReturnType.ANY
         )
         head_sha, _, remote_sha = (await executed_container.stdout()).strip().partition("\n")
         if await executed_container.exit_code() != 0 or head_sha != remote_sha:
@@ -354,7 +354,7 @@ class Releaser(PythonModule):
             cls._build_uv_run_command(
                 ["cz", "bump", "--get-next", "--yes"], execution_mode=ExecutionMode.SCRIPT
             ),
-            expect=dagger.ReturnType.ANY,
+            expect=ReturnType.ANY,
         )
         exit_code = await executed_container.exit_code()
         if exit_code in CZ_NOTHING_TO_RELEASE_EXIT_CODES:
