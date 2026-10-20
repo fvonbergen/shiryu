@@ -38,6 +38,7 @@ def get_jinja_environment(file_path: Path) -> jinja2.Environment:
         ),
         autoescape=jinja2.select_autoescape(),
         keep_trailing_newline=True,
+        undefined=jinja2.StrictUndefined,
     )
 
 

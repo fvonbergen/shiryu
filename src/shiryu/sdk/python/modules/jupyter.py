@@ -26,7 +26,7 @@ PortDaggerType = Annotated[PortType, dagger.Doc("Jupyter notebooks port")]
 
 PROJECT_NOTEBOOKS_FOLDER: Final = "notebooks"
 PORT_DAGGER_DEFAULT: Final = 8888
-JUPYTER_NOTEBOOKS_CACHE_VOLUME = core().cache_volume("shiryu-jupyter-debian-trixie")
+JUPYTER_NOTEBOOKS_CACHE_VOLUME = core().cache_volume("shiryu-jupyter")
 
 
 class JupyterInitializer(PythonModuleInitializer):

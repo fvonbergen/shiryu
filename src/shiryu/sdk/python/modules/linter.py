@@ -277,7 +277,7 @@ class Linter(PythonModule):
         initializer = cls._initializer_cls()
         ruff_cache_folder = initializer._ruff_cache_folder()
         container = container.with_mounted_cache(
-            ruff_cache_folder, core().cache_volume("shiryu-ruff-debian-trixie-slim")
+            ruff_cache_folder, core().cache_volume("shiryu-ruff")
         )
         ruff_toml_file_name = initializer._ruff_toml_template_file().file_name
         ruff_check_command = cls._build_uv_run_command(

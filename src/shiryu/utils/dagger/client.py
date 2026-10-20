@@ -10,8 +10,11 @@ APT_PACKAGES = Set[str]
 
 WORKDIR_PATH: Final = PurePosixPath("/workspace")
 
-# FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = "public.ecr.aws/debian/debian:trixie-slim"
-FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = "docker.io/library/debian:trixie-slim"
+DEBIAN_CODENAME: Final = "trixie"
+DEBIAN_SNAPSHOT_DATETIME: Final = "20261019T203124Z"
+# FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = f"public.ecr.aws/debian/debian:{DEBIAN_CODENAME}-slim"
+FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = f"docker.io/library/debian:{DEBIAN_CODENAME}-slim"
+UV_VERSION: Final = "0.13.2"
 
 
 def container_debian(platform: Platform, *, apt_packages: APT_PACKAGES = frozenset()) -> Container:
@@ -26,6 +29,12 @@ def container_debian(platform: Platform, *, apt_packages: APT_PACKAGES = frozens
     """
     container = core().container(platform=platform).from_(FULLY_QUALIFIED_IMAGE_NAME_DEBIAN)
     if apt_packages:
+        snapshot_sources = (
+            f"deb http://snapshot.debian.org/archive/debian/{DEBIAN_SNAPSHOT_DATETIME} "
+            f"{DEBIAN_CODENAME} main\n"
+            f"deb http://snapshot.debian.org/archive/debian-security/{DEBIAN_SNAPSHOT_DATETIME} "
+            f"{DEBIAN_CODENAME}-security main\n"
+        )
         apt_install = (
             "apt-get",
             "install",
@@ -38,12 +47,30 @@ def container_debian(platform: Platform, *, apt_packages: APT_PACKAGES = frozens
             container.with_env_variable(name="DEBIAN_FRONTEND", value="noninteractive")
             # Prevent crashes from special characters/emojis in filenames or logs
             .with_env_variable(name="LC_ALL", value="C.UTF-8")
+            # Override sources.list with the frozen snapshot archive
+            .with_new_file(
+                path="/etc/apt/sources.list",
+                contents=snapshot_sources,
+                permissions=0o644,
+            )
+            # Tell APT to ignore validation errors on past dates
+            .with_new_file(
+                path="/etc/apt/apt.conf.d/99snapshot",
+                contents='Acquire::Check-Valid-Until "false";\n',
+                permissions=0o644,
+            )
+            # Scope cache volumes with the snapshot date to prevent stale data conflicts
             .with_mounted_cache(
                 "/var/cache/apt/archives",
-                core().cache_volume("shiryu-apt-archives-debian-trixie-slim"),
+                core().cache_volume(
+                    f"shiryu-apt-archives-debian-{DEBIAN_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
+                ),
             )
             .with_mounted_cache(
-                "/var/lib/apt/lists", core().cache_volume("shiryu-apt-lists-debian-trixie-slim")
+                "/var/lib/apt/lists",
+                core().cache_volume(
+                    f"shiryu-apt-lists-debian-{DEBIAN_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
+                ),
             )
             .with_new_file(
                 path="/etc/apt/apt.conf.d/keep-cache",
@@ -81,12 +108,10 @@ def container_uv(platform: Platform, *, apt_packages: APT_PACKAGES = frozenset()
     container = container_debian(platform, apt_packages={"pipx", *apt_packages})
     venv_path_str = "/opt/.venv"
     return (
-        container.with_mounted_cache(
-            "/root/.cache/pipx", core().cache_volume("shiryu-pipx-debian-trixie-slim")
-        )
+        container.with_mounted_cache("/root/.cache/pipx", core().cache_volume("shiryu-pipx"))
         .with_env_variable(name="PATH", value="/root/.local/bin:${PATH}", expand=True)
-        .with_exec(["pipx", "install", "uv"])
-        .with_mounted_cache("/root/.cache/uv", core().cache_volume("shiryu-uv-debian-trixie-slim"))
+        .with_exec(["pipx", "install", f"uv=={UV_VERSION}"])
+        .with_mounted_cache("/root/.cache/uv", core().cache_volume("shiryu-uv"))
         .with_env_variable("UV_LINK_MODE", "copy")
         .with_exec(["uv", "venv", venv_path_str])
         .with_env_variable(name="UV_PROJECT_ENVIRONMENT", value=venv_path_str)
