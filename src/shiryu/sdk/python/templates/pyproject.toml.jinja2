@@ -4,9 +4,9 @@ version = "{{ project_version }}"
 description = ""
 readme = "{{ readme_file_name }}"
 authors = [
-  {%- for project_author in project_authors|sort(attribute="name") %}
+  {% for project_author in project_authors|sort(attribute="name") %}
   { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
-  {%- endfor %}
+  {% endfor %}
 ]
 # linked to [tool.uv] environments
 # python3.6
@@ -25,9 +25,9 @@ dependencies = []
 
 # Dependencies that will be installed for the specific module call.
 [dependency-groups]
-{%- for module, dependencies in dependency_groups|dictsort %}
+{% for module, dependencies in dependency_groups|dictsort %}
 {{ module }} = ["{{ dependencies|list|sort|join('", "') }}"]
-{%- endfor %}
+{% endfor %}
 
 [project.urls]
 # "Homepage" = ""

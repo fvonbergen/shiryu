@@ -4,19 +4,19 @@ include:
 {{ name }}:
   extends: .dagger
   variables:
-    {%- for variable in variables %}
+    {% for variable in variables %}
     {{variable.name}}: "{{variable.value}}"
-    {%- endfor %}
+    {% endfor %}
   script:
-    {%- for script in scripts %}
+    {% for script in scripts %}
     - {{ script }}
-    {%- endfor %}
-  {%- if artifacts is not none %}
+    {% endfor %}
+  {% if artifacts is not none %}
   artifacts:
-    {%- if artifacts.paths|length != 0 %}
+    {% if artifacts.paths|length != 0 %}
     paths:
-      {%- for path in artifacts.paths %}
+      {% for path in artifacts.paths %}
       - {{ path }}
-      {%- endfor %}
-    {%- endif %}
-  {%- endif %}
+      {% endfor %}
+    {% endif %}
+  {% endif %}

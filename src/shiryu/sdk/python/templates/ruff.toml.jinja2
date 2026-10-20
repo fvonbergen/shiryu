@@ -1,8 +1,8 @@
 # target-version = "py38"
 cache-dir = "{{cache_folder}}"
-{%- if exclude is defined and exclude|length > 0 %}
+{% if exclude is defined and exclude|length > 0 %}
 exclude = ["{{ exclude|join('", "') }}"]
-{%- endif %}
+{% endif %}
 respect-gitignore = true
 line-length = 100
 

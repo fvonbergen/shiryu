@@ -12,45 +12,45 @@ inputs:
   sdk_language:
     description: "SDK programming language"
     default: "{{ sdk_language.default }}"
-  {%- for parameter in parameters %}
+  {% for parameter in parameters %}
   {{ parameter.name }}:
     description: "{{ parameter.description }}"
-    {%- if parameter.default is not none %}
+    {% if parameter.default is not none %}
     default: "{{ parameter.default }}"
-    {%- endif %}
-  {%- endfor %}
-{%- if release_tag_enabled %}
+    {% endif %}
+  {% endfor %}
+{% if release_tag_enabled %}
 outputs:
   tag:
     description: "Release tag, empty if there was nothing to release"
     value: {{ release_tag_output }}
-{%- endif -%}
-{{ '\n' }}
+{% endif %}
+
 runs:
   using: "composite"
   steps:
-    {%- for step in steps %}
+    {% for step in steps %}
     - id: {{ step.id }}
       name: {{ step.name }}
       uses: {{ step.uses }}
-      {%- if step.env|length != 0 %}
+      {% if step.env|length != 0 %}
       env:
-        {%- for step_env in step.env %}
+        {% for step_env in step.env %}
         {{ step_env.name }}: {{ step_env.value }}
-        {%- endfor %}
-      {%- endif %}
-      {%- if step.with_|length != 0 %}
+        {% endfor %}
+      {% endif %}
+      {% if step.with_|length != 0 %}
       with:
-        {%- for step_with_ in step.with_ %}
+        {% for step_with_ in step.with_ %}
         {{ step_with_.name }}: {{ step_with_.value }}
-        {%- endfor %}
-      {%- endif %}
-    {%- endfor %}
-    {%- if release_tag_enabled %}
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+    {% if release_tag_enabled %}
     - id: release_tag
       name: Release tag
       shell: bash
       env:
         OUTPUT: {{ release_tag_step_output }}
       run: {{ release_tag_command }}
-    {%- endif %}
+    {% endif %}

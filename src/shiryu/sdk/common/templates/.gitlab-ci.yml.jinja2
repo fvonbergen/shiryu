@@ -1,9 +1,9 @@
 include:
-  {%- for path in paths|sort %}
+  {% for path in paths|sort %}
   - local: "{{ path }}"
-  {%- endfor %}
+  {% endfor %}
 
 stages:
-{%- for stage in stages|sort %}
+{% for stage in stages|sort %}
   - {{ stage }}
-{%- endfor %}
+{% endfor %}

@@ -37,6 +37,8 @@ def get_jinja_environment(file_path: Path) -> jinja2.Environment:
             package_path=str(templates_file_path.relative_to(SHIRYU_PACKAGE_PATH)),
         ),
         autoescape=jinja2.select_autoescape(),
+        trim_blocks=True,
+        lstrip_blocks=True,
         keep_trailing_newline=True,
         undefined=jinja2.StrictUndefined,
     )

@@ -1,2 +1,4 @@
 *.swp
-{% if exclude is defined and exclude|length > 0 %}{{ exclude|join('\n') }}{% endif %}
+{% if exclude is defined and exclude|length > 0 %}
+{{ exclude|join('\n') }}
+{% endif %}
