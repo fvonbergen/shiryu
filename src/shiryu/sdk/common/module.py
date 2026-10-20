@@ -31,7 +31,7 @@ from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAU
 
 logger = logging.getLogger(__name__)
 
-DAGGER_VERSION = "1.0.0-beta.16"
+DAGGER_VERSION = "1.0.0-beta.19"
 
 
 def warning(message: str) -> None:
