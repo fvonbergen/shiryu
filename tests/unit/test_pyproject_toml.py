@@ -88,6 +88,7 @@ environments = [
   "python_version == '3.12'",
   "python_version == '3.13'",
   "python_version == '3.14'",
+  "python_version == '3.15'",
 ]"""
 
     assert rendered.strip() == expected_output.strip()

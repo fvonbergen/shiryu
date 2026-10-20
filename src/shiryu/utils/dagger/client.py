@@ -11,10 +11,20 @@ APT_PACKAGES = Set[str]
 WORKDIR_PATH: Final = PurePosixPath("/workspace")
 
 DEBIAN_CODENAME: Final = "trixie"
-DEBIAN_SNAPSHOT_DATETIME: Final = "20261019T203124Z"
-# FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = f"public.ecr.aws/debian/debian:{DEBIAN_CODENAME}-slim"
-FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = f"docker.io/library/debian:{DEBIAN_CODENAME}-slim"
-UV_VERSION: Final = "0.13.2"
+# https://snapshot.debian.org/
+DEBIAN_SNAPSHOT_DATETIME: Final = "20261019T000000Z"
+# Pick the multi-architecture manifest wrapper.
+# https://hub.docker.com/layers/library/debian/trixie-slim/images/sha256-918311b7b6c4c6f68b232ba516584925f6c78ad82b6fd534b98979df6438e483
+DEBIAN_MANIFEST_DIGEST: Final = (
+    "sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f"
+)
+# FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = (
+#    f"public.ecr.aws/debian/debian:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
+# )
+FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = (
+    f"docker.io/library/debian:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
+)
+UV_VERSION: Final = "0.13.3"
 
 
 def container_debian(platform: Platform, *, apt_packages: APT_PACKAGES = frozenset()) -> Container:

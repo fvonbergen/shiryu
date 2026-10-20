@@ -17,6 +17,6 @@
 ["","oci-sha",["docker.io/library/debian:trixie-slim"],"sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f"]
 ["","oci-sha",["docker.io/library/golang:1.25-alpine"],"sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59"]
 ["","oci-sha",["docker.io/library/python:3.12-slim"],"sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1"]
-["","oci-sha",["ghcr.io/astral-sh/uv:python3.14-alpine"],"sha256:d1238ee39def0c65fdda5be36be6a3c80c7cc01aa62ca09ece54bc6847e6e9e4"]
+["","oci-sha",["ghcr.io/astral-sh/uv:python3.14-alpine"],"sha256:fe7756b5411e9835a08e842ea254118ba795512c9f325d260b908edb615d1fad"]
 ["","vanity-url",["https://dagger.io/sdk/helpers"],"https://github.com/dagger/sdk-helpers"]
 ["","vanity-url",["https://dagger.io/sdk/python/entrypoint"],"https://github.com/dagger/python-sdk/entrypoint"]
