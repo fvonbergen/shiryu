@@ -192,7 +192,12 @@ class ReleaserInitializer(PythonModuleInitializer):
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"commitizen"}
+                sdk_module_name,
+                {
+                    # https://github.com/commitizen-tools/commitizen/blob/master/CHANGELOG.md#v430-2025-02-28
+                    # >= 4.3.0: Add uv_provider
+                    "commitizen >= 4.3.0"
+                },
             ),
         )
 

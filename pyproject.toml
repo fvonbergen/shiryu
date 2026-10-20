@@ -61,7 +61,7 @@ linter = [
   # >= 0.16.0: New PLR0917 rule
   "ruff >= 0.16.0",
 ]
-releaser = ["commitizen"]
+releaser = ["commitizen >= 4.3.0"]
 tester = [
   "pytest >= 7.4.0",
   "pytest-asyncio >= 0.24.0",
