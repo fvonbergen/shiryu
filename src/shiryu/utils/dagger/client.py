@@ -24,7 +24,7 @@ DEBIAN_MANIFEST_DIGEST: Final = (
 FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = (
     f"docker.io/library/debian:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
 )
-UV_VERSION: Final = "0.13.3"
+UV_VERSION: Final = "0.13.4"
 
 
 def container_debian(platform: Platform, *, apt_packages: APT_PACKAGES = frozenset()) -> Container:
