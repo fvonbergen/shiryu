@@ -6,7 +6,6 @@ from enum import Enum, auto, unique
 from pathlib import Path, PurePosixPath
 from typing import Final, final
 
-import dagger
 from dagger_clients.core import Container, Directory
 
 from ...utils.dagger.client import container_uv
@@ -194,11 +193,9 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         """
         initializer = cls._initializer_cls()
         project_metadata = await super()._get_project_metadata(source, project_name, platform)
-        project_container = container_uv(platform, apt_packages={"git"}).with_directory(".", source)
-        try:
-            pyproject_toml_file_contents = await project_container.file(
-                str(initializer._pyproject_toml_template_file().output_path)
-            ).contents()
+        pyproject_toml_path_str = str(initializer._pyproject_toml_template_file().output_path)
+        if await source.exists(pyproject_toml_path_str):
+            pyproject_toml_file_contents = await source.file(pyproject_toml_path_str).contents()
             pyproject_toml = tomllib.loads(pyproject_toml_file_contents)
             pyproject_toml_project = pyproject_toml["project"]
             project_metadata = replace(
@@ -212,15 +209,6 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
                     }
                 ),
             )
-        except dagger.QueryError:
-            ...
-        try:
-            project_version = (
-                await project_container.with_exec(["uv", "version", "--short"]).stdout()
-            ).strip()
-            project_metadata = replace(project_metadata, version=project_version)
-        except dagger.QueryError:
-            ...
         return project_metadata
 
     @final
