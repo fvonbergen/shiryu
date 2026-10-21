@@ -373,7 +373,7 @@ class Releaser(PythonModule):
         )
         exit_code = await executed_container.exit_code()
         if exit_code in CZ_NOTHING_TO_RELEASE_EXIT_CODES:
-            return None, None
+            return None
         if exit_code != 0:
             exception_message = (
                 f"{await executed_container.stdout()}{await executed_container.stderr()}"
@@ -524,9 +524,10 @@ class Releaser(PythonModule):
             self.__get_clean_push_urls(self.source, platform),
         )
         await self.__ensure_branch_head(container, branch)
-        bump_container, version = await self.__bump(container, vcs_user_name, vcs_user_email)
-        if version is None:
+        bump_result = await self.__bump(container, vcs_user_name, vcs_user_email)
+        if bump_result is None:
             return ""
+        bump_container, version = bump_result
         notes = await self.__release_notes(bump_container, version)
         await self.__push(
             bump_container, push_urls, branch, f"v{version}", auth_user_name, auth_token

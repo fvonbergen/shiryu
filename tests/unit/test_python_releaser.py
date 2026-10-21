@@ -82,7 +82,7 @@ async def test_python_releaser_bump_git_identity(vcs_user_name: str, vcs_user_em
     executed_container.exit_code = AsyncMock(return_value=0)
     executed_container.with_exec.return_value.stdout = AsyncMock(return_value="0.1.0\n")
 
-    bump_container, version = await Releaser._Releaser__bump(
+    bump_container, version = await Releaser._Releaser__bump(  # ty: ignore[unresolved-attribute]
         container, vcs_user_name, vcs_user_email
     )
 
