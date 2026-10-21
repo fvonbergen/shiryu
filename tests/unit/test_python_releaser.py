@@ -1,13 +1,21 @@
 """test_python_releaser module."""
 
 import json
+from unittest.mock import AsyncMock, MagicMock, call
 
 import dagger
 import pytest
+from dagger_clients.core import Container, ReturnType
 
 from shiryu.main import Shiryu
 from shiryu.sdk.common.module import SCM, ProjectNameType, SCMType
-from shiryu.sdk.python.modules.releaser import build_release_request
+from shiryu.sdk.python.module import ExecutionMode
+from shiryu.sdk.python.modules.releaser import (
+    VCS_USER_EMAIL_DAGGER_DEFAULT,
+    VCS_USER_NAME_DAGGER_DEFAULT,
+    Releaser,
+    build_release_request,
+)
 
 from .utils.common import Paths
 from .utils.python_init import TestCaseInit, build_test_cases_init
@@ -50,6 +58,48 @@ def python_releaser_init_paths(project_name: ProjectNameType, scm: SCMType) -> P
 
 
 TEST_CASES_RELEASER_INIT = build_test_cases_init((python_releaser_init_paths,))
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("vcs_user_name", "vcs_user_email"),
+    [
+        (VCS_USER_NAME_DAGGER_DEFAULT, VCS_USER_EMAIL_DAGGER_DEFAULT),
+        ("Release Bot", "release@example.com"),
+    ],
+    ids=["default_identity", "custom_identity"],
+)
+async def test_python_releaser_bump_git_identity(vcs_user_name: str, vcs_user_email: str) -> None:
+    """Ensure bump sets both Git identities before running Commitizen.
+
+    Args:
+        vcs_user_name: Release commit author and committer name.
+        vcs_user_email: Release commit author and committer email.
+    """
+    container = MagicMock(spec=Container)
+    container.with_env_variable.return_value = container
+    executed_container = container.with_exec.return_value
+    executed_container.exit_code = AsyncMock(return_value=0)
+    executed_container.with_exec.return_value.stdout = AsyncMock(return_value="0.1.0\n")
+
+    bump_container, version = await Releaser._Releaser__bump(
+        container, vcs_user_name, vcs_user_email
+    )
+
+    assert container.mock_calls[:5] == [
+        call.with_env_variable("GIT_AUTHOR_NAME", vcs_user_name),
+        call.with_env_variable("GIT_AUTHOR_EMAIL", vcs_user_email),
+        call.with_env_variable("GIT_COMMITTER_NAME", vcs_user_name),
+        call.with_env_variable("GIT_COMMITTER_EMAIL", vcs_user_email),
+        call.with_exec(
+            Releaser._build_uv_run_command(
+                ["cz", "bump", "--yes"], execution_mode=ExecutionMode.SCRIPT
+            ),
+            expect=ReturnType.ANY,
+        ),
+    ]
+    assert bump_container is executed_container
+    assert version == "0.1.0"
 
 
 @pytest.mark.asyncio

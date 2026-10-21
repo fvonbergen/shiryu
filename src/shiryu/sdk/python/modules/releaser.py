@@ -343,69 +343,52 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    async def __next_version(cls, container: Container) -> str | None:
-        """Compute the next version from the commits since the last release tag.
+    async def __bump(
+        cls,
+        container: Container,
+        vcs_user_name: VCSUserNameType,
+        vcs_user_email: VCSUserEMailType,
+    ) -> tuple[Container, str] | None:
+        """Bump the project version, update the changelog, commit and tag.
 
         Args:
             container: Project container.
+            vcs_user_name: Release commit author and committer name.
+            vcs_user_email: Release commit author and committer email.
 
         Returns:
-            The next version, or `None` if no commit is eligible for a release.
-
-        Raises:
-            RuntimeError: If commitizen fails for any other reason.
+            A container with the release commit and tag, and the new version.
         """
-        executed_container = container.with_exec(
-            cls._build_uv_run_command(
-                ["cz", "bump", "--get-next", "--yes"], execution_mode=ExecutionMode.SCRIPT
-            ),
-            expect=ReturnType.ANY,
+        executed_container = (
+            container.with_env_variable("GIT_AUTHOR_NAME", vcs_user_name)
+            .with_env_variable("GIT_AUTHOR_EMAIL", vcs_user_email)
+            .with_env_variable("GIT_COMMITTER_NAME", vcs_user_name)
+            .with_env_variable("GIT_COMMITTER_EMAIL", vcs_user_email)
+            .with_exec(
+                cls._build_uv_run_command(
+                    ["cz", "bump", "--yes"], execution_mode=ExecutionMode.SCRIPT
+                ),
+                expect=ReturnType.ANY,
+            )
         )
         exit_code = await executed_container.exit_code()
         if exit_code in CZ_NOTHING_TO_RELEASE_EXIT_CODES:
-            return None
+            return None, None
         if exit_code != 0:
             exception_message = (
                 f"{await executed_container.stdout()}{await executed_container.stderr()}"
             )
             raise RuntimeError(exception_message)
-        return (await executed_container.stdout()).strip()
 
-    @final
-    @classmethod
-    def __bump(
-        cls,
-        container: Container,
-        version: str,
-        vcs_user_name: VCSUserNameType,
-        vcs_user_email: VCSUserEMailType,
-    ) -> Container:
-        """Bump the project version, update the changelog, commit and tag.
-
-        Args:
-            container: Project container.
-            version: The new version.
-            vcs_user_name: Release commit author name.
-            vcs_user_email: Release commit author email.
-
-        Returns:
-            A container with the release commit and tag.
-        """
-        tag = f"v{version}"
-        git_identity = ["-c", f"user.name={vcs_user_name}", "-c", f"user.email={vcs_user_email}"]
-        return (
-            # Updates pyproject.toml and uv.lock together.
-            container.with_exec(["uv", "version", version, "--no-sync"])
-            .with_exec(
-                cls._build_uv_run_command(
-                    ["cz", "changelog", "--incremental", f"--unreleased-version={tag}"],
-                    execution_mode=ExecutionMode.SCRIPT,
-                )
-            )
-            .with_exec(["git", "add", "pyproject.toml", "uv.lock", "CHANGELOG.md"])
-            .with_exec(["git", *git_identity, "commit", "-m", f"chore: release {tag}"])
-            .with_exec(["git", *git_identity, "tag", "--annotate", tag, f"--message={tag}"])
+        version_container = executed_container.with_exec(
+            cls._build_uv_run_command(
+                ["cz", "version", "--project"], execution_mode=ExecutionMode.SCRIPT
+            ),
+            expect=ReturnType.ANY,
         )
+        version = (await version_container.stdout()).strip()
+
+        return executed_container, version
 
     @final
     @classmethod
@@ -434,7 +417,7 @@ class Releaser(PythonModule):
         container: Container,
         push_urls: PushUrls,
         branch: BranchType,
-        tag: str,
+        version: str,
         auth_user_name: AuthUserNameType,
         auth_token: AuthTokenType,
     ) -> Container:
@@ -444,7 +427,7 @@ class Releaser(PythonModule):
             container: Container with the release commit and tag.
             push_urls: Credential-free HTTPS push URLs.
             branch: Release branch.
-            tag: The release tag.
+            version: The release version.
             auth_user_name: User name sent along with the token.
             auth_token: Token with write access to the repository.
 
@@ -476,7 +459,7 @@ class Releaser(PythonModule):
                     "--atomic",
                     push_url,
                     f"HEAD:refs/heads/{branch}",
-                    f"refs/tags/{tag}",
+                    f"refs/tags/{version}",
                 ]
             )
         return await container.sync()
@@ -541,15 +524,15 @@ class Releaser(PythonModule):
             self.__get_clean_push_urls(self.source, platform),
         )
         await self.__ensure_branch_head(container, branch)
-        version = await self.__next_version(container)
+        bump_container, version = await self.__bump(container, vcs_user_name, vcs_user_email)
         if version is None:
             return ""
-        tag = f"v{version}"
-        bump_container = self.__bump(container, version, vcs_user_name, vcs_user_email)
-        notes = await self.__release_notes(bump_container, tag)
-        await self.__push(bump_container, push_urls, branch, tag, auth_user_name, auth_token)
-        await self.__create_releases(push_urls, tag, notes, auth_token, platform).sync()
-        return tag
+        notes = await self.__release_notes(bump_container, version)
+        await self.__push(
+            bump_container, push_urls, branch, f"v{version}", auth_user_name, auth_token
+        )
+        await self.__create_releases(push_urls, f"v{version}", notes, auth_token, platform).sync()
+        return f"v{version}"
 
 
 sdk_module: Final = Releaser
