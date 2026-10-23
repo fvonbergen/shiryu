@@ -535,7 +535,6 @@ class Releaser(PythonModule):
         await self.__create_releases(push_urls, f"v{version}", notes, auth_token, platform).sync()
         return f"v{version}"
 
-
     @final
     @dagger.function
     async def dry_run(
@@ -550,8 +549,7 @@ class Releaser(PythonModule):
         container = await self._exec_container(self.source, exclude, platform)
         executed_container = container.with_exec(
             self._build_uv_run_command(
-                ["cz", "bump", "--dry-run", "--yes"],
-                execution_mode=ExecutionMode.SCRIPT
+                ["cz", "bump", "--dry-run", "--yes"], execution_mode=ExecutionMode.SCRIPT
             ),
             expect=ReturnType.ANY,
         )
