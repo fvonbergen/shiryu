@@ -536,4 +536,26 @@ class Releaser(PythonModule):
         return f"v{version}"
 
 
+    @final
+    @dagger.function
+    async def dry_run(
+        self,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> str:
+        """Perform a dry run of the release process.
+
+        Perform a dry run of the release process without making any changes.
+        """
+        exclude: list[str] = []
+        container = await self._exec_container(self.source, exclude, platform)
+        executed_container = container.with_exec(
+            self._build_uv_run_command(
+                ["cz", "bump", "--dry-run", "--yes"],
+                execution_mode=ExecutionMode.SCRIPT
+            ),
+            expect=ReturnType.ANY,
+        )
+        return await executed_container.stdout()
+
+
 sdk_module: Final = Releaser

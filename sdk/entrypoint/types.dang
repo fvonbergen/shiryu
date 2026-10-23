@@ -20,6 +20,11 @@ type ModuleTypes {
         ),
       typeDef.withObject("Releaser", description: "Python SDK Releaser.")
         .withFunction(
+          function("dry_run", typeDef.withKind(TypeDefKind.STRING_KIND))
+            .withDescription("Perform a dry run of the release process.\n\nPerform a dry run of the release process without making any changes.")
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
           function("init", typeDef.withObject("Changeset"))
             .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
             .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
