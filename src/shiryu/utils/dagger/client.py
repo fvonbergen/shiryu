@@ -18,13 +18,12 @@ DEBIAN_SNAPSHOT_DATETIME: Final = "20261019T000000Z"
 DEBIAN_MANIFEST_DIGEST: Final = (
     "sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f"
 )
-# FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = (
-#    f"public.ecr.aws/debian/debian:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
-# )
+IMAGE_REF: Final = "docker.io/library/debian"
+# IMAGE_REF: Final = "public.ecr.aws/debian/debian"
 FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = (
-    f"docker.io/library/debian:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
+    f"{IMAGE_REF}:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
 )
-UV_VERSION: Final = "0.13.4"
+UV_VERSION: Final = "0.13.5"
 
 
 def container_debian(platform: Platform, *, apt_packages: APT_PACKAGES = frozenset()) -> Container:

@@ -51,7 +51,7 @@ build-backend = "hatchling.build"
 
 # Dependencies that will be installed for the specific module call.
 [dependency-groups]
-auditor = ["uv >= 0.13.4"]
+auditor = ["uv >= 0.11.0"]
 builder = ["hatch"]
 checker = ["pytest >= 7.4.0", "pytest-asyncio >= 0.24.0", "ty >= 0.0.1-alpha.8"]
 documenter = ["mkdocstrings-python >= 1.11.0", "zensical >= 0.0.66"]

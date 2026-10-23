@@ -31,8 +31,6 @@ from .vcs import VCS_PRIMARY_BRANCH, VCS_USER_EMAIL_DEFAULT, VCS_USER_NAME_DEFAU
 
 logger = logging.getLogger(__name__)
 
-DAGGER_VERSION = "1.0.0-beta.19"
-
 
 def warning(message: str) -> None:
     """Helper function to print a formatted warning to stderr.
@@ -299,6 +297,28 @@ class SDKModule[
         ...
 
     @final
+    @staticmethod
+    async def __get_module_tag_or_branch(platform: PlatformType, module_source: Directory) -> str:
+        """Get the exact Git tag or current branch name for the module source.
+
+        Args:
+            platform: The target platform type.
+            module_source: The directory containing the module source.
+
+        Returns:
+            The exact Git tag if available, otherwise the current branch name.
+        """
+        container = container_git(platform).with_directory(".", module_source)
+        try:
+            return (
+                await container.with_exec(["git", "describe", "--tags", "--exact-match"]).stdout()
+            ).strip()
+        except dagger.QueryError:
+            return (
+                await container.with_exec(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout()
+            ).strip()
+
+    @final
     @classmethod
     async def __get_shiryu_metadata(cls, platform: PlatformType) -> DaggerModuleMetadata:
         """Returns shiryu metadata.
@@ -309,39 +329,26 @@ class SDKModule[
         Returns:
             Shiryu metadata.
         """
-        module_source = core().current_module().source()
-        # TODO: I suppose this is a dagger issue. Getting engine version is failing:
-        #   dagger.QueryError: failed to compute cache key for Query.currentModule: failed to get
-        #   current module: no current module
-        # Get locked dagger engine version.
-        # dagger_version = await module_source.as_module_source().engine_version()
-        # Use a hard coded version
-        dagger_version = DAGGER_VERSION
         # Get module exact git tag. Falls back to the branch name if the commit is not tagged.
-        container = container_git(platform).with_directory(".", module_source)
         try:
-            module_tag = (
-                await container.with_exec(["git", "describe", "--tags", "--exact-match"]).stdout()
-            ).strip()
+            module_source = core().current_module().source()
+            dagger_engine_version, git_tag_or_branch = await asyncio.gather(
+                module_source.as_module_source().engine_version(),
+                cls.__get_module_tag_or_branch(platform, module_source),
+            )
             return DaggerModuleMetadata(
-                dagger_version=dagger_version, git_tag_or_branch=module_tag.strip()
+                dagger_version=dagger_engine_version.removeprefix("v"),
+                git_tag_or_branch=git_tag_or_branch,
             )
         except dagger.QueryError:
             # TODO: https://github.com/dagger/dagger/issues/13054
             # TODO: the try-exception block is necessary because dagger.dag.current_module() fails
             # in dagger-in-dagger used in our tester unit module call with a QueryError
-            try:
-                module_branch = (
-                    await container.with_exec(["git", "rev-parse", "--abbrev-ref", "HEAD"]).stdout()
-                ).strip()
-                return DaggerModuleMetadata(
-                    dagger_version=dagger_version, git_tag_or_branch=module_branch.strip()
-                )
-            except dagger.QueryError:
-                git_tag_or_branch = "undefined"
-                return DaggerModuleMetadata(
-                    dagger_version=dagger_version, git_tag_or_branch=git_tag_or_branch
-                )
+            dagger_version = "undefined"
+            git_tag_or_branch = "undefined"
+            return DaggerModuleMetadata(
+                dagger_version=dagger_version, git_tag_or_branch=git_tag_or_branch
+            )
 
     @classmethod
     @abstractmethod
