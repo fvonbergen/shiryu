@@ -909,8 +909,15 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
     )
 
 
-@staticmethod
-def _gitlab_param_manage(param: SDKModuleFunctionParameter) -> tuple[GitLabVariable, str]:
+def __gitlab_param_manage(param: SDKModuleFunctionParameter) -> tuple[GitLabVariable, str]:
+    """Map a parameter to a GitLab variable and shell option string.
+
+    Args:
+        param: The parameter to process.
+
+    Returns:
+        A tuple containing the GitLabVariable and the shell option string.
+    """
     env_name = param.name.upper()
     if param.is_secret:
         var_name, value = f"{env_name}_", f"env:{env_name}"
@@ -977,7 +984,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
 
     param_variables, formatted_parameters = zip(
-        *map(_gitlab_param_manage, sdk_module_function_parameters), strict=True
+        *map(__gitlab_param_manage, sdk_module_function_parameters), strict=True
     )
 
     variables = (
