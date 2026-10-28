@@ -32,8 +32,9 @@ from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 from .checker import Checker
 
+OptionalKeywordType = str | None
 OptionalKeywordDaggerType = Annotated[
-    str | None, dagger.Doc("Run tests that match substring expression")
+    OptionalKeywordType, dagger.Doc("Run tests that match substring expression")
 ]
 OPTIONAL_KEYWORD_DAGGER_DEFAULT: Final = None
 
@@ -248,7 +249,7 @@ class Tester(PythonModule):
 
     @final
     @classmethod
-    async def __unit(cls, container: Container, keyword: OptionalKeywordDaggerType) -> Container:
+    async def __unit(cls, container: Container, keyword: OptionalKeywordType) -> Container:
         """Unit test pipeline.
 
         Args:

@@ -42,8 +42,9 @@ def warning(message: str) -> None:
 
 
 PROJECT_VERSION_DEFAULT: Final = "0.0.0"
-ProjectNameDaggerType = Annotated[ProjectNameType | None, dagger.Doc("Project name")]
-PROJECT_NAME_DAGGER_DEFAULT: Final = None
+OptionalProjectNameType = ProjectNameType | None
+OptionalProjectNameDaggerType = Annotated[OptionalProjectNameType, dagger.Doc("Project name")]
+OPTIONAL_PROJECT_NAME_DAGGER_DEFAULT: Final = None
 # dagger_clients.core.Platform is built with: <os>/<platform_variant>
 # opencontainers image spec documentation: https://github.com/opencontainers/image-spec/blob/main/image-index.md#image-index-property-descriptions
 # Go Language documentation:
@@ -402,12 +403,9 @@ class SDKModule[
         Returns:
             The shiryu module and project metadata.
         """
-        shiryu_metadata, _project_metadata = await asyncio.gather(
+        shiryu_metadata, project_metadata = await asyncio.gather(
             cls.__get_shiryu_metadata(platform),
             cls._get_project_metadata(source, project_name, platform),
-        )
-        project_metadata = (
-            replace(_project_metadata, name=project_name) if project_name else _project_metadata
         )
         return (shiryu_metadata, project_metadata)
 
@@ -502,7 +500,7 @@ class SDKModule[
 
     async def _init(
         self,
-        project_name: ProjectNameType,
+        project_name: OptionalProjectNameType,
         is_update: IsUpdateType,
         scm: SCMType,
         platform: PlatformType,
@@ -519,8 +517,11 @@ class SDKModule[
             A changeset to initialize a project with the SDK module directory.
         """
         source = self.source
+        _project_name = self.project_name if project_name is None else project_name
         # Gather metadata.
-        shiryu_metadata, project_metadata = await self._get_metadata(source, project_name, platform)
+        shiryu_metadata, project_metadata = await self._get_metadata(
+            source, _project_name, platform
+        )
         # Build an initialized directory.
         init_directory = await self.__build_init_directory(
             shiryu_metadata, project_metadata, scm, platform
@@ -560,14 +561,13 @@ class SDKModule[
     async def init(
         self,
         *,
-        project_name: ProjectNameDaggerType = PROJECT_NAME_DAGGER_DEFAULT,
+        project_name: OptionalProjectNameDaggerType = OPTIONAL_PROJECT_NAME_DAGGER_DEFAULT,
         is_update: IsUpdateDaggerType = IS_UPDATE_DAGGER_DEFAULT,
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> Changeset:
         """Returns a changeset to initialize a project with the SDK module directory."""
-        _project_name = self.project_name if project_name is None else project_name
-        return await self._init(_project_name, is_update, scm, platform)
+        return await self._init(project_name, is_update, scm, platform)
 
     @classmethod
     @abstractmethod
@@ -692,7 +692,7 @@ def get_sdk_language(
     async def init(
         self,
         *,
-        project_name: ProjectNameDaggerType = PROJECT_NAME_DAGGER_DEFAULT,
+        project_name: OptionalProjectNameDaggerType = OPTIONAL_PROJECT_NAME_DAGGER_DEFAULT,
         is_update: IsUpdateDaggerType = IS_UPDATE_DAGGER_DEFAULT,
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
