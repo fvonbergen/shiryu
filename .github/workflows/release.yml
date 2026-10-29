@@ -13,64 +13,6 @@ env:
   DO_NOT_TRACK: "1"
 
 jobs:
-  builder_publish:
-    name: Builder publish
-    runs-on: ubuntu-latest
-    needs: releaser_release
-    if: needs.releaser_release.outputs.tag != ''
-    steps:
-      - id: check_out_code
-        name: Check out code
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.releaser_release.outputs.tag }}
-          fetch-depth: 0
-      - id: builder_publish
-        name: Builder publish
-        uses: "./.github/actions/builder_publish"
-        with:
-          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
-          sdk_language: "python"
-          platform: "linux/amd64"
-          repository_password: ${{ secrets.REPOSITORY_PASSWORD }}
-          repository_url: ${{ secrets.REPOSITORY_URL }}
-          repository_user: ${{ secrets.REPOSITORY_USER }}
-  documenter_document:
-    name: Documenter document
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: releaser_release
-    if: needs.releaser_release.outputs.tag != ''
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    steps:
-      - id: check_out_code
-        name: Check out code
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.releaser_release.outputs.tag }}
-          fetch-depth: 0
-      - id: documenter_document
-        name: Documenter document
-        uses: "./.github/actions/documenter_document"
-        with:
-          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
-          sdk_language: "python"
-          platform: "linux/amd64"
-      - id: upload_artifact
-        name: Upload artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: site/
-      - id: deploy_to_github_pages
-        name: Deploy to GitHub pages
-        uses: actions/deploy-pages@v5
   releaser_release:
     name: Releaser release
     runs-on: ubuntu-latest
