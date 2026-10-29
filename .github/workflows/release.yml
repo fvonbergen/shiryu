@@ -31,11 +31,11 @@ jobs:
         uses: "./.github/actions/releaser_release"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
+          shiryu_version: "feat/add-python-sdk-release-add-deploy"
           sdk_language: "python"
           auth_token: ${{ secrets.AUTH_TOKEN }}
           auth_user_name: "x-access-token"
-          branch: "main"
+          branch: "feat/add-python-sdk-release-add-deploy"
           platform: "linux/amd64"
           vcs_user_email: "ci@shiryu.dev"
           vcs_user_name: "CI Release Bot"

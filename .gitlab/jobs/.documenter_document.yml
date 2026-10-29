@@ -4,7 +4,7 @@ include:
 .documenter_document:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat/add-python-sdk-release"
+    SHIRYU_VERSION: "feat/add-python-sdk-release-add-deploy"
     SDK_LANGUAGE: "python"
     PLATFORM: "linux/amd64"
   script:
