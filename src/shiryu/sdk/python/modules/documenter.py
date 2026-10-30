@@ -134,7 +134,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             build_github_workflow_checkout_job(
                 (
                     GitHubWorkflowStepInputParameter(
-                        "ref", "${{ needs.releaser_release.outputs.tag }}"
+                        "ref", "${{ needs.builder_publish.outputs.last_tag }}"
                     ),
                     GitHubWorkflowStepInputParameter("fetch-depth", "0"),
                 )
@@ -151,7 +151,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                     actions=init_context_directory.scm.github_actions_workflows.actions
                     | {github_action},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
-                        GitHubWorkflowId.RELEASE,
+                        GitHubWorkflowId.DEPLOY,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
                             github_action=github_action,
@@ -176,8 +176,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                                     (),
                                 ),
                             ),
-                            needs=("releaser_release",),
-                            condition="needs.releaser_release.outputs.tag != ''",
+                            needs=("builder_publish",),
                             permissions=(
                                 ("contents", "read"),
                                 ("pages", "write"),
