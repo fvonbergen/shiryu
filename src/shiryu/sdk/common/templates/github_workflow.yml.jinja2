@@ -1,21 +1,23 @@
 name: {{ name }}
 
 on:
-  {% if on.keys()|length == 1 and on.values()|list|first is not none %} {{ on.keys()|list|first }}{% else %}
+  {% if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys()|list|first }}
+  {% else %}
   {% for action, action_properties in on|dictsort %}
   {% if action_properties is none %}
   {{ action }}:
   {% else %}
   {{ action }}:
-    {% for action_property_name, action_property_value in action_properties|dictsort %}
+    {% for action_property_name, action_property_value in action_properties.items() %}
     {% if action_property_value is none %}
     {{ action_property_name }}:
+    {% elif action_property_value is string %}
+    {{ action_property_name }}: {{ action_property_value }}
     {% else %}
-    {{ action_property_name }}:{% if action_property_value is string %} {{ action_property_value }}{% else %}
+    {{ action_property_name }}:
       {% for value in action_property_value %}
       - {{ value }}
       {% endfor %}
-    {% endif %}
     {% endif %}
     {% endfor %}
   {% endif %}
@@ -54,7 +56,7 @@ jobs:
     needs: {{ job.needs|join(", ") }}
     {% endif %}
     {% if job.condition is not none %}
-    if: {{ job.condition }}
+    if: ${{ "{{" }} {{ job.condition }} {{ "}}" }}
     {% endif %}
     {% if job.outputs|length != 0 %}
     outputs:
@@ -76,7 +78,12 @@ jobs:
         {% if step.with_|length != 0 %}
         with:
           {% for step_with_ in step.with_ %}
+          {% if "\n" in step_with_.value %}
+          {{ step_with_.name }}: |
+{{ step_with_.value|indent(12, true) }}
+          {% else %}
           {{ step_with_.name }}: {{ step_with_.value }}
+          {% endif %}
           {% endfor %}
         {% endif %}
       {% endfor %}

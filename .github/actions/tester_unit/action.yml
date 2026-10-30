@@ -8,7 +8,7 @@ inputs:
   shiryu_version:
     required: false
     description: "Shiryu version"
-    default: "feat/add-python-sdk-release"
+    default: "feat/add-python-sdk-release-add-deploy"
   sdk_language:
     description: "SDK programming language"
     default: "python"
@@ -25,6 +25,6 @@ runs:
       with:
         version: "v1.0.0-beta.20"
         verb: call
-        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        module: github.com/eamanu/shiryu@${{ inputs.shiryu_version }}
         args: ${{ inputs.sdk_language }} tester unit --platform="${{ inputs.platform }}"
         cloud-token: ${{ inputs.dagger_cloud_token }}
