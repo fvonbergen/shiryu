@@ -16,8 +16,14 @@ include:
     {% endfor %}
   {% endif %}
   stage: {{ job.stage }}
+  {% if job.needs|length == 0 %}
+  needs: []
+  {% else %}
   needs:
-    - [{{ job.needs| map('tojson')| join(", ") }}]
+    {% for need in job.needs %}
+    - {{ need|tojson }}
+    {% endfor %}
+  {% endif %}
   {% if job.script|length != 0 %}
   script:
     {% for script in job.script %}
@@ -42,4 +48,5 @@ include:
       {% endfor %}
     {% endif %}
   {% endif %}
+{{ "\n" }}
 {% endfor %}

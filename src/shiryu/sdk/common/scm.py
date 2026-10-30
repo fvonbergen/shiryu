@@ -508,6 +508,7 @@ class GitLabStageId(Enum):
     DOCUMENTATION = GitLabStageProperties("documentation", ())
     QUALITY = GitLabStageProperties("quality", ())
     RELEASE = GitLabStageProperties("release", ())
+    DEPLOY = GitLabStageProperties("deploy", ())
 
 
 @final

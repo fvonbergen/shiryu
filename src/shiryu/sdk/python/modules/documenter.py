@@ -234,9 +234,9 @@ class DocumenterInitializer(PythonModuleInitializer):
                     )
                     .add(GitLabStageId.DOCUMENTATION, gitlab_pages_stage_job)
                     .add(
-                        GitLabStageId.RELEASE,
+                        GitLabStageId.DEPLOY,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_stage_id=GitLabStageId.DEPLOY,
                             gitlab_job=gitlab_job,
                             needs=("release_releaser_release",),
                         ),
