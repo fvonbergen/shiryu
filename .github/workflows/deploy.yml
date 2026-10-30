@@ -2,7 +2,8 @@ name: deploy
 
 on:
   workflow_run:
-    workflows: ["release"]
+    workflows:
+      - release
     types:
       - completed
 

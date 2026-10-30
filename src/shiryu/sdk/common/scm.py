@@ -193,6 +193,15 @@ class GitHubWorkflowTriggerActionWorkflowDispatch:
     inputs: dict[str, str] | None
 
 
+@final
+@dataclass(frozen=True, slots=True)
+class GitHubWorkflowTriggerActionWorkflowRun:
+    """GitHubWorkflowTriggerActionWorkflowRun class."""
+
+    workflows: GitLabArrayType
+    types: GitLabArrayType
+
+
 class UnsetType(Enum):
     """Sentinel type to distinguish unprovided fields from explicit `None` values."""
 
@@ -209,6 +218,7 @@ class GitHubWorkflowTriggerAction:
 
     push: GitHubWorkflowTriggerActionPush | UnsetType | None
     workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | UnsetType | None
+    workflow_run: GitHubWorkflowTriggerActionWorkflowRun | UnsetType | None = UNSET
 
     def asdict(self) -> dict[str, Any]:
         """Converts the trigger action to a dictionary, excluding any fields set to UNSET.
@@ -260,6 +270,17 @@ class GitHubWorkflowId(Enum):
     RELEASE = GitHubWorkflowProperties(
         "release",
         GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None),
+        concurrency=("pages", False),
+    )
+    DEPLOY = GitHubWorkflowProperties(
+        "deploy",
+        GitHubWorkflowTriggerAction(
+            push=UNSET,
+            workflow_dispatch=UNSET,
+            workflow_run=GitHubWorkflowTriggerActionWorkflowRun(
+                workflows=("release",), types=("completed",)
+            ),
+        ),
         concurrency=("pages", False),
     )
 
@@ -841,6 +862,36 @@ def build_github_workflow_checkout_job(
         A configured GitHub Actions step object for checking out code.
     """
     return GitHubWorkflowJobStep("check_out_code", "Check out code", "actions/checkout@v7", with_)
+
+
+def build_github_workflow_github_script_job(
+    script: str,
+    result_encoding: str | None = None,
+    id_: str = "github_script",
+    name: str = "Run GitHub Script",
+) -> GitHubWorkflowJobStep:
+    """Builds a GitHub Actions step that runs a GitHub Script.
+
+    Args:
+        script: JavaScript source executed by actions/github-script.
+        result_encoding: Optional encoding for the script result.
+        id_: Step identifier.
+        name: Step display name.
+
+    Returns:
+        A configured GitHub Script step object.
+    """
+    with_: GitHubWorkflowStepInputParameters = (
+        GitHubWorkflowStepInputParameter("script", script),
+    )
+    if result_encoding is not None:
+        with_ += (GitHubWorkflowStepInputParameter("result-encoding", result_encoding),)
+    return GitHubWorkflowJobStep(
+        id_,
+        name,
+        "actions/github-script@v6",
+        with_,
+    )
 
 
 def build_github_workflow_job(  # noqa: PLR0913, PLR0917
