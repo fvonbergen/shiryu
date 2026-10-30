@@ -168,9 +168,9 @@ class BuilderInitializer(PythonModuleInitializer):
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
                     | {gitlab_job_builder_publish, gitlab_job_builder_test},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.RELEASE,
+                        GitLabStageId.DEPLOY,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_stage_id=GitLabStageId.DEPLOY,
                             gitlab_job=gitlab_job_builder_publish,
                             needs=("release_releaser_release",),
                         ),

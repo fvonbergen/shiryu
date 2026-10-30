@@ -30,8 +30,8 @@ def python_builder_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
                 ".gitlab/jobs/.builder_publish.yml",
                 ".gitlab/jobs/.builder_test.yml",
                 ".gitlab/stages/",
+                ".gitlab/stages/deploy.yml",
                 ".gitlab/stages/quality.yml",
-                ".gitlab/stages/release.yml",
             )
             if SCM.GITLAB in scm
             else ()
@@ -45,8 +45,8 @@ def python_builder_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pa
                 ".github/actions/builder_test/",
                 ".github/actions/builder_test/action.yml",
                 ".github/workflows/",
+                ".github/workflows/deploy.yml",
                 ".github/workflows/quality.yml",
-                ".github/workflows/release.yml",
             )
             if SCM.GITHUB in scm
             else ()

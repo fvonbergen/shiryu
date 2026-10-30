@@ -1,0 +1,15 @@
+include:
+  - local: ".gitlab/jobs/.builder_publish.yml"
+  - local: ".gitlab/jobs/.documenter_document.yml"
+
+deploy_builder_publish:
+  extends: .builder_publish
+  stage: deploy
+  needs:
+    - "release_releaser_release"
+
+deploy_documenter_document:
+  extends: .documenter_document
+  stage: deploy
+  needs:
+    - "release_releaser_release"
