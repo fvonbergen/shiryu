@@ -15,7 +15,12 @@ from dagger_clients.core import Changeset, Container, Directory, Platform, core
 from ...utils.class_name import ClassName
 from ...utils.dagger.client import container_git
 from ...utils.dagger.directory import directory_with_new_file
-from ...utils.dagger.function import ProjectNameType, SourceType, add_enum_values_as_methods
+from ...utils.dagger.function import (
+    ProjectNameType,
+    SecurityAuditType,
+    SourceType,
+    add_enum_values_as_methods,
+)
 from ...utils.enum import create_enum
 from ...utils.template import Mapping, Template, TemplateFile
 from .context import (
@@ -60,7 +65,6 @@ IsUpdateDaggerType = Annotated[
 ]
 IS_UPDATE_DAGGER_DEFAULT: Final = False
 SCMType = list[SCM]
-"""A list of Source Control Management (SCM) configurations."""
 SCMDaggerType = Annotated[
     SCMType, dagger.Doc("Project Source Code Management (SCM) list to be targeted or configured")
 ]
@@ -144,6 +148,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         init_context_vcs: SDKModuleInitContextDirectoryVcs,
         directory: Directory,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Initialize the directory with the VCS folders and files.
 
@@ -152,15 +157,16 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             init_context_vcs: SDK module initialization directory VCS context.
             directory: A directory to VCS initialize.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             Returns a directory with the VCS folders and files.
         """
         _project_authors = sorted(project_authors, key=lambda author: author.name)
         project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
-        container = container_git(platform)
         _directory = (
-            container.with_directory(".", directory)
+            (await container_git(platform, security_audit))
+            .with_directory(".", directory)
             .with_exec(["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH])
             .with_exec(["git", "config", "user.name", project_author.name])
             .with_exec(["git", "config", "user.email", project_author.email])
@@ -228,13 +234,14 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         )
 
     @classmethod
-    async def _init_directory(
+    async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
         init_directory: Directory,
         init_context_directory: SDKModuleInitContextDirectoryType,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -244,13 +251,18 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The initialization directory.
         """
         directory = init_directory
         directory = await cls.__vcs_init(
-            project_metadata.authors, init_context_directory.vcs, directory, platform
+            project_metadata.authors,
+            init_context_directory.vcs,
+            directory,
+            platform,
+            security_audit,
         )
         # README.md
         readme_md_template = cls._readme_md_template(project_metadata.name)
@@ -276,6 +288,7 @@ class SDKModule[
 
     source: SourceType
     project_name: ProjectNameType
+    security_audit: SecurityAuditType
 
     @staticmethod
     @abstractmethod
@@ -299,17 +312,22 @@ class SDKModule[
 
     @final
     @staticmethod
-    async def __get_module_tag_or_branch(platform: PlatformType, module_source: Directory) -> str:
+    async def __get_module_tag_or_branch(
+        platform: PlatformType, security_audit: SecurityAuditType, module_source: Directory
+    ) -> str:
         """Get the exact Git tag or current branch name for the module source.
 
         Args:
             platform: The target platform type.
+            security_audit: Security audit checks that can be enabled in the pipeline.
             module_source: The directory containing the module source.
 
         Returns:
             The exact Git tag if available, otherwise the current branch name.
         """
-        container = container_git(platform).with_directory(".", module_source)
+        container = (await container_git(platform, security_audit)).with_directory(
+            ".", module_source
+        )
         try:
             return (
                 await container.with_exec(["git", "describe", "--tags", "--exact-match"]).stdout()
@@ -321,11 +339,14 @@ class SDKModule[
 
     @final
     @classmethod
-    async def __get_shiryu_metadata(cls, platform: PlatformType) -> DaggerModuleMetadata:
+    async def __get_shiryu_metadata(
+        cls, platform: PlatformType, security_audit: SecurityAuditType
+    ) -> DaggerModuleMetadata:
         """Returns shiryu metadata.
 
         Args:
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             Shiryu metadata.
@@ -335,7 +356,7 @@ class SDKModule[
             module_source = core().current_module().source()
             dagger_engine_version, git_tag_or_branch = await asyncio.gather(
                 module_source.as_module_source().engine_version(),
-                cls.__get_module_tag_or_branch(platform, module_source),
+                cls.__get_module_tag_or_branch(platform, security_audit, module_source),
             )
             return DaggerModuleMetadata(
                 dagger_version=dagger_engine_version.removeprefix("v"),
@@ -354,7 +375,11 @@ class SDKModule[
     @classmethod
     @abstractmethod
     async def _get_project_metadata(
-        cls, source: SourceType, project_name: ProjectNameType, platform: PlatformType
+        cls,
+        source: SourceType,
+        project_name: ProjectNameType,
+        platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> ProjectMetadata:
         """Get project metadata.
 
@@ -364,12 +389,15 @@ class SDKModule[
             source: Project source directory.
             project_name: Project name.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The project metadata.
         """
         project_author = ProjectAuthor()
-        project_container = container_git(platform).with_directory(".", source)
+        project_container = (await container_git(platform, security_audit)).with_directory(
+            ".", source
+        )
         try:
             project_author_name = (
                 await project_container.with_exec(["git", "config", "user.name"]).stdout()
@@ -391,7 +419,11 @@ class SDKModule[
     @final
     @classmethod
     async def _get_metadata(
-        cls, source: SourceType, project_name: ProjectNameType, platform: PlatformType
+        cls,
+        source: SourceType,
+        project_name: ProjectNameType,
+        platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> tuple[DaggerModuleMetadata, ProjectMetadata]:
         """Helper function to return metadata for the SDK module and project.
 
@@ -399,24 +431,28 @@ class SDKModule[
             source: Project source directory.
             project_name: Project name.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The shiryu module and project metadata.
         """
         shiryu_metadata, project_metadata = await asyncio.gather(
-            cls.__get_shiryu_metadata(platform),
-            cls._get_project_metadata(source, project_name, platform),
+            cls.__get_shiryu_metadata(platform, security_audit),
+            cls._get_project_metadata(source, project_name, platform, security_audit),
         )
         return (shiryu_metadata, project_metadata)
 
     @final
     @classmethod
-    async def __is_vcs_init(cls, source: SourceType, platform: PlatformType) -> bool:
+    async def __is_vcs_init(
+        cls, source: SourceType, platform: PlatformType, security_audit: SecurityAuditType
+    ) -> bool:
         """Whether the dagger directory is initialized or not.
 
         Args:
             source: The project source directory.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             `True` if directory is git initialized, `False` otherwise.
@@ -424,7 +460,7 @@ class SDKModule[
         is_vcs_init: bool
         try:
             await (
-                container_git(platform)
+                (await container_git(platform, security_audit))
                 .with_directory(".", source)
                 .with_exec(["git", "rev-parse", "--is-inside-work-tree"])
                 .sync()
@@ -442,6 +478,7 @@ class SDKModule[
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Returns a SDK module initialized directory.
 
@@ -450,6 +487,7 @@ class SDKModule[
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             A SDK module initialized directory.
@@ -463,7 +501,7 @@ class SDKModule[
         # Build initialized directory.
         init_directory = core().directory()
         return await initializer_cls._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform
+            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
         )
 
     @final
@@ -474,6 +512,7 @@ class SDKModule[
         source: SourceType,
         is_update: IsUpdateType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Changeset:
         """Returns a project output directory merged with the SDK module initialized directory.
 
@@ -482,12 +521,13 @@ class SDKModule[
             source: Project source directory.
             is_update: Whether to update project directory files or not.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             A project directory merged with the SDK module initialized directory.
         """
         # Check if project is git initialized.
-        is_vcs_init = await cls.__is_vcs_init(source, platform)
+        is_vcs_init = await cls.__is_vcs_init(source, platform, security_audit)
         # Merge directories.
         vcs_excludes = [".git/"] if is_vcs_init else []
         init_directory_filtered = init_directory.filter(exclude=vcs_excludes)
@@ -518,16 +558,19 @@ class SDKModule[
         """
         source = self.source
         _project_name = self.project_name if project_name is None else project_name
+        security_audit = self.security_audit
         # Gather metadata.
         shiryu_metadata, project_metadata = await self._get_metadata(
-            source, _project_name, platform
+            source, _project_name, platform, security_audit
         )
         # Build an initialized directory.
         init_directory = await self.__build_init_directory(
-            shiryu_metadata, project_metadata, scm, platform
+            shiryu_metadata, project_metadata, scm, platform, security_audit
         )
         # Merge the SDK module initialized directory with the project output directory.
-        return await self.__build_output_directory(init_directory, source, is_update, platform)
+        return await self.__build_output_directory(
+            init_directory, source, is_update, platform, security_audit
+        )
 
     def log(self, exception: dagger.ExecError) -> None:
         """Logs a Dagger execution error with context on where it failed.
@@ -597,16 +640,18 @@ class SDKModule[
 
     @classmethod
     @abstractmethod
-    def _base_container(
+    async def _base_container(
         cls,
         init_context_container: SDKModuleInitContextContainerType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Container:
         """Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             A base container.
@@ -615,12 +660,13 @@ class SDKModule[
 
     @final
     @classmethod
-    def _init_container(
+    async def _init_container(
         cls,
         init_context_container: SDKModuleInitContextContainerType,
         source: SourceType,
         exclude: list[str],
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Container:
         """Helper function to return an initialized container for the SDK module.
 
@@ -629,18 +675,18 @@ class SDKModule[
             source: Project source directory.
             exclude: Exclude source files and folders.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             An initialized container for the SDK module.
         """
-        return cls._base_container(init_context_container, platform).with_directory(
-            ".", source, exclude=exclude
-        )
+        return (
+            await cls._base_container(init_context_container, platform, security_audit)
+        ).with_directory(".", source, exclude=exclude)
 
     @final
-    @classmethod
     async def _exec_container(
-        cls, source: SourceType, exclude: list[str], platform: PlatformType
+        self, source: SourceType, exclude: list[str], platform: PlatformType
     ) -> Container:
         """Helper function to return an initialized container for the SDK module.
 
@@ -652,9 +698,11 @@ class SDKModule[
         Returns:
             An initialized container for the SDK module.
         """
-        init_context_container = cls._create_init_context_container()
-        init_context_container = cls._init_context_container(init_context_container)
-        return cls._init_container(init_context_container, source, exclude, platform)
+        init_context_container = self._create_init_context_container()
+        init_context_container = self._init_context_container(init_context_container)
+        return await self._init_container(
+            init_context_container, source, exclude, platform, self.security_audit
+        )
 
 
 def get_sdk_language(

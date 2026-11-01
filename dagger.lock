@@ -14,6 +14,8 @@
 ["","git-sha",["github.com/dagger/python-sdk","refs/tags/v1.2.0"],"eb9c4aa175054d8d27109afec8ab4cc9818cf2e5"]
 ["","git-sha",["github.com/dagger/sdk-helpers","refs/tags/v1.0.5"],"2d593321b19e3519584b1bbd6e77d83b2be9de2f"]
 ["","git-sha",["github.com/dagger/sdk-helpers","refs/tags/v1.0.6"],"16e5bf2837eb1dc840a1c9ad7d6dba385f0038d3"]
+["","oci-latest",["docker.io/aquasec/trivy"],"0.76.1"]
+["","oci-sha",["docker.io/aquasec/trivy:0.76.1"],"sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c"]
 ["","oci-sha",["docker.io/library/debian:trixie-slim"],"sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f"]
 ["","oci-sha",["docker.io/library/golang:1.25-alpine"],"sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59"]
 ["","oci-sha",["docker.io/library/python:3.12-slim"],"sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1"]

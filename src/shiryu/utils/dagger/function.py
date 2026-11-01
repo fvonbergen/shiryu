@@ -1,10 +1,10 @@
 """function module."""
 
-from collections.abc import Callable
-from enum import Enum
+from collections.abc import Callable, Set
+from enum import Enum, StrEnum, unique
 from pathlib import Path
 from types import FunctionType
-from typing import Self
+from typing import Annotated, Final, Self, final
 from urllib.parse import unquote, urlparse
 
 import dagger
@@ -14,15 +14,35 @@ SourceType = Directory
 ProjectNameType = str
 
 
+@dagger.enum_type
+@final
+@unique
+class SecurityAudit(StrEnum):
+    """SecurityAudit options."""
+
+    CONTAINER = "container"
+    DEPENDENCIES = "dependencies"
+
+
+SecurityAuditType = Set[SecurityAudit]
+SecurityAuditDaggerType = Annotated[
+    list[SecurityAudit], dagger.Doc("Security audit checks that can be enabled in the pipeline.")
+]
+SECURITY_AUDIT_DEFAULT: Final = [SecurityAudit.CONTAINER, SecurityAudit.DEPENDENCIES]
+
+
 @dagger.object_type
 class DaggerBase:
     """DaggerBase class."""
 
     source: SourceType
     project_name: ProjectNameType
+    security_audit: SecurityAuditType
 
     @classmethod
-    async def create(cls, ws: Workspace) -> Self:
+    async def create(
+        cls, ws: Workspace, security_audit: SecurityAuditDaggerType = SECURITY_AUDIT_DEFAULT
+    ) -> Self:
         """
         Dagger factory class method.
 
@@ -30,6 +50,7 @@ class DaggerBase:
             ws: Dagger auto-populates it from the current workspace. The caller passes nothing for
                 it, and no project files are uploaded up front. The module pulls only the paths it
                 asks for.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             An instance built with `cls(...)`.
@@ -52,6 +73,7 @@ class DaggerBase:
                 gitignore=True,
             ),  # ty: ignore[unknown-argument]
             project_name=project_name,  # ty: ignore[unknown-argument]
+            security_audit=frozenset(security_audit),  # ty: ignore[unknown-argument]
         )
 
 
@@ -97,7 +119,11 @@ def add_enum_values_as_methods(
                 Returns:
                     Enum value class.
                 """
-                return enum_option.value(source=self.source, project_name=self.project_name)
+                return enum_option.value(
+                    source=self.source,
+                    project_name=self.project_name,
+                    security_audit=self.security_audit,
+                )
 
             __enum_value_template.__name__ = enum_option.name.lower()
             __enum_value_template.__doc__ = enum_option.value.__doc__

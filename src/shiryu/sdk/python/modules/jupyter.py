@@ -8,6 +8,7 @@ from dagger_clients.core import Container, Directory, Service, core
 
 from ....utils.dagger.client import container_debian
 from ....utils.dagger.directory import directory_with_new_file
+from ....utils.dagger.function import SecurityAuditType
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -61,13 +62,14 @@ class JupyterInitializer(PythonModuleInitializer):
         )
 
     @classmethod
-    async def _init_directory(
+    async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
         init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -77,12 +79,13 @@ class JupyterInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform
+            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
         )
 
         # <jupyter notebooks>/playground.ipynb
@@ -176,13 +179,15 @@ class Jupyter(PythonModule):
 
     @final
     @dagger.function
-    def notebooks(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> Directory:
+    async def notebooks(
+        self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
+    ) -> Directory:
         """Returns jupyter notebooks Directory."""
         jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
         export_path_str = "/export"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
         return (
-            container_debian(platform)
+            (await container_debian(platform, self.security_audit))
             .with_mounted_cache(jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME)
             .with_exec(
                 ["cp", "--archive", f"{jupyter_notebooks_cache_folder}/.", f"{export_path_str}/"]

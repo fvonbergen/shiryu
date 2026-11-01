@@ -10,7 +10,7 @@ from dagger_clients.core import Container, Directory
 
 from ...utils.dagger.client import container_uv
 from ...utils.dagger.directory import directory_with_new_file
-from ...utils.dagger.function import ProjectNameType, SourceType
+from ...utils.dagger.function import ProjectNameType, SecurityAuditType, SourceType
 from ...utils.template import Mapping, Template, TemplateFile
 from ..common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
 from ..common.module import (
@@ -90,13 +90,14 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         return TemplateFile(Path("pyproject.toml"))
 
     @classmethod
-    async def _init_directory(
+    async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
         init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -106,12 +107,13 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform
+            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
         )
         project_name = project_metadata.name
         project_authors = project_metadata.authors
@@ -156,7 +158,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         )
         init_directory = directory_with_new_file(init_directory, __init___py_template)
         return (
-            container_uv(platform)
+            (await container_uv(platform, security_audit))
             .with_directory(".", init_directory)
             .with_exec(["uv", "lock"])
             .directory(".")
@@ -179,7 +181,11 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
     @final
     @classmethod
     async def _get_project_metadata(
-        cls, source: SourceType, project_name: ProjectNameType, platform: PlatformType
+        cls,
+        source: SourceType,
+        project_name: ProjectNameType,
+        platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> ProjectMetadata:
         """Get project metadata.
 
@@ -187,12 +193,15 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
             source: Project source directory.
             project_name: Project name.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The project metadata.
         """
         initializer = cls._initializer_cls()
-        project_metadata = await super()._get_project_metadata(source, project_name, platform)
+        project_metadata = await super()._get_project_metadata(
+            source, project_name, platform, security_audit
+        )
         pyproject_toml_path_str = str(initializer._pyproject_toml_template_file().output_path)
         if await source.exists(pyproject_toml_path_str):
             pyproject_toml_file_contents = await source.file(pyproject_toml_path_str).contents()
@@ -223,19 +232,25 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
 
     @final
     @classmethod
-    def _base_container(
-        cls, init_context_container: SDKModuleInitContextContainer, platform: PlatformType
+    async def _base_container(
+        cls,
+        init_context_container: SDKModuleInitContextContainer,
+        platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Container:
         """Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             A base container.
         """
-        return container_uv(platform, apt_packages=init_context_container.apt_packages)
+        return await container_uv(
+            platform, security_audit, apt_packages=init_context_container.apt_packages
+        )
 
     @final
     @classmethod

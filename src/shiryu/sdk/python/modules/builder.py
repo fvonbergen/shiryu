@@ -304,15 +304,18 @@ class Builder(PythonModule):
     async def test(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Test the project installation process for the provided source Directory."""
         source = self.source
+        security_audit = self.security_audit
         exclude = []
         container = await self._exec_container(source, exclude, platform)
-        project_metadata = await self._get_project_metadata(source, self.project_name, platform)
+        project_metadata = await self._get_project_metadata(
+            source, self.project_name, platform, security_audit
+        )
         package_name = project_metadata.name
         package_name_version = f"{package_name}=={project_metadata.version}"
         try:
             directory = self.__build(container, platform)
             await (
-                container_uv(platform)
+                (await container_uv(platform, security_audit))
                 .with_directory(".", directory)
                 .with_exec(["uv", "venv"])
                 .with_exec(

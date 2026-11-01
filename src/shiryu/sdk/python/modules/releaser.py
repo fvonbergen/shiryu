@@ -11,7 +11,7 @@ from dagger_clients.core import Container, Directory, ReturnType, Secret
 
 from ....utils.dagger.client import container_debian, container_git
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SourceType
+from ....utils.dagger.function import SecurityAuditType, SourceType
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -212,13 +212,14 @@ class ReleaserInitializer(PythonModuleInitializer):
         return TemplateFile(Path(".cz.toml"))
 
     @classmethod
-    async def _init_directory(
+    async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
         init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -228,12 +229,13 @@ class ReleaserInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform
+            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
         )
         # .cz.toml
         _cz_toml_template_mapping: Mapping = {}
@@ -290,7 +292,9 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    async def __get_clean_push_urls(cls, source: SourceType, platform: PlatformType) -> PushUrls:
+    async def __get_clean_push_urls(
+        cls, source: SourceType, platform: PlatformType, security_audit: SecurityAuditType
+    ) -> PushUrls:
         """Retrieve cleaned HTTPS Git push URLs for a project directory.
 
         Extracts 'origin' push URLs via Dagger and normalizes them to credential-free HTTPS
@@ -299,12 +303,13 @@ class Releaser(PythonModule):
         Args:
             source: Project source directory.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             A list of validated, credential-free HTTPS Git remote URLs.
         """
         raw_origin = await (
-            container_git(platform)
+            (await container_git(platform, security_audit))
             .with_directory(".", source)
             .with_exec(["git", "remote", "get-url", "--all", "--push", "origin"])
             .stdout()
@@ -466,13 +471,14 @@ class Releaser(PythonModule):
 
     @final
     @classmethod
-    def __create_releases(
+    async def __create_releases(  # noqa: PLR0913, PLR0917
         cls,
         push_urls: PushUrls,
         tag: str,
         notes: str,
         auth_token: AuthTokenType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Container:
         """Create the GitHub or GitLab release of a pushed tag in every push URL.
 
@@ -482,12 +488,15 @@ class Releaser(PythonModule):
             notes: The release notes.
             auth_token: Token with write access to the repository releases.
             platform: The container platform.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The container after creating the releases.
         """
-        container = container_debian(
-            platform, apt_packages={"ca-certificates", "curl"}
+        container = (
+            await container_debian(
+                platform, security_audit, apt_packages={"ca-certificates", "curl"}
+            )
         ).with_secret_variable("RELEASE_AUTH_TOKEN", auth_token)
         curl_command = (
             "curl --fail-with-body --silent --show-error --request POST "
@@ -518,10 +527,11 @@ class Releaser(PythonModule):
         Returns the release tag, or an empty string if there is nothing to release, so CI can
         decide whether to run the publishing jobs and which ref to check out.
         """
+        security_audit = self.security_audit
         exclude: list[str] = []
         container, push_urls = await asyncio.gather(
             self._exec_container(self.source, exclude, platform),
-            self.__get_clean_push_urls(self.source, platform),
+            self.__get_clean_push_urls(self.source, platform, security_audit),
         )
         await self.__ensure_branch_head(container, branch)
         bump_result = await self.__bump(container, vcs_user_name, vcs_user_email)
@@ -532,7 +542,11 @@ class Releaser(PythonModule):
         await self.__push(
             bump_container, push_urls, branch, f"v{version}", auth_user_name, auth_token
         )
-        await self.__create_releases(push_urls, f"v{version}", notes, auth_token, platform).sync()
+        await (
+            await self.__create_releases(
+                push_urls, f"v{version}", notes, auth_token, platform, security_audit
+            )
+        ).sync()
         return f"v{version}"
 
     @final

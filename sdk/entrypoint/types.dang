@@ -202,13 +202,17 @@ type ModuleTypes {
       typeDef.withObject("Shiryu", description: "Shiryu class.")
         .withFunction(
           function("python", typeDef.withObject("python_module"))
-            .withDescription("python_module(source: dagger_clients.core.Directory, project_name: str)")
+            .withDescription("python_module(source: dagger_clients.core.Directory, project_name: str, security_audit: list[shiryu.utils.dagger.function.SecurityAudit])")
         )
         .withConstructor(
           function("", typeDef.withObject("Shiryu"))
-            .withDescription("Dagger factory class method.\n\nArgs:\n    ws: Dagger auto-populates it from the current workspace. The caller passes nothing for\n        it, and no project files are uploaded up front. The module pulls only the paths it\n        asks for.\n\nReturns:\n    An instance built with `cls(...)`.")
+            .withDescription("Dagger factory class method.\n\nArgs:\n    ws: Dagger auto-populates it from the current workspace. The caller passes nothing for\n        it, and no project files are uploaded up front. The module pulls only the paths it\n        asks for.\n    security_audit: Security audit checks that can be enabled in the pipeline.\n\nReturns:\n    An instance built with `cls(...)`.")
             .withArg("ws", typeDef.withObject("Workspace"), description: "A Dagger workspace detected from the current working directory or\nconstructed from a Directory.")
+            .withArg("security_audit", typeDef.withListOf(typeDef.withEnum("SecurityAudit", description: "SecurityAudit options.")), description: "Security audit checks that can be enabled in the pipeline.", defaultValue: ("[\"CONTAINER\", \"DEPENDENCIES\"]" :: Dagger.JSON!))
         ),
+      typeDef.withEnum("SecurityAudit", description: "SecurityAudit options.")
+        .withEnumMember("CONTAINER", value: "container")
+        .withEnumMember("DEPENDENCIES", value: "dependencies"),
       typeDef.withEnum("SCM", description: "SCM options.")
         .withEnumMember("GITHUB", value: "github")
         .withEnumMember("GITLAB", value: "gitlab"),

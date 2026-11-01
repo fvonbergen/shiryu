@@ -8,6 +8,7 @@ import dagger
 from dagger_clients.core import Container, Directory
 
 from ....utils.dagger.directory import directory_with_new_file
+from ....utils.dagger.function import SecurityAuditType
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -132,13 +133,14 @@ class CheckerInitializer(PythonModuleInitializer):
         )
 
     @classmethod
-    async def _init_directory(
+    async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
         init_directory: Directory,
         init_context_directory: PythonModuleInitContextDirectory,
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
+        security_audit: SecurityAuditType,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -148,12 +150,13 @@ class CheckerInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
+            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform
+            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
         )
         # ty.toml
         ty_toml_template_mapping: Mapping = {
