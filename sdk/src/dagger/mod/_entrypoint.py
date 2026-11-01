@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import pathlib
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 
 from dagger.mod._describe import (
     ArgumentDescription,
@@ -23,11 +23,12 @@ def write_entrypoint(
     *,
     name: str,
     output: pathlib.Path,
+    outside: Sequence[str] = (),
 ) -> None:
     """Write types.dang and main.dang for the module."""
     output.mkdir(parents=True, exist_ok=True)
     (output / "types.dang").write_text(render_types(desc))
-    (output / "main.dang").write_text(render_main(name))
+    (output / "main.dang").write_text(render_main(name, outside))
 
 
 def render_types(desc: ModuleDescription) -> str:
@@ -42,8 +43,23 @@ def render_types(desc: ModuleDescription) -> str:
     return "\n".join(lines)
 
 
-def render_main(name: str) -> str:
-    return MAIN_TEMPLATE.format(header=HEADER, name=_quote(name))
+def render_main(name: str, outside: Sequence[str] = ()) -> str:
+    """Return the module and each directory outside it from sources.
+
+    `outside` holds the directories outside the module that its build reads,
+    relative to the module directory.
+    """
+    return MAIN_TEMPLATE.format(
+        header=HEADER,
+        name=_quote(name),
+        outside="".join(
+            f"      .withDirectory(workspace.cwd + {_quote('/' + path)}, "
+            f"workspace.directory({_quote(path)}, exclude: {SOURCES_EXCLUDE}, "
+            "gitignore: true))\n"
+            for path in outside
+        ),
+        exclude=SOURCES_EXCLUDE,
+    )
 
 
 def _object(obj: ObjectDescription) -> list[str]:
@@ -54,13 +70,22 @@ def _object(obj: ObjectDescription) -> list[str]:
         deprecated = _opt("deprecated", obj.deprecated)
         head = f"typeDef.withObject({_quote(obj.name)}{description}{deprecated})"
     lines = [head]
+    if obj.collection:
+        lines.append(".withCollection")
     lines.extend(
         f".withField({_quote(field.name)}, {_type(field.type)}"
         f"{_opt('description', field.description)}"
         f"{_opt('deprecated', field.deprecated)})"
         for field in obj.fields
     )
+    for field in obj.fields:
+        if field.collection_role == "keys":
+            lines.append(f".withCollectionKeys({_quote(field.name)})")
+        elif field.collection_role == "delta":
+            lines.append(f".withCollectionDelta({_quote(field.name)})")
     for func in obj.functions:
+        if func.collection_get:
+            lines.append(f".withCollectionGet({_quote(func.name)})")
         lines += _wrap("withFunction", _function(func))
     if obj.constructor is not None:
         lines += _wrap("withConstructor", _function(obj.constructor))
@@ -170,16 +195,23 @@ def _indent(lines: list[str], width: int) -> list[str]:
     return [pad + line if i == 0 else pad + "  " + line for i, line in enumerate(lines)]
 
 
+SOURCES_EXCLUDE = '["**/.git", "**/.venv", "**/__pycache__"]'
+
 MAIN_TEMPLATE = """{header}
+# Needs Dagger v1.0.0-beta.18 or later; older engines report a missing "workspace" argument.
 type Entrypoint implements ModuleEntrypoint {{
   let moduleName: String! = {name}
 
-  pub types(workspace: Workspace!): [TypeDef!]! {{
+  pub sources(workspace: Workspace!): Directory! {{
+    directory
+{outside}      .withDirectory(workspace.cwd, workspace.directory(".", exclude: {exclude}, gitignore: true))
+  }}
+
+  pub types: [TypeDef!]! {{
     ModuleTypes().all
   }}
 
   pub call(
-    workspace: Workspace!,
     receiverType: String!,
     receiverValue: JSON,
     fnName: String!,
@@ -203,12 +235,10 @@ type Entrypoint implements ModuleEntrypoint {{
     (result :: JSON!)
   }}
 
-  # The module's own source, not the workspace the engine hands over: that is
-  # the caller's, which holds the module only when the module sits in it.
   let runtime: Container! {{
     PythonModuleBuild(
-      contextDir: directory.withDirectory(".", currentModule.source, exclude: ["**/.venv", "**/__pycache__"]),
-      subPath: ".",
+      contextDir: directory.withDirectory(".", currentModule.contextDirectory, exclude: ["**/.venv", "**/__pycache__"]),
+      subPath: currentModule.sourceSubpath,
       moduleName: moduleName,
     ).installed
   }}
