@@ -131,16 +131,6 @@ class DocumenterInitializer(PythonModuleInitializer):
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
         pre_steps = (build_github_workflow_checkout_job(),)
-        release_pre_steps = (
-            build_github_workflow_checkout_job(
-                (
-                    GitHubWorkflowStepInputParameter(
-                        "ref", "${{ needs.builder_publish.outputs.last_tag }}"
-                    ),
-                    GitHubWorkflowStepInputParameter("fetch-depth", "0"),
-                )
-            ),
-        )
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -158,7 +148,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                             github_action=github_action,
                             shiryu_version=shiryu_version,
                             job_environment=GITHUB_PAGES_ENVIRONMENT,
-                            pre_steps=release_pre_steps,
+                            pre_steps=pre_steps,
                             post_steps=(
                                 GitHubWorkflowJobStep(
                                     "upload_artifact",

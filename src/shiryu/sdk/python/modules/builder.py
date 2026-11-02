@@ -21,7 +21,6 @@ from ...common.scm import (
     GitLabStageId,
     build_github_action,
     build_github_workflow_checkout_job,
-    build_github_workflow_github_script_job,
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
@@ -36,14 +35,6 @@ RepositoryUserDaggerType = Annotated[str, dagger.Doc("Repository user")]
 RepositoryPasswordDaggerType = Annotated[Secret, dagger.Doc("Repository password")]
 
 PROJECT_DISTRIBUTABLE_FOLDER: Final = "dist"
-
-
-LIST_TAG_SCRIPT: Final = """const tags = await github.rest.repos.listTags({
-  owner: context.repo.owner,
-  repo: context.repo.repo,
-  per_page: 1
-});
-return tags.data.length ? tags.data[0].name : '';"""
 
 
 class BuilderInitializer(PythonModuleInitializer):
@@ -114,22 +105,7 @@ class BuilderInitializer(PythonModuleInitializer):
             post_script=(),
             artifacts=None,
         )
-        last_tag_step = build_github_workflow_github_script_job(
-            LIST_TAG_SCRIPT,
-            result_encoding="string",
-            id_="last_tag",
-            name="Get last tag",
-        )
         pre_steps = (build_github_workflow_checkout_job(),)
-        deploy_pre_steps = (
-            last_tag_step,
-            build_github_workflow_checkout_job(
-                (
-                    GitHubWorkflowStepInputParameter("ref", "${{ steps.last_tag.outputs.result }}"),
-                    GitHubWorkflowStepInputParameter("fetch-depth", "0"),
-                )
-            ),
-        )
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -147,10 +123,8 @@ class BuilderInitializer(PythonModuleInitializer):
                             github_action=github_action_builder_publish,
                             shiryu_version=shiryu_version,
                             job_environment=None,
-                            pre_steps=deploy_pre_steps,
+                            pre_steps=pre_steps,
                             post_steps=(),
-                            condition="github.event.workflow_run.conclusion == 'success'",
-                            outputs=(("last_tag", "${{ steps.last_tag.outputs.result }}"),),
                         ),
                     ).add(
                         GitHubWorkflowId.QUALITY,
