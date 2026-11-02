@@ -202,7 +202,7 @@ type ModuleTypes {
       typeDef.withObject("Shiryu", description: "Shiryu class.")
         .withFunction(
           function("python", typeDef.withObject("python_module"))
-            .withDescription("python_module(source: dagger_clients.core.Directory, project_name: str, security_audit: list[shiryu.utils.dagger.function.SecurityAudit])")
+            .withDescription("python_module(source: dagger_clients.core.Directory, project_name: str, security_audit: collections.abc.Set[shiryu.utils.dagger.function.SecurityAudit])")
         )
         .withConstructor(
           function("", typeDef.withObject("Shiryu"))
