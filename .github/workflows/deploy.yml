@@ -1,11 +1,11 @@
 name: deploy
 
 on:
-  workflow_run:
-    workflows:
-      - release
-    types:
-      - completed
+  push:
+    branches:
+      - main
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 # Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
 # However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
@@ -20,28 +20,10 @@ jobs:
   builder_publish:
     name: Builder publish
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    outputs:
-      last_tag: ${{ steps.last_tag.outputs.result }}
     steps:
-      - id: last_tag
-        name: Get last tag
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const tags = await github.rest.repos.listTags({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              per_page: 1
-            });
-            return tags.data.length ? tags.data[0].name : '';
-          result-encoding: string
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
-        with:
-          ref: ${{ steps.last_tag.outputs.result }}
-          fetch-depth: 0
       - id: builder_publish
         name: Builder publish
         uses: "./.github/actions/builder_publish"
@@ -68,9 +50,6 @@ jobs:
       - id: check_out_code
         name: Check out code
         uses: actions/checkout@v7
-        with:
-          ref: ${{ needs.builder_publish.outputs.last_tag }}
-          fetch-depth: 0
       - id: documenter_document
         name: Documenter document
         uses: "./.github/actions/documenter_document"

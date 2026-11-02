@@ -5,11 +5,13 @@ include:
 deploy_builder_publish:
   extends: .builder_publish
   stage: deploy
-  needs:
-    - "release_releaser_release"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
 
 deploy_documenter_document:
   extends: .documenter_document
   stage: deploy
   needs:
-    - "release_releaser_release"
+    - "deploy_builder_publish"
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
