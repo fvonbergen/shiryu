@@ -1,7 +1,7 @@
 name: {{ name }}
 
 on:
-  {% if on.keys()|length == 1 and on.values()|list|first is none %} {{ on.keys()|list|first }}
+  {% if on.keys()|length == 1 and on.values()|list|first is none %}  {{ on.keys()|list|first }}:
   {% else %}
   {% for action, action_properties in on|dictsort %}
   {% if action_properties is none %}

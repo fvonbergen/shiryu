@@ -167,7 +167,6 @@ class DocumenterInitializer(PythonModuleInitializer):
                                     (),
                                 ),
                             ),
-                            needs=("builder_publish",),
                             permissions=(
                                 ("contents", "read"),
                                 ("pages", "write"),
@@ -229,7 +228,6 @@ class DocumenterInitializer(PythonModuleInitializer):
                         build_gitlab_stage_job(
                             gitlab_stage_id=GitLabStageId.DEPLOY,
                             gitlab_job=gitlab_job,
-                            needs=("release_releaser_release",),
                         ),
                     )
                     .add(

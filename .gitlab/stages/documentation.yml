@@ -9,7 +9,7 @@ documentation_documenter_document:
 pages:
   stage: documentation
   needs:
-    - ["documentation_documenter_document"]
+    - "documentation_documenter_document"
   script:
     - echo "Deploying site"
   artifacts:

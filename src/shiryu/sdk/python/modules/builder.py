@@ -146,7 +146,6 @@ class BuilderInitializer(PythonModuleInitializer):
                         build_gitlab_stage_job(
                             gitlab_stage_id=GitLabStageId.DEPLOY,
                             gitlab_job=gitlab_job_builder_publish,
-                            needs=("release_releaser_release",),
                         ),
                     ).add(
                         GitLabStageId.QUALITY,

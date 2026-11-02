@@ -4,5 +4,6 @@ include:
 release_releaser_release:
   extends: .releaser_release
   stage: release
-  needs: []
+  needs:
+    - []
   when: manual

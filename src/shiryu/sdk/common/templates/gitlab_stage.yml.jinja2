@@ -17,7 +17,8 @@ include:
   {% endif %}
   stage: {{ job.stage }}
   {% if job.needs|length == 0 %}
-  needs: []
+  needs:
+    - []
   {% else %}
   needs:
     {% for need in job.needs %}
@@ -48,5 +49,4 @@ include:
       {% endfor %}
     {% endif %}
   {% endif %}
-{{ "\n" }}
 {% endfor %}

@@ -498,7 +498,13 @@ class GitLabStageId(Enum):
     DOCUMENTATION = GitLabStageProperties("documentation", ())
     QUALITY = GitLabStageProperties("quality", ())
     RELEASE = GitLabStageProperties("release", ())
-    DEPLOY = GitLabStageProperties("deploy", ())
+    DEPLOY = GitLabStageProperties(
+        "deploy",
+        (
+            '$CI_COMMIT_BRANCH == "main"',
+            "$CI_COMMIT_TAG =~ /^v[0-9]+\\.[0-9]+\\.[0-9]+$/",
+        ),
+    )
 
 
 @final
