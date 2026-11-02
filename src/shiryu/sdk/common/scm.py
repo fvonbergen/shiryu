@@ -785,7 +785,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
             GitHubWorkflowRunStep(
                 f"call_dagger_{id_}",
                 f"Call Dagger {name}",
-                "dagger/dagger-for-github@v8.4.0",
+                "dagger/dagger-for-github@v8.4.1",
                 (
                     *[
                         GitHubWorkflowStepEnvParameter(
@@ -1001,7 +1001,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
             (
                 "dagger "
                 f"--load-module={gitlab_shiryu_module}@${{{shiryu_version_gitlab_variable.name}}} "
-                f"call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
+                f"api call ${{{sdk_language_gitlab_variable.name}}} {sdk_module_name} "
                 f"{sdk_module_function_name}"
             ),
             *formatted_parameters,

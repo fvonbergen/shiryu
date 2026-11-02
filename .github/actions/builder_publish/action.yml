@@ -27,7 +27,7 @@ runs:
   steps:
     - id: call_dagger_builder_publish
       name: Call Dagger Builder publish
-      uses: dagger/dagger-for-github@v8.4.0
+      uses: dagger/dagger-for-github@v8.4.1
       env:
         REPOSITORY_PASSWORD: "${{ inputs.repository_password }}"
       with:

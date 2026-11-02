@@ -39,7 +39,7 @@ runs:
   steps:
     - id: call_dagger_releaser_release
       name: Call Dagger Releaser release
-      uses: dagger/dagger-for-github@v8.4.0
+      uses: dagger/dagger-for-github@v8.4.1
       env:
         AUTH_TOKEN: "${{ inputs.auth_token }}"
       with:
