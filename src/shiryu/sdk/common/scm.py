@@ -520,13 +520,7 @@ class GitLabStageId(Enum):
         ),
     )
     QUALITY = GitLabStageProperties("quality", ())
-    RELEASE = GitLabStageProperties(
-        "release",
-        (
-            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
-            f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
-        ),
-    )
+    RELEASE = GitLabStageProperties("release", ())
 
 
 @final
