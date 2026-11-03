@@ -805,14 +805,6 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     action_yml_template_mapping: Mapping = {
         "function": sdk_module_function_name,
         "module": sdk_module_name,
-        # TODO: we should move to releaser_release and it as another step
-        "release_tag_enabled": sdk_module_name == "releaser"
-        and sdk_module_function_name == "release",
-        "release_tag_output": "${{ steps.release_tag.outputs.tag }}",
-        "release_tag_step_output": "${{ steps.call_dagger_releaser_release.outputs.output }}",
-        "release_tag_command": (
-            'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"'
-        ),
         "shiryu_version": {"default": shiryu_version},
         "sdk_language": {"default": sdk_language},
         "parameters": sdk_module_function_parameters,
