@@ -3,6 +3,9 @@ name: quality
 on:
   push:
 
+permissions:
+  contents: read
+
 env:
   DO_NOT_TRACK: "1"
 

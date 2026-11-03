@@ -1,13 +1,11 @@
 include:
-  # TODO: remove stage after feat-add-python-sdk branch merge. It's only used for testing.
   - local: ".gitlab/stages/deploy.yml"
-  - local: ".gitlab/stages/documentation.yml"
+  - local: ".gitlab/stages/publish.yml"
   - local: ".gitlab/stages/quality.yml"
   - local: ".gitlab/stages/release.yml"
 
 stages:
-  # TODO: remove stage after feat-add-python-sdk branch merge. It's only used for testing.
   - deploy
-  - documentation
+  - publish
   - quality
   - release

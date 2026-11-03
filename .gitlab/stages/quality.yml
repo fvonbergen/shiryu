@@ -10,35 +10,28 @@ include:
 quality_auditor_audit:
   extends: .auditor_audit
   stage: quality
-  needs:
-    - []
+  needs: []
 quality_builder_test:
   extends: .builder_test
   stage: quality
-  needs:
-    - []
+  needs: []
 quality_checker_check:
   extends: .checker_check
   stage: quality
-  needs:
-    - []
+  needs: []
 quality_documenter_document:
   extends: .documenter_document
   stage: quality
-  needs:
-    - []
+  needs: []
 quality_linter_lint_code:
   extends: .linter_lint_code
   stage: quality
-  needs:
-    - []
+  needs: []
 quality_linter_lint_vcs:
   extends: .linter_lint_vcs
   stage: quality
-  needs:
-    - []
+  needs: []
 quality_tester_unit:
   extends: .tester_unit
   stage: quality
-  needs:
-    - []
+  needs: []

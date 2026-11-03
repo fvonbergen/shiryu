@@ -15,6 +15,9 @@ from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
+from .vcs import VCS_PRIMARY_BRANCH
+
+MATCHING_TAGS_REGEX: Final = r"v[0-9]+\.[0-9]+\.[0-9]+"
 
 
 @final
@@ -248,30 +251,37 @@ class GitHubWorkflowProperties:
 class GitHubWorkflowId(Enum):
     """GitHubWorkflowId options."""
 
-    DOCUMENTATION = GitHubWorkflowProperties(
-        "documentation",
-        GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET),
-        permissions=(("contents", "read"), ("pages", "write"), ("id-token", "write")),
-        concurrency=("pages", False),
-    )
-    QUALITY = GitHubWorkflowProperties(
-        "quality", GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET)
-    )
-    RELEASE = GitHubWorkflowProperties(
-        "release",
-        GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None),
-        concurrency=("pages", False),
-    )
     DEPLOY = GitHubWorkflowProperties(
         "deploy",
         GitHubWorkflowTriggerAction(
             push=GitHubWorkflowTriggerActionPush(
-                branches=("main",),
-                tags=("v[0-9]+.[0-9]+.[0-9]+",),  # TODO: this should be taken from a environment variable or configuration
+                branches=(VCS_PRIMARY_BRANCH,), tags=(MATCHING_TAGS_REGEX,)
             ),
             workflow_dispatch=UNSET,
         ),
+        permissions=(("contents", "read"),),
+        # TODO: This should be modified by the documentation module.
         concurrency=("pages", False),
+    )
+    PUBLISH = GitHubWorkflowProperties(
+        "publish",
+        GitHubWorkflowTriggerAction(
+            push=GitHubWorkflowTriggerActionPush(
+                branches=(VCS_PRIMARY_BRANCH,), tags=(MATCHING_TAGS_REGEX,)
+            ),
+            workflow_dispatch=UNSET,
+        ),
+        permissions=(("contents", "read"),),
+    )
+    QUALITY = GitHubWorkflowProperties(
+        "quality",
+        GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET),
+        permissions=(("contents", "read"),),
+    )
+    RELEASE = GitHubWorkflowProperties(
+        "release",
+        GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None),
+        permissions=(("contents", "read"),),
     )
 
 
@@ -495,14 +505,26 @@ class GitLabStageProperties:
 class GitLabStageId(Enum):
     """GitLabStageId options."""
 
-    DOCUMENTATION = GitLabStageProperties("documentation", ())
-    QUALITY = GitLabStageProperties("quality", ())
-    RELEASE = GitLabStageProperties("release", ())
     DEPLOY = GitLabStageProperties(
         "deploy",
         (
-            '$CI_COMMIT_BRANCH == "main"',
-            "$CI_COMMIT_TAG =~ /^v[0-9]+\\.[0-9]+\\.[0-9]+$/",
+            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
+            f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
+        ),
+    )
+    PUBLISH = GitLabStageProperties(
+        "publish",
+        (
+            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
+            f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
+        ),
+    )
+    QUALITY = GitLabStageProperties("quality", ())
+    RELEASE = GitLabStageProperties(
+        "release",
+        (
+            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
+            f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
         ),
     )
 
@@ -789,6 +811,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     action_yml_template_mapping: Mapping = {
         "function": sdk_module_function_name,
         "module": sdk_module_name,
+        # TODO: we should move to releaser_release and it as another step
         "release_tag_enabled": sdk_module_name == "releaser"
         and sdk_module_function_name == "release",
         "release_tag_output": "${{ steps.release_tag.outputs.tag }}",

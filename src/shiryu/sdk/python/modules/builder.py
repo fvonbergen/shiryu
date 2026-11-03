@@ -17,7 +17,6 @@ from ...common.module import (
 )
 from ...common.scm import (
     GitHubWorkflowId,
-    GitHubWorkflowStepInputParameter,
     GitLabStageId,
     build_github_action,
     build_github_workflow_checkout_job,
@@ -117,7 +116,7 @@ class BuilderInitializer(PythonModuleInitializer):
                     actions=init_context_directory.scm.github_actions_workflows.actions
                     | {github_action_builder_publish, github_action_builder_test},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
-                        GitHubWorkflowId.DEPLOY,
+                        GitHubWorkflowId.PUBLISH,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
                             github_action=github_action_builder_publish,
@@ -142,7 +141,7 @@ class BuilderInitializer(PythonModuleInitializer):
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
                     | {gitlab_job_builder_publish, gitlab_job_builder_test},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.DEPLOY,
+                        GitLabStageId.PUBLISH,
                         build_gitlab_stage_job(
                             gitlab_stage_id=GitLabStageId.DEPLOY,
                             gitlab_job=gitlab_job_builder_publish,

@@ -1,0 +1,34 @@
+name: publish
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v[0-9]+\.[0-9]+\.[0-9]+
+
+permissions:
+  contents: read
+
+env:
+  DO_NOT_TRACK: "1"
+
+jobs:
+  builder_publish:
+    name: Builder publish
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v7
+      - id: builder_publish
+        name: Builder publish
+        uses: "./.github/actions/builder_publish"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "undefined"
+          sdk_language: "python"
+          platform: "linux/amd64"
+          repository_password: ${{ secrets.REPOSITORY_PASSWORD }}
+          repository_url: ${{ secrets.REPOSITORY_URL }}
+          repository_user: ${{ secrets.REPOSITORY_USER }}

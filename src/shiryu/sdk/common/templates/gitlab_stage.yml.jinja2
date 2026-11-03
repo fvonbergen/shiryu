@@ -16,15 +16,7 @@ include:
     {% endfor %}
   {% endif %}
   stage: {{ job.stage }}
-  {% if job.needs|length == 0 %}
-  needs:
-    - []
-  {% else %}
-  needs:
-    {% for need in job.needs %}
-    - {{ need|tojson }}
-    {% endfor %}
-  {% endif %}
+  needs: [{% if job.needs|length != 0 %}"{{ job.needs|list|sort|join('", "') }}"{% endif %}]
   {% if job.script|length != 0 %}
   script:
     {% for script in job.script %}
