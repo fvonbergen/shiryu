@@ -15,6 +15,9 @@ from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
+from .vcs import VCS_PRIMARY_BRANCH
+
+MATCHING_TAGS_REGEX: Final = r"v[0-9]+\.[0-9]+\.[0-9]+"
 
 
 @final
@@ -248,19 +251,37 @@ class GitHubWorkflowProperties:
 class GitHubWorkflowId(Enum):
     """GitHubWorkflowId options."""
 
-    DOCUMENTATION = GitHubWorkflowProperties(
-        "documentation",
-        GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET),
-        permissions=(("contents", "read"), ("pages", "write"), ("id-token", "write")),
+    DEPLOY = GitHubWorkflowProperties(
+        "deploy",
+        GitHubWorkflowTriggerAction(
+            push=GitHubWorkflowTriggerActionPush(
+                branches=(VCS_PRIMARY_BRANCH,), tags=(MATCHING_TAGS_REGEX,)
+            ),
+            workflow_dispatch=UNSET,
+        ),
+        permissions=(("contents", "read"),),
+        # TODO: This should be modified by the documentation module.
         concurrency=("pages", False),
     )
+    PUBLISH = GitHubWorkflowProperties(
+        "publish",
+        GitHubWorkflowTriggerAction(
+            push=GitHubWorkflowTriggerActionPush(
+                branches=(VCS_PRIMARY_BRANCH,), tags=(MATCHING_TAGS_REGEX,)
+            ),
+            workflow_dispatch=UNSET,
+        ),
+        permissions=(("contents", "read"),),
+    )
     QUALITY = GitHubWorkflowProperties(
-        "quality", GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET)
+        "quality",
+        GitHubWorkflowTriggerAction(push=None, workflow_dispatch=UNSET),
+        permissions=(("contents", "read"),),
     )
     RELEASE = GitHubWorkflowProperties(
         "release",
         GitHubWorkflowTriggerAction(push=UNSET, workflow_dispatch=None),
-        concurrency=("pages", False),
+        permissions=(("contents", "read"),),
     )
 
 
@@ -484,9 +505,22 @@ class GitLabStageProperties:
 class GitLabStageId(Enum):
     """GitLabStageId options."""
 
-    DOCUMENTATION = GitLabStageProperties("documentation", ())
+    DEPLOY = GitLabStageProperties(
+        "deploy",
+        (
+            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
+            f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
+        ),
+    )
+    PUBLISH = GitLabStageProperties(
+        "publish",
+        (
+            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
+            f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
+        ),
+    )
     QUALITY = GitLabStageProperties("quality", ())
-    RELEASE = GitLabStageProperties("release", ())
+    RELEASE = GitLabStageProperties("release", (f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',))
 
 
 @final
@@ -771,13 +805,6 @@ def build_github_action(  # noqa: PLR0913, PLR0917
     action_yml_template_mapping: Mapping = {
         "function": sdk_module_function_name,
         "module": sdk_module_name,
-        "release_tag_enabled": sdk_module_name == "releaser"
-        and sdk_module_function_name == "release",
-        "release_tag_output": "${{ steps.release_tag.outputs.tag }}",
-        "release_tag_step_output": "${{ steps.call_dagger_releaser_release.outputs.output }}",
-        "release_tag_command": (
-            'echo "tag=$(printf \'%s\' "$OUTPUT" | tr -d \'[:space:]\')" >> "$GITHUB_OUTPUT"'
-        ),
         "shiryu_version": {"default": shiryu_version},
         "sdk_language": {"default": sdk_language},
         "parameters": sdk_module_function_parameters,
@@ -840,7 +867,9 @@ def build_github_workflow_checkout_job(
     Returns:
         A configured GitHub Actions step object for checking out code.
     """
-    return GitHubWorkflowJobStep("check_out_code", "Check out code", "actions/checkout@v7", with_)
+    return GitHubWorkflowJobStep(
+        "check_out_code", "Check out code", "actions/checkout@v7.0.1", with_
+    )
 
 
 def build_github_workflow_job(  # noqa: PLR0913, PLR0917
@@ -1026,6 +1055,19 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     return GitLabJob(id_, job_name, job_yml_template, sdk_module_function_parameters)
 
 
+def build_gitlab_stage_name(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJob) -> str:
+    """Build a GitLab stage name from a stage ID and a job object.
+
+    Args:
+        gitlab_stage_id: The GitLab stage id.
+        gitlab_job: The GitLab job.
+
+    Returns:
+        A formatted string representing the GitLab stage name.
+    """
+    return f"{gitlab_stage_id.name.lower()}-{gitlab_job.id_}"
+
+
 def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
@@ -1043,13 +1085,12 @@ def build_gitlab_stage_job(
     Returns:
         A GitLab stage job.
     """
-    gitlab_stage_name = gitlab_stage_id.name.lower()
     return GitLabStageJob(
         path=str(gitlab_job.template.template_file.output_path),
-        name=f"{gitlab_stage_name}_{gitlab_job.id_}",
+        name=build_gitlab_stage_name(gitlab_stage_id, gitlab_job),
         extends=(gitlab_job.name,),
         variables=(),
-        stage=gitlab_stage_name,
+        stage=gitlab_stage_id.name.lower(),
         needs=needs,
         rules=gitlab_stage_id.value.rules,
         when=when,

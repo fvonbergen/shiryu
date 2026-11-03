@@ -7,8 +7,6 @@ from typing import Final, final
 import dagger
 from dagger_clients.core import Changeset, Container, Directory
 
-from shiryu.sdk.common.utils import PROJECT_SOURCE_CODE_FOLDER
-
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.dagger.function import SecurityAuditType
 from ....utils.template import Mapping, Template, TemplateFile
@@ -33,8 +31,10 @@ from ...common.scm import (
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
+    build_gitlab_stage_name,
 )
 from ...common.templates import COMMON_JINJA_ENVIRONMENT
+from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
 from ..context import PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
@@ -119,28 +119,21 @@ class DocumenterInitializer(PythonModuleInitializer):
             ),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
+        gitlab_stage_id_deploy = GitLabStageId.DEPLOY
+        gitlab_stage = gitlab_stage_id_deploy.value
+        stage_name = gitlab_stage.name
         gitlab_pages_stage_job = GitLabStageJob(
             path=None,
             name="pages",
             extends=(),
             variables=(),
-            stage=GitLabStageId.DOCUMENTATION.value.name,
-            needs=("documentation_documenter_document",),
-            rules=(),
+            stage=stage_name,
+            needs=(build_gitlab_stage_name(gitlab_stage_id_deploy, gitlab_job),),
+            rules=gitlab_stage.rules,
             script=('echo "Deploying site"',),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
         pre_steps = (build_github_workflow_checkout_job(),)
-        release_pre_steps = (
-            build_github_workflow_checkout_job(
-                (
-                    GitHubWorkflowStepInputParameter(
-                        "ref", "${{ needs.releaser_release.outputs.tag }}"
-                    ),
-                    GitHubWorkflowStepInputParameter("fetch-depth", "0"),
-                )
-            ),
-        )
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -152,42 +145,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                     actions=init_context_directory.scm.github_actions_workflows.actions
                     | {github_action},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
-                        GitHubWorkflowId.RELEASE,
-                        build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_version,
-                            job_environment=GITHUB_PAGES_ENVIRONMENT,
-                            pre_steps=release_pre_steps,
-                            post_steps=(
-                                GitHubWorkflowJobStep(
-                                    "upload_artifact",
-                                    "Upload artifact",
-                                    "actions/upload-pages-artifact@v5",
-                                    (
-                                        GitHubWorkflowStepInputParameter(
-                                            "path", f"{PROJECT_SITE_PATH}/"
-                                        ),
-                                    ),
-                                ),
-                                GitHubWorkflowJobStep(
-                                    "deploy_to_github_pages",
-                                    "Deploy to GitHub pages",
-                                    "actions/deploy-pages@v5",
-                                    (),
-                                ),
-                            ),
-                            needs=("releaser_release",),
-                            condition="needs.releaser_release.outputs.tag != ''",
-                            permissions=(
-                                ("contents", "read"),
-                                ("pages", "write"),
-                                ("id-token", "write"),
-                            ),
-                        ),
-                    )
-                    .add(
-                        GitHubWorkflowId.DOCUMENTATION,
+                        GitHubWorkflowId.DEPLOY,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
                             github_action=github_action,
@@ -198,7 +156,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                                 GitHubWorkflowJobStep(
                                     "upload_artifact",
                                     "Upload artifact",
-                                    "actions/upload-pages-artifact@v5",
+                                    "actions/upload-pages-artifact@v5.0.0",
                                     (
                                         GitHubWorkflowStepInputParameter(
                                             "path", f"{PROJECT_SITE_PATH}/"
@@ -208,13 +166,17 @@ class DocumenterInitializer(PythonModuleInitializer):
                                 GitHubWorkflowJobStep(
                                     "deploy_to_github_pages",
                                     "Deploy to GitHub pages",
-                                    "actions/deploy-pages@v5",
+                                    "actions/deploy-pages@v5.0.1",
                                     (),
                                 ),
                             ),
+                            permissions=(
+                                ("contents", "read"),
+                                ("pages", "write"),
+                                ("id-token", "write"),
+                            ),
                         ),
-                    )
-                    .add(
+                    ).add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
@@ -229,20 +191,12 @@ class DocumenterInitializer(PythonModuleInitializer):
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.DOCUMENTATION,
+                        gitlab_stage_id_deploy,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.DOCUMENTATION, gitlab_job=gitlab_job
+                            gitlab_stage_id=gitlab_stage_id_deploy, gitlab_job=gitlab_job
                         ),
                     )
-                    .add(GitLabStageId.DOCUMENTATION, gitlab_pages_stage_job)
-                    .add(
-                        GitLabStageId.RELEASE,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE,
-                            gitlab_job=gitlab_job,
-                            needs=("release_releaser_release",),
-                        ),
-                    )
+                    .add(gitlab_stage_id_deploy, gitlab_pages_stage_job)
                     .add(
                         GitLabStageId.QUALITY,
                         build_gitlab_stage_job(

@@ -1,7 +1,7 @@
 name: {{ name }}
 
 on:
-  {% if on.keys()|length == 1 and on.values()|list|first is not none %} {{ on.keys()|list|first }}{% else %}
+  {% if on.keys()|length == 1 and on.values()|list|first is string %} {{ on.keys()|list|first }}{% else %}
   {% for action, action_properties in on|dictsort %}
   {% if action_properties is none %}
   {{ action }}:
@@ -11,11 +11,14 @@ on:
     {% if action_property_value is none %}
     {{ action_property_name }}:
     {% else %}
-    {{ action_property_name }}:{% if action_property_value is string %} {{ action_property_value }}{% else %}
+    {{ action_property_name }}:
+      {% if action_property_value is string %}
+      {{ action_property_value }}
+      {% else %}
       {% for value in action_property_value %}
       - {{ value }}
       {% endfor %}
-    {% endif %}
+      {% endif %}
     {% endif %}
     {% endfor %}
   {% endif %}

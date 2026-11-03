@@ -26,7 +26,7 @@ dependencies = []
 # Dependencies that will be installed for the specific module call.
 [dependency-groups]
 {% for module, dependencies in dependency_groups|dictsort %}
-{{ module }} = ["{{ dependencies|list|sort|join('", "') }}"]
+{{ module }} = [{% if dependencies|length !=0 %}"{{ dependencies|list|sort|join('", "') }}"{% endif %}]
 {% endfor %}
 
 [project.urls]

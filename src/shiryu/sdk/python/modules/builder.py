@@ -17,7 +17,6 @@ from ...common.module import (
 )
 from ...common.scm import (
     GitHubWorkflowId,
-    GitHubWorkflowStepInputParameter,
     GitLabStageId,
     build_github_action,
     build_github_workflow_checkout_job,
@@ -106,16 +105,6 @@ class BuilderInitializer(PythonModuleInitializer):
             artifacts=None,
         )
         pre_steps = (build_github_workflow_checkout_job(),)
-        release_pre_steps = (
-            build_github_workflow_checkout_job(
-                (
-                    GitHubWorkflowStepInputParameter(
-                        "ref", "${{ needs.releaser_release.outputs.tag }}"
-                    ),
-                    GitHubWorkflowStepInputParameter("fetch-depth", "0"),
-                )
-            ),
-        )
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -127,16 +116,14 @@ class BuilderInitializer(PythonModuleInitializer):
                     actions=init_context_directory.scm.github_actions_workflows.actions
                     | {github_action_builder_publish, github_action_builder_test},
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
-                        GitHubWorkflowId.RELEASE,
+                        GitHubWorkflowId.PUBLISH,
                         build_github_workflow_job(
                             sdk_language=sdk_language,
                             github_action=github_action_builder_publish,
                             shiryu_version=shiryu_version,
                             job_environment=None,
-                            pre_steps=release_pre_steps,
+                            pre_steps=pre_steps,
                             post_steps=(),
-                            needs=("releaser_release",),
-                            condition="needs.releaser_release.outputs.tag != ''",
                         ),
                     ).add(
                         GitHubWorkflowId.QUALITY,
@@ -154,11 +141,10 @@ class BuilderInitializer(PythonModuleInitializer):
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
                     | {gitlab_job_builder_publish, gitlab_job_builder_test},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.RELEASE,
+                        GitLabStageId.PUBLISH,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE,
+                            gitlab_stage_id=GitLabStageId.PUBLISH,
                             gitlab_job=gitlab_job_builder_publish,
-                            needs=("release_releaser_release",),
                         ),
                     ).add(
                         GitLabStageId.QUALITY,

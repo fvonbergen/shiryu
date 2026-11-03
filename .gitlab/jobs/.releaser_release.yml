@@ -10,6 +10,7 @@ include:
     GIT_DEPTH: "0"
     AUTH_TOKEN_: "env:AUTH_TOKEN"
     AUTH_USER_NAME: "x-access-token"
+    # TODO: replace with `main` before feat/add-python-sdk branch merge. It's only used for testing.
     BRANCH: "$CI_COMMIT_REF_NAME"
     PLATFORM: "linux/amd64"
     VCS_USER_EMAIL: "ci@shiryu.dev"

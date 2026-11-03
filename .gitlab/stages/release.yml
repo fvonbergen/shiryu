@@ -1,21 +1,11 @@
 include:
-  - local: ".gitlab/jobs/.builder_publish.yml"
-  - local: ".gitlab/jobs/.documenter_document.yml"
   - local: ".gitlab/jobs/.releaser_release.yml"
 
-release_builder_publish:
-  extends: .builder_publish
-  stage: release
-  needs:
-    - ["release_releaser_release"]
-release_documenter_document:
-  extends: .documenter_document
-  stage: release
-  needs:
-    - ["release_releaser_release"]
-release_releaser_release:
+release-releaser_release:
   extends: .releaser_release
   stage: release
-  needs:
-    - []
+  needs: []
+  # TODO: remove this comments before feat/add-python-sdk branch merge. It's only used for testing.
+  # rules:
+  #   - if: '$CI_COMMIT_BRANCH == "main"'
   when: manual
