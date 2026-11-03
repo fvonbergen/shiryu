@@ -520,7 +520,7 @@ class GitLabStageId(Enum):
         ),
     )
     QUALITY = GitLabStageProperties("quality", ())
-    RELEASE = GitLabStageProperties("release", ())
+    RELEASE = GitLabStageProperties("release", (f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',))
 
 
 @final
@@ -867,7 +867,9 @@ def build_github_workflow_checkout_job(
     Returns:
         A configured GitHub Actions step object for checking out code.
     """
-    return GitHubWorkflowJobStep("check_out_code", "Check out code", "actions/checkout@v7", with_)
+    return GitHubWorkflowJobStep(
+        "check_out_code", "Check out code", "actions/checkout@v7.0.1", with_
+    )
 
 
 def build_github_workflow_job(  # noqa: PLR0913, PLR0917

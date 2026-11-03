@@ -4,12 +4,13 @@ include:
 .releaser_release:
   extends: .dagger
   variables:
-    SHIRYU_VERSION: "feat/add-python-sdk-release-add-deploy"
+    SHIRYU_VERSION: "feat/add-python-sdk-release"
     SDK_LANGUAGE: "python"
     GIT_STRATEGY: "fetch"
     GIT_DEPTH: "0"
     AUTH_TOKEN_: "env:AUTH_TOKEN"
     AUTH_USER_NAME: "x-access-token"
+    # TODO: replace with `main` before feat/add-python-sdk branch merge. It's only used for testing.
     BRANCH: "$CI_COMMIT_REF_NAME"
     PLATFORM: "linux/amd64"
     VCS_USER_EMAIL: "ci@shiryu.dev"

@@ -20,7 +20,7 @@ jobs:
     steps:
       - id: check_out_code
         name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
       - id: releaser_release
@@ -28,7 +28,7 @@ jobs:
         uses: "./.github/actions/releaser_release"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release-add-deploy"
+          shiryu_version: "feat/add-python-sdk-release"
           sdk_language: "python"
           auth_token: ${{ secrets.AUTH_TOKEN }}
           auth_user_name: "x-access-token"

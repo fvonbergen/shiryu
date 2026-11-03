@@ -1,9 +1,9 @@
 include:
   - local: ".gitlab/jobs/.builder_publish.yml"
 
-deploy_builder_publish:
+publish_builder_publish:
   extends: .builder_publish
-  stage: deploy
+  stage: publish
   needs: []
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'

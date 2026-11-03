@@ -143,7 +143,7 @@ class BuilderInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.PUBLISH,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.DEPLOY,
+                            gitlab_stage_id=GitLabStageId.PUBLISH,
                             gitlab_job=gitlab_job_builder_publish,
                         ),
                     ).add(
