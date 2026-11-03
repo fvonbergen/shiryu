@@ -26,7 +26,7 @@ jobs:
         uses: "./.github/actions/builder_publish"
         with:
           dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
-          shiryu_version: "feat/add-python-sdk-release"
+          shiryu_version: "feat/add-python-sdk-release-add-deploy"
           sdk_language: "python"
           platform: "linux/amd64"
           repository_password: ${{ secrets.REPOSITORY_PASSWORD }}
