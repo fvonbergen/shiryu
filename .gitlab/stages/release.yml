@@ -1,7 +1,7 @@
 include:
   - local: ".gitlab/jobs/.releaser_release.yml"
 
-release_releaser_release:
+release-releaser_release:
   extends: .releaser_release
   stage: release
   needs: []

@@ -7,7 +7,6 @@ from typing import Final, final
 import dagger
 from dagger_clients.core import Changeset, Container, Directory
 
-from ....utils.case import to_kebab_case, to_snake_case
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.dagger.function import SecurityAuditType
 from ....utils.template import Mapping, Template, TemplateFile
@@ -32,6 +31,7 @@ from ...common.scm import (
     build_github_workflow_job,
     build_gitlab_job,
     build_gitlab_stage_job,
+    build_gitlab_stage_name,
 )
 from ...common.templates import COMMON_JINJA_ENVIRONMENT
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
@@ -119,7 +119,8 @@ class DocumenterInitializer(PythonModuleInitializer):
             ),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
-        gitlab_stage = GitLabStageId.DEPLOY.value
+        gitlab_stage_id_deploy = GitLabStageId.DEPLOY
+        gitlab_stage = gitlab_stage_id_deploy.value
         stage_name = gitlab_stage.name
         gitlab_pages_stage_job = GitLabStageJob(
             path=None,
@@ -127,10 +128,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             extends=(),
             variables=(),
             stage=stage_name,
-            # TODO: generate a function that builds this string which is the same used in scm.py
-            needs=(
-                f"{stage_name}_{to_snake_case(f'{sdk_module_name.title()}{to_kebab_case(sdk_module_function.__name__).title()}')}",
-            ),
+            needs=(build_gitlab_stage_name(gitlab_stage_id_deploy, gitlab_job),),
             rules=gitlab_stage.rules,
             script=('echo "Deploying site"',),
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
@@ -193,12 +191,12 @@ class DocumenterInitializer(PythonModuleInitializer):
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
-                        GitLabStageId.DEPLOY,
+                        gitlab_stage_id_deploy,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.DEPLOY, gitlab_job=gitlab_job
+                            gitlab_stage_id=gitlab_stage_id_deploy, gitlab_job=gitlab_job
                         ),
                     )
-                    .add(GitLabStageId.DEPLOY, gitlab_pages_stage_job)
+                    .add(gitlab_stage_id_deploy, gitlab_pages_stage_job)
                     .add(
                         GitLabStageId.QUALITY,
                         build_gitlab_stage_job(

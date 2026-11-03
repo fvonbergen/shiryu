@@ -1055,6 +1055,19 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
     return GitLabJob(id_, job_name, job_yml_template, sdk_module_function_parameters)
 
 
+def build_gitlab_stage_name(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJob) -> str:
+    """Build a GitLab stage name from a stage ID and a job object.
+
+    Args:
+        gitlab_stage_id: The GitLab stage id.
+        gitlab_job: The GitLab job.
+
+    Returns:
+        A formatted string representing the GitLab stage name.
+    """
+    return f"{gitlab_stage_id.name.lower()}-{gitlab_job.id_}"
+
+
 def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
@@ -1072,13 +1085,12 @@ def build_gitlab_stage_job(
     Returns:
         A GitLab stage job.
     """
-    gitlab_stage_name = gitlab_stage_id.name.lower()
     return GitLabStageJob(
         path=str(gitlab_job.template.template_file.output_path),
-        name=f"{gitlab_stage_name}_{gitlab_job.id_}",
+        name=build_gitlab_stage_name(gitlab_stage_id, gitlab_job),
         extends=(gitlab_job.name,),
         variables=(),
-        stage=gitlab_stage_name,
+        stage=gitlab_stage_id.name.lower(),
         needs=needs,
         rules=gitlab_stage_id.value.rules,
         when=when,
