@@ -17,6 +17,7 @@ from ...common.module import (
 )
 from ...common.scm import (
     GitHubWorkflowId,
+    GitLabJobEnvironmentId,
     GitLabStageId,
     build_github_action,
     build_github_workflow_checkout_job,
@@ -145,6 +146,7 @@ class BuilderInitializer(PythonModuleInitializer):
                         build_gitlab_stage_job(
                             gitlab_stage_id=GitLabStageId.PUBLISH,
                             gitlab_job=gitlab_job_builder_publish,
+                            environment=GitLabJobEnvironmentId.PRODUCTION.value,
                         ),
                     ).add(
                         GitLabStageId.QUALITY,

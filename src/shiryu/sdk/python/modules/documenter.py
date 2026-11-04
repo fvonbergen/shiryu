@@ -24,6 +24,7 @@ from ...common.scm import (
     GitHubWorkflowJobStep,
     GitHubWorkflowStepInputParameter,
     GitLabArtifacts,
+    GitLabJobEnvironmentId,
     GitLabStageId,
     GitLabStageJob,
     build_github_action,
@@ -122,6 +123,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         gitlab_stage_id_deploy = GitLabStageId.DEPLOY
         gitlab_stage = gitlab_stage_id_deploy.value
         stage_name = gitlab_stage.name
+        environment = GitLabJobEnvironmentId.PRODUCTION.value
         gitlab_pages_stage_job = GitLabStageJob(
             path=None,
             name="pages",
@@ -131,6 +133,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             needs=(build_gitlab_stage_name(gitlab_stage_id_deploy, gitlab_job),),
             rules=gitlab_stage.rules,
             script=('echo "Deploying site"',),
+            environment=environment,
             artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
         )
         pre_steps = (build_github_workflow_checkout_job(),)
@@ -193,7 +196,9 @@ class DocumenterInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         gitlab_stage_id_deploy,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=gitlab_stage_id_deploy, gitlab_job=gitlab_job
+                            gitlab_stage_id=gitlab_stage_id_deploy,
+                            gitlab_job=gitlab_job,
+                            environment=environment,
                         ),
                     )
                     .add(gitlab_stage_id_deploy, gitlab_pages_stage_job)

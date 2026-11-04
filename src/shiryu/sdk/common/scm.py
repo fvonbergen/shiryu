@@ -474,6 +474,51 @@ class GitLabJobWhen(StrEnum):
     DELAYED = "delayed"
 
 
+# https://docs.gitlab.com/ci/yaml/#environmentdeployment_tier
+@final
+@unique
+class GitLabJobEnvironmentDeploymentTier(StrEnum):
+    """GitLabJobEnvironmentDeploymentTier options."""
+
+    DEVELOPMENT = "development"
+    OTHER = "other"
+    PRODUCTION = "production"
+    STAGING = "staging"
+    TESTING = "testing"
+
+
+@final
+@dataclass(frozen=True, slots=True)
+class GitLabJobEnvironment:
+    """GitLabJobEnvironment class."""
+
+    name: str
+    deployment_tier: GitLabJobEnvironmentDeploymentTier
+
+
+@final
+@unique
+class GitLabJobEnvironmentId(Enum):
+    """GitLabJobEnvironmentId options."""
+
+    DEVELOPMENT = GitLabJobEnvironment(
+        GitLabJobEnvironmentDeploymentTier.DEVELOPMENT.value,
+        GitLabJobEnvironmentDeploymentTier.DEVELOPMENT,
+    )
+    PRODUCTION = GitLabJobEnvironment(
+        GitLabJobEnvironmentDeploymentTier.PRODUCTION.value,
+        GitLabJobEnvironmentDeploymentTier.PRODUCTION,
+    )
+    STAGING = GitLabJobEnvironment(
+        GitLabJobEnvironmentDeploymentTier.STAGING.value,
+        GitLabJobEnvironmentDeploymentTier.STAGING,
+    )
+    TESTING = GitLabJobEnvironment(
+        GitLabJobEnvironmentDeploymentTier.TESTING.value,
+        GitLabJobEnvironmentDeploymentTier.TESTING,
+    )
+
+
 @final
 @dataclass(frozen=True, slots=True)
 class GitLabStageJob:
@@ -488,6 +533,7 @@ class GitLabStageJob:
     rules: GitLabStageRules
     when: GitLabJobWhen | None = None
     script: GitLabScript = ()
+    environment: GitLabJobEnvironment | None = None
     artifacts: GitLabArtifacts | None = None
 
 
@@ -1073,6 +1119,7 @@ def build_gitlab_stage_job(
     gitlab_job: GitLabJob,
     needs: GitLabArrayType = (),
     when: GitLabJobWhen | None = None,
+    environment: GitLabJobEnvironment | None = None,
 ) -> GitLabStageJob:
     """Build a GitLab stage job.
 
@@ -1081,6 +1128,7 @@ def build_gitlab_stage_job(
         gitlab_job: The GitLab job.
         needs: GitLab jobs that must complete before this job.
         when: The condition for when the job should run.
+        environment: The GitLab job environment.
 
     Returns:
         A GitLab stage job.
@@ -1094,4 +1142,5 @@ def build_gitlab_stage_job(
         needs=needs,
         rules=gitlab_stage_id.value.rules,
         when=when,
+        environment=environment,
     )

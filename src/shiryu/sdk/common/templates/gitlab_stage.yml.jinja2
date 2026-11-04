@@ -32,6 +32,11 @@ include:
   {% if job.when %}
   when: {{ job.when.value }}
   {% endif %}
+  {% if job.environment %}
+  environment:
+    name: {{ job.environment.name }}
+    deployment_tier: {{ job.environment.deployment_tier.value }}
+  {% endif %}
   {% if job.artifacts is not none %}
   artifacts:
     {% if job.artifacts.paths|length != 0 %}

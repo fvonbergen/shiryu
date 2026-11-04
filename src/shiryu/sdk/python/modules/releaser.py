@@ -24,6 +24,7 @@ from ...common.module import (
 from ...common.scm import (
     GitHubWorkflowId,
     GitHubWorkflowStepInputParameter,
+    GitLabJobEnvironmentId,
     GitLabJobWhen,
     GitLabStageId,
     GitLabVariable,
@@ -187,6 +188,7 @@ class ReleaserInitializer(PythonModuleInitializer):
                             gitlab_stage_id=GitLabStageId.RELEASE,
                             gitlab_job=gitlab_job,
                             when=GitLabJobWhen.MANUAL,
+                            environment=GitLabJobEnvironmentId.PRODUCTION.value,
                         ),
                     ),
                 ),
