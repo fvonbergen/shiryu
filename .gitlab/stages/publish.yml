@@ -1,7 +1,7 @@
 include:
   - local: ".gitlab/jobs/.builder_publish.yml"
 
-publish-builder_publish:
+builder publish:
   extends: .builder_publish
   stage: publish
   needs: []
