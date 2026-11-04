@@ -5,10 +5,9 @@ import warnings as _warnings  # noqa: F401
 from collections.abc import Callable as _Callable
 from dataclasses import dataclass as _dataclass
 from typing import Protocol as _Protocol
+from typing import Self as _Self
 from typing import overload as _overload
 from typing import runtime_checkable as _runtime_checkable
-
-from typing_extensions import Self as _Self
 
 from dagger.client import Session as _Session
 from dagger.client import client_root as _client_root
@@ -3482,7 +3481,7 @@ class Container(_Type):
         _ctx = self._select("asService", _args)
         return Service(_ctx)
 
-    def as_tarball(self, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes,) -> "File":
+    def as_tarball(self, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, source_date_epoch: int | None = None,) -> "File":
         """Package the container state as an OCI image, and return it as a tar
         archive
 
@@ -3504,6 +3503,14 @@ class Container(_Type):
             Defaults to OCI, which is largely compatible with most recent
             container runtimes, but Docker may be needed for older runtimes
             without OCI support.
+        source_date_epoch:
+            Clamp the image's timestamps to this time, so that rebuilding
+            unchanged files produces identical layers.
+            Formatted in seconds following Unix epoch (e.g., 1672531199). File
+            timestamps in every layer and the image's creation times that are
+            later than this are set to it, as with BuildKit's rewrite-
+            timestamp and SOURCE_DATE_EPOCH. Every layer is rewritten, so this
+            costs time on each export.
         """
         if not (platform_variants is None or (isinstance(platform_variants, list) and all(isinstance(_v0, Container) for _v0 in platform_variants))):
             raise _type_error("Container.as_tarball", "platform_variants", platform_variants, "list[Container] | None")
@@ -3511,10 +3518,13 @@ class Container(_Type):
             raise _type_error("Container.as_tarball", "forced_compression", forced_compression, "ImageLayerCompression | None")
         if not (media_types is None or isinstance(media_types, ImageMediaTypes)):
             raise _type_error("Container.as_tarball", "media_types", media_types, "ImageMediaTypes | None")
+        if not (source_date_epoch is None or isinstance(source_date_epoch, int)):
+            raise _type_error("Container.as_tarball", "source_date_epoch", source_date_epoch, "int | None")
         _args = [
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
             _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("asTarball", _args)
         return File(_ctx)
@@ -3769,7 +3779,7 @@ class Container(_Type):
         _ctx = self._select("experimentalWithGPU", _args)
         return Container(_ctx)
 
-    async def export(self, path: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, expand: bool | None = False,) -> str:
+    async def export(self, path: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, expand: bool | None = False, source_date_epoch: int | None = None,) -> str:
         """Writes the container as an OCI tarball to the destination file path on
         the host.
 
@@ -3800,6 +3810,14 @@ class Container(_Type):
             Replace "${VAR}" or "$VAR" in the value of path according to the
             current environment variables defined in the container (e.g.
             "/$VAR/foo").
+        source_date_epoch:
+            Clamp the image's timestamps to this time, so that rebuilding
+            unchanged files produces identical layers.
+            Formatted in seconds following Unix epoch (e.g., 1672531199). File
+            timestamps in every layer and the image's creation times that are
+            later than this are set to it, as with BuildKit's rewrite-
+            timestamp and SOURCE_DATE_EPOCH. Every layer is rewritten, so this
+            costs time on each export.
 
         Returns
         -------
@@ -3825,17 +3843,20 @@ class Container(_Type):
             raise _type_error("Container.export", "media_types", media_types, "ImageMediaTypes | None")
         if not (expand is None or isinstance(expand, bool)):
             raise _type_error("Container.export", "expand", expand, "bool | None")
+        if not (source_date_epoch is None or isinstance(source_date_epoch, int)):
+            raise _type_error("Container.export", "source_date_epoch", source_date_epoch, "int | None")
         _args = [
             _Arg("path", path),
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
             _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
             _Arg("expand", expand, False),
+            _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("export", _args)
         return await _ctx.execute(str)
 
-    async def export_image(self, name: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes,) -> Void:
+    async def export_image(self, name: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, source_date_epoch: int | None = None,) -> Void:
         """Exports the container as an image to the host's container image store.
 
         Parameters
@@ -3858,6 +3879,14 @@ class Container(_Type):
             Defaults to OCI, which is largely compatible with most recent
             container runtimes, but Docker may be needed for older runtimes
             without OCI support.
+        source_date_epoch:
+            Clamp the image's timestamps to this time, so that rebuilding
+            unchanged files produces identical layers.
+            Formatted in seconds following Unix epoch (e.g., 1672531199). File
+            timestamps in every layer and the image's creation times that are
+            later than this are set to it, as with BuildKit's rewrite-
+            timestamp and SOURCE_DATE_EPOCH. Every layer is rewritten, so this
+            costs time on each export.
 
         Returns
         -------
@@ -3880,11 +3909,14 @@ class Container(_Type):
             raise _type_error("Container.export_image", "forced_compression", forced_compression, "ImageLayerCompression | None")
         if not (media_types is None or isinstance(media_types, ImageMediaTypes)):
             raise _type_error("Container.export_image", "media_types", media_types, "ImageMediaTypes | None")
+        if not (source_date_epoch is None or isinstance(source_date_epoch, int)):
+            raise _type_error("Container.export_image", "source_date_epoch", source_date_epoch, "int | None")
         _args = [
             _Arg("name", name),
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
             _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("exportImage", _args)
         await _ctx.execute()
@@ -4186,7 +4218,7 @@ class Container(_Type):
         _ctx = self._select("platform", _args)
         return await _ctx.execute(Platform)
 
-    async def publish(self, address: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, registry_service: "Service | None" = None, protocol: RegistryProtocol | None = None, insecure_skip_tls_verify: bool | None = False,) -> str:
+    async def publish(self, address: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, registry_service: "Service | None" = None, protocol: RegistryProtocol | None = None, insecure_skip_tls_verify: bool | None = False, source_date_epoch: int | None = None,) -> str:
         """Package the container state as an OCI image, and publish it to a
         registry
 
@@ -4224,6 +4256,14 @@ class Container(_Type):
         insecure_skip_tls_verify:
             Allow HTTPS registry communication without verifying the server
             certificate.
+        source_date_epoch:
+            Clamp the image's timestamps to this time, so that rebuilding
+            unchanged files produces identical layers.
+            Formatted in seconds following Unix epoch (e.g., 1672531199). File
+            timestamps in every layer and the image's creation times that are
+            later than this are set to it, as with BuildKit's rewrite-
+            timestamp and SOURCE_DATE_EPOCH. Every layer is rewritten, so this
+            costs time on each export.
 
         Returns
         -------
@@ -4253,6 +4293,8 @@ class Container(_Type):
             raise _type_error("Container.publish", "protocol", protocol, "RegistryProtocol | None")
         if not (insecure_skip_tls_verify is None or isinstance(insecure_skip_tls_verify, bool)):
             raise _type_error("Container.publish", "insecure_skip_tls_verify", insecure_skip_tls_verify, "bool | None")
+        if not (source_date_epoch is None or isinstance(source_date_epoch, int)):
+            raise _type_error("Container.publish", "source_date_epoch", source_date_epoch, "int | None")
         _args = [
             _Arg("address", address),
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
@@ -4261,6 +4303,7 @@ class Container(_Type):
             _Arg("registryService", registry_service, None),
             _Arg("protocol", protocol, None),
             _Arg("insecureSkipTLSVerify", insecure_skip_tls_verify, False),
+            _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("publish", _args)
         return await _ctx.execute(str)
@@ -4819,7 +4862,7 @@ class Container(_Type):
         _ctx = self._select("withError", _args)
         return Container(_ctx)
 
-    def with_exec(self, args: list[str], *, use_entrypoint: bool | None = False, stdin: str | None = '', redirect_stdin: str | None = '', redirect_stdout: str | None = '', redirect_stderr: str | None = '', expect: ReturnType | None = ReturnType.SUCCESS, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, dagger_in_dagger_new_session: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False,) -> _Self:
+    def with_exec(self, args: list[str], *, use_entrypoint: bool | None = False, stdin: str | None = '', redirect_stdin: str | None = '', redirect_stdout: str | None = '', redirect_stderr: str | None = '', expect: ReturnType | None = ReturnType.SUCCESS, disable_dagger_in_dagger: bool | None = False, experimental_privileged_nesting: bool | None = False, dagger_in_dagger_new_session: bool | None = False, insecure_root_capabilities: bool | None = False, expand: bool | None = False, no_init: bool | None = False, transparent_huge_pages: bool | None = False,) -> _Self:
         """Execute a command in the container, and return a new snapshot of the
         container state after execution.
 
@@ -4879,6 +4922,22 @@ class Container(_Type):
             Only use this if you specifically need the command to be pid 1 in
             the container. Otherwise it may result in unexpected behavior. If
             you're not sure, you don't need this.
+        transparent_huge_pages:
+            Let the command, and the processes it starts, use the Linux
+            kernel's transparent huge pages. Large-memory programs such as
+            compilers can run faster with them, at some cost in memory.
+            Without this, a command gets huge pages only for memory its own
+            program asks huge pages for, as on a host set to "madvise". That
+            only matters on hosts with Linux 6.18 or later whose transparent
+            huge pages are set to "always"
+            (/sys/kernel/mm/transparent_hugepage/enabled, or a size under
+            /sys/kernel/mm/transparent_hugepage/hugepages-*). With the usual
+            default settings, this changes nothing. On older kernels, commands
+            get what the host's settings give them, whether they set this or
+            not.
+            It isn't part of the exec's cache key: an exec that differs from a
+            cached one only in this setting reuses the cached result,
+            whichever setting produced it.
         """
         if not (isinstance(args, list) and all(isinstance(_v0, str) for _v0 in args)):
             raise _type_error("Container.with_exec", "args", args, "list[str]")
@@ -4906,6 +4965,8 @@ class Container(_Type):
             raise _type_error("Container.with_exec", "expand", expand, "bool | None")
         if not (no_init is None or isinstance(no_init, bool)):
             raise _type_error("Container.with_exec", "no_init", no_init, "bool | None")
+        if not (transparent_huge_pages is None or isinstance(transparent_huge_pages, bool)):
+            raise _type_error("Container.with_exec", "transparent_huge_pages", transparent_huge_pages, "bool | None")
         _args = [
             _Arg("args", args),
             _Arg("useEntrypoint", use_entrypoint, False),
@@ -4920,6 +4981,7 @@ class Container(_Type):
             _Arg("insecureRootCapabilities", insecure_root_capabilities, False),
             _Arg("expand", expand, False),
             _Arg("noInit", no_init, False),
+            _Arg("transparentHugePages", transparent_huge_pages, False),
         ]
         _ctx = self._select("withExec", _args)
         return Container(_ctx)
@@ -8943,7 +9005,7 @@ class File(_Type):
         _ctx = self._select("export", _args)
         return await _ctx.execute(str)
 
-    def extract(self, *, strip_components: int | None = 0,) -> Directory:
+    def extract(self, *, strip_components: int | None = 0, include: list[str] | None = None, exclude: list[str] | None = None,) -> Directory:
         """Extracts this archive file into a directory.
 
         The format is detected from the file's contents: zip, or tar, either
@@ -8957,11 +9019,26 @@ class File(_Type):
             Remove this many leading elements from each entry's path, as tar
             --strip-components does.
             Entries with no more elements than this are skipped.
+        include:
+            If set, only entries matching one of these glob patterns, or in a
+            directory that does, are extracted (e.g., ["src/", "*.go"]).
+            Patterns match entry paths after stripComponents is applied.
+        exclude:
+            If set, entries matching one of these glob patterns, or in a
+            directory that does, are not extracted (e.g., ["**/testdata",
+            "**/*_test.go"]).
+            Patterns match entry paths after stripComponents is applied.
         """
         if not (strip_components is None or isinstance(strip_components, int)):
             raise _type_error("File.extract", "strip_components", strip_components, "int | None")
+        if not (include is None or (isinstance(include, list) and all(isinstance(_v0, str) for _v0 in include))):
+            raise _type_error("File.extract", "include", include, "list[str] | None")
+        if not (exclude is None or (isinstance(exclude, list) and all(isinstance(_v0, str) for _v0 in exclude))):
+            raise _type_error("File.extract", "exclude", exclude, "list[str] | None")
         _args = [
             _Arg("stripComponents", strip_components, 0),
+            _Arg("include", [] if include is None else include, []),
+            _Arg("exclude", [] if exclude is None else exclude, []),
         ]
         _ctx = self._select("extract", _args)
         return Directory(_ctx)
@@ -21340,7 +21417,7 @@ def core(*, session: _Session | None = None) -> Query:
     return _client_root(Query, None, None, [], session=session)
 
 
-CORE_DIGEST = "sha256:0572617b0dbaa0ae70095a9b6a1ac99ca1e5558e08443132e3dc9a1995d36908"
+CORE_DIGEST = "sha256:175e626422bfb81c2d51269ec16740ec9401baebfac4ac02d30aee15ef9efa71"
 """Digest of the core schema that this package was generated from."""
 
 
