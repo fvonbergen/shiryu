@@ -15,7 +15,7 @@ type ModuleTypes {
         )
         .withFunction(
           function("notebooks", typeDef.withObject("Directory"))
-            .withDescription("Returns jupyter notebooks Directory.")
+            .withDescription("Returns a jupyter notebooks Directory.")
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         )
         .withFunction(
@@ -77,6 +77,11 @@ type ModuleTypes {
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         ),
       typeDef.withObject("Documenter", description: "Python SDK documenter.")
+        .withFunction(
+          function("audit", typeDef.withKind(TypeDefKind.STRING_KIND))
+            .withDescription("Audit source code docstrings.")
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
         .withFunction(
           function("document", typeDef.withObject("Changeset"))
             .withDescription("Run documenter document in the project of the provided source Directory.")
@@ -149,7 +154,7 @@ type ModuleTypes {
         )
         .withFunction(
           function("release", typeDef.withKind(TypeDefKind.STRING_KIND))
-            .withDescription("Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.\n\nReturns the release tag, or an empty string if there is nothing to release, so CI can\ndecide whether to run the publishing jobs and which ref to check out.")
+            .withDescription("Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.")
             .withArg("auth_token", typeDef.withObject("Secret"), description: "Authorization token with write access to the repository and its releases (GitLab tokens need the api scope)")
             .withArg("auth_user_name", typeDef.withKind(TypeDefKind.STRING_KIND), description: "User name sent with the authorization token (any non-empty value works with GitHub and GitLab access tokens)", defaultValue: ("\"x-access-token\"" :: Dagger.JSON!))
             .withArg("branch", typeDef.withKind(TypeDefKind.STRING_KIND), description: "Branch to release from and push the release commit to", defaultValue: ("\"main\"" :: Dagger.JSON!))

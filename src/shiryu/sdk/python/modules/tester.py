@@ -284,14 +284,25 @@ class Tester(PythonModule):
         return container.with_exec(pytest_command, expect=expect)
 
     @final
-    @dagger.function
+    @dagger.function(doc="Run unit tests in the project of the provided source Directory.")
     async def unit(
         self,
         *,
         keyword: OptionalKeywordDaggerType = OPTIONAL_KEYWORD_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
-        """Run unit tests in the project of the provided source Directory."""
+        """Run unit tests in the project of the provided source Directory.
+
+        Args:
+            keyword: Run tests that match substring expression.
+            platform: The container platform.
+
+        Returns:
+            Output stdout from running unit tests.
+
+        Raises:
+            dagger.ExecError: If unit test execution fails.
+        """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         container = await self.__unit(container, keyword)

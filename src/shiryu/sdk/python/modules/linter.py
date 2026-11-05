@@ -276,6 +276,9 @@ class Linter(PythonModule):
 
         Returns:
             Changeset between the project directory before and after running commands.
+
+        Raises:
+            dagger.ExecError: If the linting or formatting execution fails.
         """
         initializer = cls._initializer_cls()
         ruff_cache_folder = initializer._ruff_cache_folder()
@@ -372,11 +375,20 @@ class Linter(PythonModule):
         )
 
     @final
-    @dagger.function
+    @dagger.function(
+        doc="Run linter analysis in the project code of the provided source Directory."
+    )
     # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
     # @dagger.check
     async def lint_code(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
-        """Run linter analysis in the project code of the provided source Directory."""
+        """Run linter analysis in the project code of the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Raises:
+            dagger.ExecError: If linter execution fails.
+        """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         try:
@@ -387,11 +399,21 @@ class Linter(PythonModule):
             raise
 
     @final
-    @dagger.function
+    @dagger.function(doc="Run linter fixes in the project code of the provided source Directory.")
     async def fix_code(
         self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
     ) -> Changeset:
-        """Run linter fixes in the project code of the provided source Directory."""
+        """Run linter fixes in the project code of the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Returns:
+            Changeset with linter fixes applied.
+
+        Raises:
+            dagger.ExecError: If linter fix execution fails.
+        """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         try:
@@ -402,7 +424,7 @@ class Linter(PythonModule):
             raise
 
     @final
-    @dagger.function
+    @dagger.function(doc="Run linter analysis in the project VCS of the provided source Directory.")
     # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
     # @dagger.check
     async def lint_vcs(
@@ -411,7 +433,15 @@ class Linter(PythonModule):
         branch_history: BranchHistoryDaggerType = BRANCH_HISTORY_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> None:
-        """Run linter analysis in the project VCS of the provided source Directory."""
+        """Run linter analysis in the project VCS of the provided source Directory.
+
+        Args:
+            branch_history: Whether to lint over branch VCS history or not.
+            platform: The container platform.
+
+        Raises:
+            dagger.ExecError: If VCS linter execution fails.
+        """
         exclude = []
         container = await self._exec_container(self.source, exclude, platform)
         try:

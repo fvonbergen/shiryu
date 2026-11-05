@@ -11,7 +11,7 @@ from typing import Any, Final, Self, final, get_args, get_origin
 import dagger
 from dagger_clients.core import Changeset, Directory, Secret
 
-from ...utils.case import to_kebab_case, to_snake_case
+from ...utils.case import to_kebab_case, to_snake_case, to_space_separated
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
@@ -812,7 +812,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
 
     Raises:
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
-            not `dagger_clients.core.Directory`.
+            not `dagger_clients.core.Changeset` or `dagger_clients.core.Directory`.
     """
     sdk_module_name_title = sdk_module_name.title()
     sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
@@ -1032,7 +1032,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
 
     Raises:
         ValueError: If `export_path` argument is provided and `sdk_module_function` return type is
-            not `dagger_clients.core.Directory`.
+            not `dagger_clients.core.Changeset` or `dagger_clients.core.Directory`.
     """
     sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
     id_ = to_snake_case(
@@ -1110,7 +1110,7 @@ def build_gitlab_stage_name(gitlab_job: GitLabJob) -> str:
     Returns:
         A formatted string representing the GitLab stage name.
     """
-    return f"{' '.join(gitlab_job.id_.split('_'))}"
+    return to_space_separated(gitlab_job.id_)
 
 
 def build_gitlab_stage_job(

@@ -133,7 +133,7 @@ class Jupyter(PythonModule):
             jupyter_port: Jupyter notebooks port.
 
         Returns:
-            A container with the project jupyter command executed.
+            A Service running the jupyter notebook server.
         """
         jupyter_notebooks_cache_folder = cls.__notebooks_cache_folder()
         container = (
@@ -165,24 +165,41 @@ class Jupyter(PythonModule):
         return container.as_service(args=jupyter_command)
 
     @final
-    @dagger.function
+    @dagger.function(
+        doc="Returns a jupyter notebooks service with the project of the provided source Directory."
+    )
     async def service(
         self,
         *,
         backend_port: PortDaggerType = PORT_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> Service:
-        """Returns a jupyter notebooks service with the project of the provided source Directory."""
+        """Returns a jupyter notebooks service with the project of the provided source Directory.
+
+        Args:
+            backend_port: Jupyter notebooks port.
+            platform: The container platform.
+
+        Returns:
+            A jupyter notebooks service.
+        """
         exclude = []
         container = await self._exec_container(self.source, exclude, platform)
         return await self.__serve(container, backend_port)
 
     @final
-    @dagger.function
+    @dagger.function(doc="Returns a jupyter notebooks Directory.")
     async def notebooks(
         self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
     ) -> Directory:
-        """Returns jupyter notebooks Directory."""
+        """Returns a jupyter notebooks Directory.
+
+        Args:
+            platform: The container platform.
+
+        Returns:
+            A jupyter notebooks Directory.
+        """
         jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
         export_path_str = "/export"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints

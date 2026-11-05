@@ -602,7 +602,9 @@ class SDKModule[
         # if exception.stderr:
         #     logger.error("STDERR:\n%s", exception.stderr)
 
-    @dagger.function
+    @dagger.function(
+        doc="Returns a changeset to initialize a project with the SDK module directory."
+    )
     async def init(
         self,
         *,
@@ -611,7 +613,17 @@ class SDKModule[
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> Changeset:
-        """Returns a changeset to initialize a project with the SDK module directory."""
+        """Returns a changeset to initialize a project with the SDK module directory.
+
+        Args:
+            project_name: Project name.
+            is_update: Whether to update project directory files or not.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform.
+
+        Returns:
+            A changeset to initialize a project with the SDK module directory.
+        """
         return await self._init(project_name, is_update, scm, platform)
 
     @classmethod
@@ -737,7 +749,9 @@ def get_sdk_language(
         """
         return init_initializer
 
-    @dagger.function
+    @dagger.function(
+        doc="Returns a changeset to initialize a project with the SDK module directory."
+    )
     @dagger.generate
     async def init(
         self,
@@ -747,7 +761,18 @@ def get_sdk_language(
         scm: SCMDaggerType = SCM_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> Changeset:
-        """Returns a changeset to initialize a project with the SDK module directory."""
+        """Returns a changeset to initialize a project with the SDK module directory.
+
+        Args:
+            self: The current instance of the SDKModule class.
+            project_name: Project name.
+            is_update: Whether to update project directory files or not.
+            scm: Project Source Code Management (SCM) list to be targeted or configured.
+            platform: The container platform.
+
+        Returns:
+            A changeset to initialize a project with the SDK module directory.
+        """
         # Call the wrapped init method
         return await self._init(
             project_name=project_name, is_update=is_update, scm=scm, platform=platform

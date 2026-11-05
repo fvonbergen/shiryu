@@ -5,7 +5,7 @@ from pathlib import Path, PurePosixPath
 from typing import Final, final
 
 import dagger
-from dagger_clients.core import Changeset, Container, Directory
+from dagger_clients.core import Changeset, Container, Directory, core
 
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.dagger.function import SecurityAuditType
@@ -440,11 +440,21 @@ class Documenter(PythonModule):
         return container.with_exec(zensical_command).directory(PROJECT_SITE_FOLDER)
 
     @final
-    @dagger.function
+    @dagger.function(doc="Run documenter document in the project of the provided source Directory.")
     async def document(
         self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
     ) -> Changeset:
-        """Run documenter document in the project of the provided source Directory."""
+        """Run documenter document in the project of the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Returns:
+            Changeset containing generated documentation.
+
+        Raises:
+            dagger.ExecError: If documentation generation fails.
+        """
         source = self.source
         exclude = []
         container = await self._exec_container(source, exclude, platform)
@@ -455,47 +465,44 @@ class Documenter(PythonModule):
 
             raise
 
+    @final
+    @dagger.function(doc="Audit source code docstrings.")
+    async def audit(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> str:
+        """Audit source code docstrings.
 
-#     @final
-#     @dagger.function
-#     async def audit(
-#         self,
-#         *,
-#         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-#     ) -> str | None:
-#         """Audit source code docstrings."""
-#         exclude = []
-#         workspace = await self._exec_container(self.source, exclude, platform)
-#
-#         # Extract source code context before calling LLM
-#         source_code_dump = await workspace.with_exec(
-#             [
-#                 "sh",
-#                 "-c",
-#                 f"find {PROJECT_SOURCE_CODE_FOLDER} -name '*.py' -exec echo '=== FILE: {{}} ===' \\; -exec cat {{}} \\;",  # noqa: E501
-#             ]
-#         ).stdout()
-#
-#         # Render prompt template
-#         documenter_audit_propmpt_txt_template_mapping: Mapping = {
-#             "source_code_dump": source_code_dump,
-#             "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
-#         }
-#         documenter_audit_prompt_txt_template = Template(
-#             PYTHON_JINJA_ENVIRONMENT,
-#             TemplateFile(Path("documenter_audit_prompt.txt")),
-#             documenter_audit_propmpt_txt_template_mapping,
-#         )
-#
-#         prompt = documenter_audit_prompt_txt_template.contents
-#         report = await (
-#             dagger.dag.llm(model="gemini-3.6-flash")
-#             .with_prompt(prompt)
-#             .loop()
-#             .last_reply()
-#         )
-#
-#         return report
+        Args:
+            platform: The container platform.
+
+        Returns:
+            Audit report string.
+        """
+        exclude = []
+        workspace = await self._exec_container(self.source, exclude, platform)
+
+        # Extract source code context before calling LLM
+        source_code_dump = await workspace.with_exec(
+            [
+                "sh",
+                "-c",
+                f"find {PROJECT_SOURCE_CODE_FOLDER} -name '*.py' -exec echo '=== FILE: {{}} ===' \\; -exec awk '{{printf \"%d %s\\n\", FNR, $0}}' {{}} \\;",  # noqa: E501
+            ]
+        ).stdout()
+
+        # Render prompt template
+        documenter_audit_propmpt_txt_template_mapping: Mapping = {
+            "source_code_dump": source_code_dump,
+            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
+        }
+        documenter_audit_prompt_txt_template = Template(
+            PYTHON_JINJA_ENVIRONMENT,
+            TemplateFile(Path("documenter_audit_prompt.txt")),
+            documenter_audit_propmpt_txt_template_mapping,
+        )
+
+        prompt = documenter_audit_prompt_txt_template.contents
+        report = await core().llm(model="gemini-3.6-flash").with_prompt(prompt).loop().last_reply()
+
+        return report
 
 
 sdk_module: Final = Documenter

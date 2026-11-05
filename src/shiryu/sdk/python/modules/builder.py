@@ -238,9 +238,6 @@ class Builder(PythonModule):
             repository_user: Repository user.
             repository_password: Repository password.
             platform: The container platform.
-
-        Returns:
-            A container with the project build command executed.
         """
         container = cls.__build_container(container, platform, True)
         deploy_command = cls._build_uv_run_command(
@@ -259,16 +256,25 @@ class Builder(PythonModule):
         )
 
     @final
-    @dagger.function
+    @dagger.function(doc="Build project distributable of the provided source Directory.")
     async def build(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> Changeset:
-        """Build project distributable of the provided source Directory."""
+        """Build project distributable of the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Returns:
+            Changeset containing built distributables.
+        """
         source = self.source
         exclude = []
         container = await self._exec_container(source, exclude, platform)
         return self.__build(container, platform).changes(source)
 
     @final
-    @dagger.function
+    @dagger.function(
+        doc="Build and publish project distributable of the provided source Directory."
+    )
     async def publish(
         self,
         repository_url: RepositoryUrlDaggerType,
@@ -277,7 +283,17 @@ class Builder(PythonModule):
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
-        """Build and publish project distributable of the provided source Directory."""
+        """Build and publish project distributable of the provided source Directory.
+
+        Args:
+            repository_url: Repository to push distributable.
+            repository_user: Repository user.
+            repository_password: Repository password.
+            platform: The container platform.
+
+        Returns:
+            Status message indicating publishing result.
+        """
         exclude = []
         container = await self._exec_container(self.source, exclude, platform)
         await self.__publish(
@@ -286,11 +302,18 @@ class Builder(PythonModule):
         return "Publish successfull"
 
     @final
-    @dagger.function
+    @dagger.function(doc="Test the project installation process for the provided source Directory.")
     # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
     # @dagger.check
     async def test(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
-        """Test the project installation process for the provided source Directory."""
+        """Test the project installation process for the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Raises:
+            dagger.ExecError: If test execution fails.
+        """
         source = self.source
         security_audit = self.security_audit
         exclude = []

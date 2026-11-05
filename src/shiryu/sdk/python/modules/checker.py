@@ -189,6 +189,9 @@ class Checker(PythonModule):
 
         Args:
             container: Project container.
+
+        Raises:
+            dagger.ExecError: If type check execution fails.
         """
         initializer = cls._initializer_cls()
         ty_command = cls._build_uv_run_command(
@@ -209,11 +212,18 @@ class Checker(PythonModule):
             raise
 
     @final
-    @dagger.function
+    @dagger.function(doc="Run type checks in the project of the provided source Directory.")
     # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
     # @dagger.check
     async def check(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
-        """Run type checks in the project of the provided source Directory."""
+        """Run type checks in the project of the provided source Directory.
+
+        Args:
+            platform: The container platform used for initialization.
+
+        Raises:
+            dagger.ExecError: If type check execution fails.
+        """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         try:

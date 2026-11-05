@@ -365,6 +365,9 @@ class Releaser(PythonModule):
 
         Returns:
             A container with the release commit and tag, and the new version.
+
+        Raises:
+            RuntimeError: If version bump command execution fails.
         """
         executed_container = (
             container.with_env_variable("GIT_AUTHOR_NAME", vcs_user_name)
@@ -514,7 +517,9 @@ class Releaser(PythonModule):
         return container
 
     @final
-    @dagger.function
+    @dagger.function(
+        doc="Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release."  # noqa: E501
+    )
     async def release(  # noqa: PLR0913, PLR0917
         self,
         auth_token: AuthTokenDaggerType,
@@ -526,8 +531,19 @@ class Releaser(PythonModule):
     ) -> str:
         """Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.
 
-        Returns the release tag, or an empty string if there is nothing to release, so CI can
-        decide whether to run the publishing jobs and which ref to check out.
+        Args:
+            auth_token: Authorization token with write access to the repository and its releases.
+            auth_user_name: User name sent with the authorization token.
+            branch: Branch to release from and push the release commit to.
+            vcs_user_name: VCS user name used for the release commit.
+            vcs_user_email: VCS user email used for the release commit.
+            platform: The container platform.
+
+        Returns:
+            The release tag, or an empty string if there is nothing to release
+
+        Raises:
+            RuntimeError: If release validation or version bump execution fails.
         """
         security_audit = self.security_audit
         exclude: list[str] = []
@@ -552,14 +568,15 @@ class Releaser(PythonModule):
         return f"v{version}"
 
     @final
-    @dagger.function
-    async def dry_run(
-        self,
-        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    @dagger.function(doc="Perform a dry run of the release process.")
+    async def dry_run(self, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> str:
         """Perform a dry run of the release process.
 
-        Perform a dry run of the release process without making any changes.
+        Args:
+            platform: The container platform.
+
+        Returns:
+            Output stdout from running the release dry run.
         """
         exclude: list[str] = []
         container = await self._exec_container(self.source, exclude, platform)

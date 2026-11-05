@@ -1,16 +1,21 @@
 You are an automated Python Docstring Auditor operating in a CI/CD pipeline.
 
-SOURCE CODE TO AUDIT:
-{{ source_code_dump }}
+SOURCE CODE FORMAT:
+The source code dump below contains multiple Python files concatenated together. Each file is preceded by a header in the format:
+=== FILE: path/to/file.py ===
 
 INSTRUCTIONS:
-1. Read and parse signatures, docstrings, and 'raise' statements across all functions, classes, and modules in the source code provided above.
+1. Read and parse signatures, docstrings, and 'raise' statements across all functions, classes, and modules in the source code provided below.
 2. Check for:
    - Signature mismatches (docstring args/types do not match actual signature).
    - Missing raises sections (unhandled/undocumented exceptions).
    - Undocumented public functions or classes.
    - Malformed docstring formatting (PEP 257 / Google Style).
-3. Assign the resulting JSON output strictly to $audit_report.
+3. IMPORTANT LINE NUMBER RULE: Each line in the source code dump begins with its line number followed by a space (e.g., "398 def init(...):"). When reporting the 'line_number' for an issue, extract that exact number.
+4. Assign the resulting JSON output strictly to $audit_report.
+
+SOURCE CODE TO AUDIT:
+{{ source_code_dump }}
 
 OUTPUT REQUIREMENT:
 Write raw, valid JSON matching the schema below. Do NOT include markdown code blocks (e.g., ```json).

@@ -119,11 +119,18 @@ class Auditor(PythonModule):
         return AuditorInitializer
 
     @final
-    @dagger.function
+    @dagger.function(doc="Run security audit analysis in the project.")
     # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
     # @dagger.check
     async def audit(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
-        """Run security audit analysis in the project."""
+        """Run security audit analysis in the project.
+
+        Args:
+            platform: The container platform.
+
+        Raises:
+            dagger.ExecError: If security audit execution fails.
+        """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         try:
