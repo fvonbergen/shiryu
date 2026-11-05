@@ -4,7 +4,7 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
-from dagger_clients.core import Container, Directory, Service, core
+from dagger_clients.core import CacheSharingMode, Container, Directory, Service, core
 
 from ....utils.dagger.client import container_debian
 from ....utils.dagger.directory import directory_with_new_file
@@ -138,7 +138,9 @@ class Jupyter(PythonModule):
         jupyter_notebooks_cache_folder = cls.__notebooks_cache_folder()
         container = (
             await container.with_mounted_cache(
-                jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME
+                jupyter_notebooks_cache_folder,
+                JUPYTER_NOTEBOOKS_CACHE_VOLUME,
+                sharing=CacheSharingMode.LOCKED,
             )
             .with_exec(
                 [
@@ -205,7 +207,11 @@ class Jupyter(PythonModule):
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
         return (
             (await container_debian(platform, self.security_audit))
-            .with_mounted_cache(jupyter_notebooks_cache_folder, JUPYTER_NOTEBOOKS_CACHE_VOLUME)
+            .with_mounted_cache(
+                jupyter_notebooks_cache_folder,
+                JUPYTER_NOTEBOOKS_CACHE_VOLUME,
+                sharing=CacheSharingMode.LOCKED,
+            )
             .with_exec(
                 ["cp", "--archive", f"{jupyter_notebooks_cache_folder}/.", f"{export_path_str}/"]
             )

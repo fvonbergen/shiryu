@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Annotated, Final, final
 
 import dagger
-from dagger_clients.core import Changeset, Container, Directory, ReturnType, core
+from dagger_clients.core import CacheSharingMode, Changeset, Container, Directory, ReturnType, core
 
 from ....utils.dagger.directory import directory_with_new_file
 from ....utils.dagger.function import SecurityAuditType
@@ -280,7 +280,7 @@ class Linter(PythonModule):
         initializer = cls._initializer_cls()
         ruff_cache_folder = initializer._ruff_cache_folder()
         container = container.with_mounted_cache(
-            ruff_cache_folder, core().cache_volume("shiryu-ruff")
+            ruff_cache_folder, core().cache_volume("shiryu-ruff"), sharing=CacheSharingMode.LOCKED
         )
         ruff_toml_file_name = initializer._ruff_toml_template_file().file_name
         ruff_check_command = cls._build_uv_run_command(

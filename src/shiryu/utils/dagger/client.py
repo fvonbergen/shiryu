@@ -43,7 +43,11 @@ async def __run_trivy(platform: Platform, rootfs_audit: Directory) -> None:
         core()
         .container(platform=platform)
         .from_(FULLY_QUALIFIED_IMAGE_NAME_TRIVY)
-        .with_mounted_cache("/root/.cache/trivy", core().cache_volume("shiryu-trivy"))
+        .with_mounted_cache(
+            "/root/.cache/trivy",
+            core().cache_volume("shiryu-trivy"),
+            sharing=CacheSharingMode.LOCKED,
+        )
         .with_directory(rootfs_target, rootfs_audit)
         .with_exec(
             [
@@ -171,10 +175,14 @@ async def container_uv(
     )
     venv_path_str = "/opt/.venv"
     container = (
-        container.with_mounted_cache("/root/.cache/pipx", core().cache_volume("shiryu-pipx"))
+        container.with_mounted_cache(
+            "/root/.cache/pipx", core().cache_volume("shiryu-pipx"), sharing=CacheSharingMode.LOCKED
+        )
         .with_env_variable(name="PATH", value="/root/.local/bin:${PATH}", expand=True)
         .with_exec(["pipx", "install", f"uv=={UV_VERSION}"])
-        .with_mounted_cache("/root/.cache/uv", core().cache_volume("shiryu-uv"))
+        .with_mounted_cache(
+            "/root/.cache/uv", core().cache_volume("shiryu-uv"), sharing=CacheSharingMode.LOCKED
+        )
         .with_env_variable("UV_LINK_MODE", "copy")
         .with_exec(["uv", "venv", venv_path_str])
         .with_env_variable(name="UV_PROJECT_ENVIRONMENT", value=venv_path_str)
