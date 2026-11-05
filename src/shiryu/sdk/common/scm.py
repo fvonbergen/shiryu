@@ -995,7 +995,7 @@ def __gitlab_param_manage(param: SDKModuleFunctionParameter) -> tuple[GitLabVari
     """
     env_name = param.name.upper()
     if param.is_secret:
-        var_name, value = f"{env_name}_", f"env:{env_name}"
+        var_name, value = f"{env_name}_", f"env://{env_name}"
     elif param.default is not None:
         var_name, value = env_name, str(param.default)
     else:
