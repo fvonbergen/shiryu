@@ -59,19 +59,6 @@ def to_snake_case(string: str) -> str:
     return "_".join(words).lower()
 
 
-def to_space_separated(string: str) -> str:
-    """Convert any string identifier to space-separated lowercase words.
-
-    Args:
-        string: An input string (e.g., "lintCode", "lint-code").
-
-    Returns:
-        A space-separated string (e.g., "lint code").
-    """
-    words = _split_into_words(string)
-    return " ".join(words).lower()
-
-
 def to_camel_case(string: str, *, camel_case: CamelCase = CamelCase.UPPER) -> str:
     """Convert any string identifier to a camelCase or PascalCase string.
 

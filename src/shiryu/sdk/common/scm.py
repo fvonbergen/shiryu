@@ -11,7 +11,7 @@ from typing import Any, Final, Self, final, get_args, get_origin
 import dagger
 from dagger_clients.core import Changeset, Directory, Secret
 
-from ...utils.case import to_kebab_case, to_snake_case, to_space_separated
+from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
 from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
@@ -1035,9 +1035,7 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
             not `dagger_clients.core.Changeset` or `dagger_clients.core.Directory`.
     """
     sdk_module_function_name = to_kebab_case(sdk_module_function.__name__)
-    id_ = to_snake_case(
-        f"{sdk_module_name.title()}{sdk_module_function_name.title()}",
-    )
+    id_ = f"{sdk_module_name.title()} {sdk_module_function_name}"
     sdk_module_function_parameters = get_sdk_module_function_parameters(sdk_module_function)
     export_chain = []
     if export_path is not None:
@@ -1054,7 +1052,11 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
             raise ValueError(exception_message)
         # TODO: Check that the return type is of type dagger.
         export_chain.append(f"export --path=./{export_path}")
-    job_name = f".{id_}"
+    job_name = f".{
+        to_snake_case(
+            f'{sdk_module_name.title()}{sdk_module_function_name.title()}',
+        )
+    }"
     shiryu_version_gitlab_variable = GitLabVariable("SHIRYU_VERSION", shiryu_version)
     sdk_language_gitlab_variable = GitLabVariable("SDK_LANGUAGE", sdk_language)
 
@@ -1111,7 +1113,7 @@ def build_gitlab_stage_name(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJo
     Returns:
         A formatted string representing the GitLab stage name.
     """
-    return to_space_separated(f"{gitlab_stage_id.name.lower()}-{gitlab_job.id_}")
+    return f"{gitlab_stage_id.name.lower()} {gitlab_job.id_}"
 
 
 def build_gitlab_stage_job(

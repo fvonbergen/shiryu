@@ -1,7 +1,7 @@
 include:
   - local: ".gitlab/jobs/.documenter_document.yml"
 
-deploy documenter document:
+deploy Documenter document:
   extends: .documenter_document
   stage: deploy
   needs: []
@@ -14,7 +14,7 @@ deploy documenter document:
     deployment_tier: production
 pages:
   stage: deploy
-  needs: ["deploy-documenter_document"]
+  needs: ["deploy Documenter document"]
   script:
     - echo "Deploying site"
   # TODO: remove this comments before feat/add-python-sdk branch merge. It's only used for testing.
