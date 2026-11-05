@@ -4,7 +4,7 @@ from collections.abc import Set
 from pathlib import PurePosixPath
 from typing import Final
 
-from dagger_clients.core import Container, Directory, Platform, core
+from dagger_clients.core import CacheSharingMode, Container, Directory, Platform, core
 
 from .function import SecurityAudit, SecurityAuditType
 
@@ -108,17 +108,21 @@ async def container_debian(
                 permissions=0o644,
             )
             # Scope cache volumes with the snapshot date to prevent stale data conflicts
+            # LOCKED serializes concurrent apt run (e.g. aynscio.gather in releaser) that
+            # would otherwise lead to race conditions for the apt cache.
             .with_mounted_cache(
                 "/var/cache/apt/archives",
                 core().cache_volume(
                     f"shiryu-apt-archives-debian-{DEBIAN_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
                 ),
+                sharing=CacheSharingMode.LOCKED,
             )
             .with_mounted_cache(
                 "/var/lib/apt/lists",
                 core().cache_volume(
                     f"shiryu-apt-lists-debian-{DEBIAN_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
                 ),
+                sharing=CacheSharingMode.LOCKED,
             )
             .with_new_file(
                 path="/etc/apt/apt.conf.d/keep-cache",
