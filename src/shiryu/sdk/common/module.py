@@ -582,7 +582,8 @@ class SDKModule[
 
         Args:
             exception: The Dagger `ExecError` caught during execution.
-        """  # Get the stack frame of the function that called this log() method
+        """
+        # Get the stack frame of the function that called this log() method
         class_name = self.name()
         func_name = "Unknown"
         current_frame = inspect.currentframe()

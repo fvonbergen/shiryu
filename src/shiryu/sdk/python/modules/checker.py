@@ -189,32 +189,16 @@ class Checker(PythonModule):
 
         Args:
             container: Project container.
-
-        Raises:
-            dagger.ExecError: If type check execution fails.
         """
         initializer = cls._initializer_cls()
         ty_command = cls._build_uv_run_command(
             ["ty", "check", f"--config-file={initializer._ty_toml_template_file().file_name}"]
         )
-        try:
-            await container.with_exec(ty_command).sync()
-        except dagger.ExecError as err:
-            class_name = cls.name()
-            logger.error(
-                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
-            )
-            if err.stdout:
-                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
-            # if err.stderr:
-            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
-
-            raise
+        await container.with_exec(ty_command).sync()
 
     @final
     @dagger.function(doc="Run type checks in the project of the provided source Directory.")
-    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
-    # @dagger.check
+    @dagger.check
     async def check(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run type checks in the project of the provided source Directory.
 

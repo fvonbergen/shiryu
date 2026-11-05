@@ -41,11 +41,13 @@ type ModuleTypes {
         .withFunction(
           function("lint_code", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
             .withDescription("Run linter analysis in the project code of the provided source Directory.")
+            .withCheck
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         )
         .withFunction(
           function("lint_vcs", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
             .withDescription("Run linter analysis in the project VCS of the provided source Directory.")
+            .withCheck
             .withArg("branch_history", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to lint over branch VCS history or not", defaultValue: ("true" :: Dagger.JSON!))
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         ),
@@ -74,6 +76,7 @@ type ModuleTypes {
         .withFunction(
           function("test", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
             .withDescription("Test the project installation process for the provided source Directory.")
+            .withCheck
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         ),
       typeDef.withObject("Documenter", description: "Python SDK documenter.")
@@ -99,6 +102,7 @@ type ModuleTypes {
         .withFunction(
           function("check", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
             .withDescription("Run type checks in the project of the provided source Directory.")
+            .withCheck
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         )
         .withFunction(
@@ -128,6 +132,7 @@ type ModuleTypes {
         .withFunction(
           function("audit", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
             .withDescription("Run security audit analysis in the project.")
+            .withCheck
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         )
         .withFunction(

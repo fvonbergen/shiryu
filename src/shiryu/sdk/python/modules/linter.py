@@ -276,9 +276,6 @@ class Linter(PythonModule):
 
         Returns:
             Changeset between the project directory before and after running commands.
-
-        Raises:
-            dagger.ExecError: If the linting or formatting execution fails.
         """
         initializer = cls._initializer_cls()
         ruff_cache_folder = initializer._ruff_cache_folder()
@@ -304,19 +301,7 @@ class Linter(PythonModule):
             ruff_format_command
         )
         modified_dir = executed_container.directory(".")
-        try:
-            return await modified_dir.changes(initial_dir).sync()
-        except dagger.ExecError as err:
-            class_name = cls.name()
-            logger.error(
-                "%s pipeline execution failed with exit code %s", class_name, err.exit_code
-            )
-            if err.stdout:
-                logger.error("%s STDOUT:\n%s", class_name, err.stdout)
-            # if err.stderr:
-            #     logger.error("%s STDERR:\n%s", class_name, err.stderr)
-
-            raise
+        return await modified_dir.changes(initial_dir).sync()
 
     @final
     @classmethod
@@ -378,8 +363,7 @@ class Linter(PythonModule):
     @dagger.function(
         doc="Run linter analysis in the project code of the provided source Directory."
     )
-    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
-    # @dagger.check
+    @dagger.check
     async def lint_code(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> None:
         """Run linter analysis in the project code of the provided source Directory.
 
@@ -425,8 +409,7 @@ class Linter(PythonModule):
 
     @final
     @dagger.function(doc="Run linter analysis in the project VCS of the provided source Directory.")
-    # TODO: dagger check is not working as expected in CI. CI is not failing when error happens
-    # @dagger.check
+    @dagger.check
     async def lint_vcs(
         self,
         *,
