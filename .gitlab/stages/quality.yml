@@ -7,31 +7,31 @@ include:
   - local: ".gitlab/jobs/.linter_lint_vcs.yml"
   - local: ".gitlab/jobs/.tester_unit.yml"
 
-auditor audit:
+quality auditor audit:
   extends: .auditor_audit
   stage: quality
   needs: []
-builder test:
+quality builder test:
   extends: .builder_test
   stage: quality
   needs: []
-checker check:
+quality checker check:
   extends: .checker_check
   stage: quality
   needs: []
-documenter document:
+quality documenter document:
   extends: .documenter_document
   stage: quality
   needs: []
-linter lint code:
+quality linter lint code:
   extends: .linter_lint_code
   stage: quality
   needs: []
-linter lint vcs:
+quality linter lint vcs:
   extends: .linter_lint_vcs
   stage: quality
   needs: []
-tester unit:
+quality tester unit:
   extends: .tester_unit
   stage: quality
   needs: []

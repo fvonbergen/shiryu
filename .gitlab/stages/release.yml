@@ -1,13 +1,12 @@
 include:
   - local: ".gitlab/jobs/.releaser_release.yml"
 
-releaser release:
+release releaser release:
   extends: .releaser_release
   stage: release
   needs: []
-  # TODO: remove this comments before feat/add-python-sdk branch merge. It's only used for testing.
-  # rules:
-  #   - if: '$CI_COMMIT_BRANCH == "main"'
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
   when: manual
   environment:
     name: production

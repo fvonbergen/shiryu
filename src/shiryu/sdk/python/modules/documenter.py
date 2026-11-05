@@ -130,7 +130,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             extends=(),
             variables=(),
             stage=stage_name,
-            needs=(build_gitlab_stage_name(gitlab_job),),
+            needs=(build_gitlab_stage_name(gitlab_stage_id_deploy, gitlab_job),),
             rules=gitlab_stage.rules,
             script=('echo "Deploying site"',),
             environment=environment,
