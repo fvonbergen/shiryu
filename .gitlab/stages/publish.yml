@@ -6,7 +6,6 @@ publish Builder publish:
   stage: publish
   needs: []
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+$/'
   environment:
     name: production

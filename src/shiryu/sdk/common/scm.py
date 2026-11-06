@@ -184,8 +184,8 @@ type GitLabArrayType = tuple[GitLabArrayElementType, ...]
 class GitHubWorkflowTriggerActionPush:
     """GitHubWorkflowTriggerActionPush class."""
 
-    branches: GitLabArrayType
-    tags: GitLabArrayType
+    branches: GitLabArrayType | None = None
+    tags: GitLabArrayType | None = None
 
 
 @final
@@ -266,9 +266,7 @@ class GitHubWorkflowId(Enum):
     PUBLISH = GitHubWorkflowProperties(
         "publish",
         GitHubWorkflowTriggerAction(
-            push=GitHubWorkflowTriggerActionPush(
-                branches=(VCS_PRIMARY_BRANCH,), tags=(MATCHING_TAGS_REGEX,)
-            ),
+            push=GitHubWorkflowTriggerActionPush(tags=(MATCHING_TAGS_REGEX,)),
             workflow_dispatch=UNSET,
         ),
         permissions=(("contents", "read"),),
@@ -561,7 +559,6 @@ class GitLabStageId(Enum):
     PUBLISH = GitLabStageProperties(
         "publish",
         (
-            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',
             f"$CI_COMMIT_TAG =~ /^{MATCHING_TAGS_REGEX}$/",
         ),
     )
