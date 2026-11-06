@@ -566,7 +566,14 @@ class GitLabStageId(Enum):
         ),
     )
     QUALITY = GitLabStageProperties("quality", ())
-    RELEASE = GitLabStageProperties("release", (f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}"',))
+    RELEASE = GitLabStageProperties(
+        "release",
+        (
+            f'$CI_COMMIT_BRANCH == "{VCS_PRIMARY_BRANCH}" && '
+            f"$CI_COMMIT_TAG !~ /^{MATCHING_TAGS_REGEX}$/ && "
+            "$CI_COMMIT_MESSAGE !~ /^bump: version/",
+        ),
+    )
 
 
 @final
