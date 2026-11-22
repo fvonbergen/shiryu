@@ -6,9 +6,10 @@ from typing import Final, final
 
 import dagger
 from dagger_clients.core import Changeset, Container, Directory, core
+from packaging.version import Version
 
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SecurityAuditType
+from ....utils.dagger.file import TargetFile
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -36,7 +37,7 @@ from ...common.scm import (
 )
 from ...common.templates import COMMON_JINJA_ENVIRONMENT
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 from ..utils import get_package_name_canonical
@@ -215,16 +216,12 @@ class DocumenterInitializer(PythonModuleInitializer):
                 {
                     # https://github.com/mkdocstrings/python/releases/tag/1.11.0
                     # >= 1.11.0: Hook into autorefs to provide context around cross-ref errors
-                    "mkdocstrings-python >= 1.11.0",
-                    # https://github.com/zensical/zensical/releases/tag/v0.0.11
-                    # # >= 0.0.11: Support mkdocstrings plugin
-                    # https://github.com/zensical/zensical/releases/tag/v0.0.22
-                    # # >= 0.0.22: Support autorefs plugin
-                    # https://github.com/zensical/zensical/releases/tag/v0.0.58
-                    # # >= 0.0.58: Support literate-nav plugin
+                    # https://github.com/mkdocstrings/python/blob/1.11.0/pyproject.toml#L11
+                    DistributionPackage("mkdocstrings-python", Version("1.11.0"), Version("3.8")),
                     # https://github.com/zensical/zensical/releases/tag/v0.0.66
-                    # # >= 0.0.66: Support api-autonav plugin
-                    "zensical >= 0.0.66",
+                    # >= 0.0.66: Support api-autonav plugin
+                    # https://github.com/zensical/zensical/blob/v0.0.66/pyproject.toml#L37
+                    DistributionPackage("zensical", Version("0.0.66"), Version("3.10")),
                 },
             ),
         )
@@ -247,7 +244,7 @@ class DocumenterInitializer(PythonModuleInitializer):
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -257,13 +254,18 @@ class DocumenterInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
         # <documentation>/**/index.md
         project_documentation_path = PROJECT_DOCUMENTATION_PATH

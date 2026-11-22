@@ -10,6 +10,8 @@ from dataclasses import InitVar, dataclass, field, replace
 from types import MappingProxyType
 from typing import Self, final
 
+from packaging.version import Version
+
 from ..common.context import (
     GitHubActionsWorkflows,
     GitHubWorkflows,
@@ -20,7 +22,18 @@ from ..common.context import (
     SDKModuleInitContextDirectoryVcs,
 )
 
-DistributionPackages = frozenset[str]
+
+@final
+@dataclass(frozen=True, slots=True)
+class DistributionPackage:
+    """DistributionPackage class."""
+
+    name: str
+    lower_bound_version: Version
+    lower_bound_requires_python: Version
+
+
+DistributionPackages = frozenset[DistributionPackage]
 
 
 @final
@@ -40,9 +53,11 @@ class DependencyGroups:
     _dependency_groups: MappingProxyType[str, DistributionPackages] = field(
         init=False, default_factory=lambda: MappingProxyType({})
     )
-    dependency_groups_input: InitVar[Mapping[str, set[str] | DistributionPackages] | None] = None
+    dependency_groups_input: InitVar[Mapping[str, Set[DistributionPackage]] | None] = None
 
-    def __post_init__(self, dependency_groups_input: Mapping[str, Set[str]] | None) -> None:
+    def __post_init__(
+        self, dependency_groups_input: Mapping[str, Set[DistributionPackage]] | None
+    ) -> None:
         """Process the input dictionary into immutable structures post-initialization.
 
         Args:
@@ -55,7 +70,35 @@ class DependencyGroups:
             }
             object.__setattr__(self, "_dependency_groups", MappingProxyType(immutable_data))
 
-    def add(self, group_name: str, packages: Set[str]) -> "DependencyGroups":
+    @property
+    def specifiers(self) -> Mapping[str, frozenset[str]]:
+        """Dependencies specifiers of the dependency groups.
+
+        Returns:
+            Dependency specifiers for the dependency groups.
+        """
+        return {
+            dependency_group_name: frozenset(
+                f"{distribution_package.name} >= {distribution_package.lower_bound_version}"
+                for distribution_package in distribution_packages
+            )
+            for dependency_group_name, distribution_packages in self._dependency_groups.items()
+        }
+
+    @property
+    def lower_bound_requires_python(self) -> Version:
+        """Lower bound requires python of the dependency groups.
+
+        Returns:
+            Lower bound requires python of the dependency groups.
+        """
+        return max(
+            distribution_package.lower_bound_requires_python
+            for distribution_packages in self._dependency_groups.values()
+            for distribution_package in distribution_packages
+        )
+
+    def add(self, group_name: str, packages: Set[DistributionPackage]) -> "DependencyGroups":
         """Add a collection of dependency packages to a dependency group name.
 
         Args:

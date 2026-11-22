@@ -5,10 +5,11 @@ from typing import Annotated, Final, final
 
 import dagger
 from dagger_clients.core import CacheSharingMode, Container, Directory, Service, core
+from packaging.version import Version
 
 from ....utils.dagger.client import container_debian
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SecurityAuditType
+from ....utils.dagger.file import TargetFile
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -18,7 +19,7 @@ from ...common.module import (
     ProjectMetadata,
     SCMType,
 )
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
@@ -57,7 +58,14 @@ class JupyterInitializer(PythonModuleInitializer):
         sdk_module_name = sdk_module_cls.name()
         return init_context_directory.evolve(
             dependency_groups=init_context_directory.dependency_groups.add(
-                sdk_module_name, {"notebook", "python-lsp-server"}
+                sdk_module_name,
+                {
+                    # TODO: versions not studied.
+                    # https://github.com/jupyter/notebook/blob/4.0.0/setup.py#L26
+                    DistributionPackage("notebook", Version("4.0.0"), Version("2.7")),
+                    # TODO: versions not studied.
+                    DistributionPackage("python-lsp-server", Version("0.1.1"), Version("0.0")),
+                },
             ),
         )
 
@@ -69,7 +77,7 @@ class JupyterInitializer(PythonModuleInitializer):
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -79,13 +87,18 @@ class JupyterInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
 
         # <jupyter notebooks>/playground.ipynb
@@ -202,11 +215,12 @@ class Jupyter(PythonModule):
         Returns:
             A jupyter notebooks Directory.
         """
+        container_security_audit_file = await self._container_security_audit_file(self.source)
         jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
         export_path_str = "/export"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
         return (
-            (await container_debian(platform, self.security_audit))
+            (await container_debian(platform, container_security_audit_file))
             .with_mounted_cache(
                 jupyter_notebooks_cache_folder,
                 JUPYTER_NOTEBOOKS_CACHE_VOLUME,

@@ -11,6 +11,7 @@ from typing import Self, final
 from .scm import GitHubActionsWorkflows, GitHubWorkflows, GitLabJobsStages, GitLabStages
 
 
+# TODO: Conver to packaging Version
 @final
 @dataclass(frozen=True, slots=True)
 class DaggerModuleMetadata:
@@ -153,23 +154,25 @@ class SDKModuleInitContextContainer:
     """Configuration context applied when bootstrapping systemic execution containers.
 
     Attributes:
-        apt_packages: A frozen set of Linux apt utility package dependencies to inject.
+        container_packages: A frozen set of container package dependencies to inject.
     """
 
-    apt_packages: frozenset[str]
+    container_packages: frozenset[str]
 
-    def evolve(self, *, apt_packages: frozenset[str] | None = None) -> Self:
+    def evolve(self, *, container_packages: frozenset[str] | None = None) -> Self:
         """Type-safe leaf evolution. Falls back to current value if None.
 
         Args:
-            apt_packages: Optional new frozen set of system package targets.
+            container_packages: Optional new frozen set of system package targets.
 
         Returns:
             An updated container initialization context instance.
         """
         return replace(
             self,
-            apt_packages=apt_packages if apt_packages is not None else self.apt_packages,
+            container_packages=container_packages
+            if container_packages is not None
+            else self.container_packages,
         )
 
     @classmethod
@@ -179,4 +182,4 @@ class SDKModuleInitContextContainer:
         Returns:
             A default container context instance.
         """
-        return cls(apt_packages=frozenset())
+        return cls(container_packages=frozenset())

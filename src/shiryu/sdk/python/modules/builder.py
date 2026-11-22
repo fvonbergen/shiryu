@@ -1,11 +1,13 @@
 """builder module."""
 
+import asyncio
 import logging
 from pathlib import PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
 from dagger_clients.core import Changeset, Container, Directory, Secret
+from packaging.version import Version
 
 from ....utils.dagger.client import container_uv
 from ...common.context import DaggerModuleMetadata
@@ -25,7 +27,7 @@ from ...common.scm import (
     build_gitlab_job,
     build_gitlab_stage_job,
 )
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 
 logger = logging.getLogger(__name__)
@@ -161,7 +163,8 @@ class BuilderInitializer(PythonModuleInitializer):
                 sdk_module_name,
                 {
                     # All versions supported
-                    "hatch"
+                    # https://github.com/pypa/hatch/blob/hatch-v1rc2/pyproject.toml#L10
+                    DistributionPackage("hatch", Version("0.0.0"), Version("3.8"))
                 },
             ),
         )
@@ -313,24 +316,33 @@ class Builder(PythonModule):
         Raises:
             dagger.ExecError: If test execution fails.
         """
+        initializer = self._initializer_cls()
         source = self.source
-        security_audit = self.security_audit
+        container_security_audit_file, dependencies_security_audit_file = await asyncio.gather(
+            self._container_security_audit_file(source),
+            self._dependencies_security_audit_file(source),
+        )
         exclude = []
         try:
             container = await self._exec_container(source, exclude, platform)
             project_metadata = await self._get_project_metadata(
-                source, self.project_name, platform, security_audit
+                source, self.project_name, platform, container_security_audit_file
             )
             package_name = project_metadata.name
             package_name_version = f"{package_name}=={project_metadata.version}"
             directory = self.__build(container, platform)
+            uv_cmd = initializer._uv_cmd()
             await (
-                (await container_uv(platform, security_audit))
+                (
+                    await container_uv(
+                        platform, container_security_audit_file, dependencies_security_audit_file
+                    )
+                )
                 .with_directory(".", directory)
-                .with_exec(["uv", "venv"])
+                .with_exec([*uv_cmd, "venv"])
                 .with_exec(
                     [
-                        "uv",
+                        *uv_cmd,
                         "pip",
                         "install",
                         "--no-build-isolation",
@@ -338,7 +350,7 @@ class Builder(PythonModule):
                         package_name_version,
                     ]
                 )
-                .with_exec(["uv", "pip", "uninstall", package_name])
+                .with_exec([*uv_cmd, "pip", "uninstall", package_name])
                 .sync()
             )
         except dagger.ExecError as exception:

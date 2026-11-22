@@ -7,9 +7,10 @@ from typing import Annotated, Final, final
 
 import dagger
 from dagger_clients.core import CacheSharingMode, Changeset, Container, Directory, ReturnType, core
+from packaging.version import Version
 
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SecurityAuditType
+from ....utils.dagger.file import TargetFile
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -32,7 +33,7 @@ from ...common.scm import (
 )
 from ...common.utils import TESTS_UNIT_PATH
 from ...common.vcs import VCS_PRIMARY_BRANCH
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
@@ -192,10 +193,12 @@ class LinterInitializer(PythonModuleInitializer):
                 {
                     # https://github.com/commit-check/commit-check/releases/tag/v2.0.0
                     # >= 2.0.0: Configuration Migration and Removed Features
-                    "commit-check >= 2.0.0",
+                    # https://github.com/commit-check/commit-check/blob/v2.0.0/pyproject.toml#L14
+                    DistributionPackage("commit-check", Version("2.0.0"), Version("3.9")),
                     # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
                     # >= 0.1.2: New ruff format command
-                    "ruff >= 0.1.2",
+                    # https://github.com/astral-sh/ruff/blob/v0.1.2/pyproject.toml#L11
+                    DistributionPackage("ruff", Version("0.1.2"), Version("3.7")),
                 },
             ),
         )
@@ -228,7 +231,7 @@ class LinterInitializer(PythonModuleInitializer):
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -238,13 +241,18 @@ class LinterInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
         # cchk.toml
         cchk_toml_template_mapping: Mapping = {}

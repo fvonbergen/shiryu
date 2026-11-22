@@ -1,5 +1,6 @@
 """template module."""
 
+from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from typing import Any, Final, final
 
@@ -44,57 +45,19 @@ def get_jinja_environment(file_path: Path) -> jinja2.Environment:
     )
 
 
-Mapping = dict[str, Any]
-
-
 @final
+@dataclass(frozen=True, slots=True)
 class TemplateFile:
     """TemplateFile class."""
 
-    def __init__(
-        self,
-        file_name: Path,
-        *,
-        output_directory: PurePosixPath | None = None,
-        output_file_name: PurePosixPath | None = None,
-    ) -> None:
-        """Class initializer.
+    file_name: Path
+    output_directory: PurePosixPath = field(default_factory=PurePosixPath, kw_only=True)
+    output_file_name: PurePosixPath = field(default_factory=PurePosixPath, kw_only=True)
 
-        Args:
-            file_name: Template file name.
-            output_directory: Output directory.
-            output_file_name: Alternative output file name.
-        """
-        self.__file_name = file_name
-        self.__output_directory = output_directory if output_directory else PurePosixPath()
-        self.__output_file_name = output_file_name if output_file_name else PurePosixPath(file_name)
-
-    @property
-    def file_name(self) -> Path:
-        """Get file name.
-
-        Returns:
-            File name.
-        """
-        return self.__file_name
-
-    @property
-    def output_directory(self) -> PurePosixPath:
-        """Get output directory.
-
-        Returns:
-            Output directory.
-        """
-        return self.__output_directory
-
-    @property
-    def output_file_name(self) -> PurePosixPath:
-        """Get output file name.
-
-        Returns:
-            Output file name.
-        """
-        return self.__output_file_name
+    def __post_init__(self) -> None:
+        """Normalize default output paths."""
+        if self.output_file_name == PurePosixPath():
+            object.__setattr__(self, "output_file_name", PurePosixPath(self.file_name))
 
     @property
     def output_path(self) -> PurePosixPath:
@@ -106,32 +69,18 @@ class TemplateFile:
         return self.output_directory / self.output_file_name
 
 
+Mapping = dict[str, Any]
+
+
 @final
+@dataclass(frozen=True, slots=True)
 class Template:
     """Template class."""
 
-    def __init__(
-        self, jinja_environment: jinja2.Environment, template_file: TemplateFile, mapping: Mapping
-    ) -> None:
-        """Class initializer.
-
-        Args:
-            jinja_environment: Jinja environment.
-            template_file: Template file.
-            mapping: Default template mapping.
-        """
-        self.__jinja_environment = jinja_environment
-        self.__template_file = template_file
-        self.__mapping = mapping
-
-    @property
-    def template_file(self) -> TemplateFile:
-        """Get template file.
-
-        Returns:
-            The template file.
-        """
-        return self.__template_file
+    jinja_environment: jinja2.Environment = field(repr=False)
+    template_file: TemplateFile
+    # TODO: we should replace Mapping with a hashable solution
+    mapping: Mapping = field(hash=False)
 
     @property
     def contents(self) -> str:
@@ -140,7 +89,7 @@ class Template:
         Returns:
             File contents.
         """
-        jinja_template = self.__jinja_environment.get_template(
+        jinja_template = self.jinja_environment.get_template(
             f"{self.template_file.file_name}.{TEMPLATE_FILE_SUFFIX}"
         )
-        return jinja_template.render(**(self.__mapping))
+        return jinja_template.render(**self.mapping)

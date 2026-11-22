@@ -42,7 +42,7 @@ async def test_python_jupyter_init(dagger_session: dagger.Session, test_case: Te
 
     init_changeset = (
         await (await Shiryu.create(ws=inputs.workspace))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .jupyter()
         .init(
             project_name=inputs.project_name,

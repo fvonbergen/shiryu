@@ -6,9 +6,10 @@ from typing import Annotated, Final, final
 
 import dagger
 from dagger_clients.core import Container, Directory, ReturnType, core
+from packaging.version import Version
 
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SecurityAuditType
+from ....utils.dagger.file import TargetFile
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -28,7 +29,7 @@ from ...common.scm import (
     build_gitlab_stage_job,
 )
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER, PROJECT_TESTS_FOLDER, TESTS_UNIT_PATH
-from ..context import DependencyGroups, PythonModuleInitContextDirectory
+from ..context import DependencyGroups, DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 from .checker import Checker
@@ -131,11 +132,13 @@ class TesterInitializer(PythonModuleInitializer):
         tests_code_dependencies = {
             # https://docs.pytest.org/en/stable/changelog.html#pytest-7-4-0-2023-06-23
             # >= 7.4.0: Enhanced the CLI flag for -c to now include --config-file.
-            "pytest >= 7.4.0",
+            # https://github.com/pytest-dev/pytest/blob/7.4.0/pyproject.toml
+            DistributionPackage("pytest", Version("7.4.0"), Version("0.0")),
             # https://github.com/pytest-dev/pytest-asyncio/releases/tag/v0.24.0
             # https://pytest-asyncio.readthedocs.io/en/stable/reference/changelog.html#id67
             # >= 0.24.0: Added the asyncio_default_fixture_loop_scope configuration option
-            "pytest-asyncio >= 0.24.0",
+            # https://github.com/pytest-dev/pytest-asyncio/blob/v0.24.0/setup.cfg#L38
+            DistributionPackage("pytest-asyncio", Version("0.24.0"), Version("3.8")),
         }
         pre_steps = (build_github_workflow_checkout_job(),)
 
@@ -173,10 +176,12 @@ class TesterInitializer(PythonModuleInitializer):
                     # https://pytest-cov.readthedocs.io/en/latest/changelog.html#id141
                     # >= 2.3.0: Add support for specifying output location for html, xml, and
                     #   annotate report.
-                    "pytest-cov >= 2.3.0",
+                    # https://github.com/pytest-dev/pytest-cov/blob/v2.3.0/setup.py#L107
+                    DistributionPackage("pytest-cov", Version("2.3.0"), Version("2.6")),
                     # https://pytest-xdist.readthedocs.io/en/latest/changelog.html#pytest-xdist-1-18-0-2017-06-26
                     # >= 1.18.0: Add long option --numprocesses as alternative for -n.
-                    "pytest-xdist[psutil] >= 1.18.0",
+                    # https://github.com/pytest-dev/pytest-xdist/blob/v1.18.0/pyproject.toml
+                    DistributionPackage("pytest-xdist[psutil]", Version("1.18.0"), Version("0.0")),
                 },
             ).merge(DependencyGroups({Checker.name(): tests_code_dependencies})),
             source_code_files_folders=init_context_directory.source_code_files_folders
@@ -191,7 +196,7 @@ class TesterInitializer(PythonModuleInitializer):
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -201,13 +206,18 @@ class TesterInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
         tests_unit_path_str = str(TESTS_UNIT_PATH)
         _coveragerc_template_file = TemplateFile(Path(".coveragerc"))

@@ -70,7 +70,7 @@ async def test_python_builder_init(dagger_session: dagger.Session, test_case: Te
 
     init_changeset = (
         await (await Shiryu.create(ws=inputs.workspace))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .init(
             project_name=inputs.project_name,
@@ -97,14 +97,14 @@ async def test_python_builder_build(dagger_session: dagger.Session) -> None:
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
     build_changeset = (
         await (await Shiryu.create(ws=init_source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .build(platform=platform)
     )
@@ -136,14 +136,14 @@ async def test_python_builder_test(dagger_session: dagger.Session) -> None:
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
     await (
         (await Shiryu.create(ws=init_source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .builder()
         .test(platform=platform)
     )

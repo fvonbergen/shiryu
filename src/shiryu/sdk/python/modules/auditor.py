@@ -3,6 +3,7 @@
 from typing import Final, final
 
 import dagger
+from packaging.version import Version
 
 from ...common.context import DaggerModuleMetadata
 from ...common.module import PLATFORM_DAGGER_DEFAULT, PlatformDaggerType, ProjectMetadata
@@ -15,7 +16,7 @@ from ...common.scm import (
     build_gitlab_job,
     build_gitlab_stage_job,
 )
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 
 
@@ -99,7 +100,8 @@ class AuditorInitializer(PythonModuleInitializer):
                 {
                     # https://github.com/astral-sh/uv/releases/tag/0.11.0
                     # >= 0.11.0: New uv audit command
-                    "uv >= 0.11.0"
+                    # https://github.com/astral-sh/uv/blob/0.11.0/pyproject.toml#L10
+                    DistributionPackage("uv", Version("0.11.0"), Version("3.8"))
                 },
             ),
         )
@@ -130,10 +132,11 @@ class Auditor(PythonModule):
         Raises:
             dagger.ExecError: If security audit execution fails.
         """
+        initializer = self._initializer_cls()
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         try:
-            uv_audit_command = self._build_uv_run_command(["uv", "audit"])
+            uv_audit_command = self._build_uv_run_command([*initializer._uv_cmd(), "audit"])
             await container.with_exec(uv_audit_command).sync()
         except dagger.ExecError as exception:
             self.log(exception)

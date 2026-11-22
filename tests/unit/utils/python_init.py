@@ -85,6 +85,7 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
             else ()
         ),
         "CHANGELOG.md",
+        "LICENSE",
         "README.md",
         "pyproject.toml",
         "src/",
@@ -92,6 +93,7 @@ def __python_init_paths(project_name: ProjectNameType, scm: SCMType) -> Paths:
         f"src/{package_name_canonical}/__init__.py",
         f"src/{package_name_canonical}/py.typed",
         "uv.lock",
+        "uv.toml",
     )
 
 

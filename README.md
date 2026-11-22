@@ -5,10 +5,12 @@ module. Its goal is to standardize software repository structures and provide
 local-first developer commands that mirror your CI/CD pipeline exactly.
 
 Source code:
+
 - [Shiryu (GitHub)](https://github.com/fvonbergen/shiryu)
 - [Shiryu (GitLab)](https://gitlab.com/fvonbergen1/shiryu)
 
 Documentation:
+
 - [Shiryu Pages (GitHub)](https://fvonbergen.github.io/shiryu)
 - [Shiryu Pages (GitLab)](https://shiryu-1fe986.gitlab.io/)
 
@@ -18,7 +20,8 @@ Documentation:
 
 > [!IMPORTANT]
 > **VCS Requirement:** Shiryu projects must use `git`. Shiryu executes version
-control commands internally and depends on the `.git/` directory and `.gitignore` configuration.
+control commands internally and depends on the `.git/` directory and `.gitignore`
+configuration.
 
 To install the Dagger CLI, follow the official instructions at
 [https://docs.dagger.io/install/](https://docs.dagger.io/install/).
@@ -41,16 +44,19 @@ DO_NOT_TRACK=1 dagger api                                 \
 ```
 
 For initializing a project:
+
 ```bash
 DO_NOT_TRACK=1 dagger generate
 ```
 
 For running checks:
+
 ```bash
 DO_NOT_TRACK=1 dagger check
 ```
 
-Alternatively, you can run functions directly from the remote reference without prior installation:
+Alternatively, you can run functions directly from the remote reference without
+prior installation:
 
 ```bash
 DO_NOT_TRACK=1 dagger api                                 \
@@ -68,7 +74,6 @@ DO_NOT_TRACK=1 dagger generate                      \
 DO_NOT_TRACK=1 dagger check                               \
   --load-module=https://github.com/fvonbergen/shiryu.git
 ```
-
 
 ### Python SDK
 
@@ -118,6 +123,7 @@ DO_NOT_TRACK=1 dagger api                                 \
 ```
 
 Run project checks:
+
 ```bash
 DO_NOT_TRACK=1 dagger check                               \
   --load-module=https://github.com/fvonbergen/shiryu.git  \
@@ -185,11 +191,13 @@ UV_MALWARE_CHECK=1 uv sync --locked --no-install-project --group=<group_section>
 prerequisite for both Shiryu and the Python Dagger SDK client.
 
 To regenerate or update the lockfile after modifying dependencies:
+
 ```bash
 UV_MALWARE_CHECK=1 uv lock --upgrade
 ```
 
 To synchronize your local `.venv` exactly with the existing `uv.lock` file:
+
 ```bash
 UV_MALWARE_CHECK=1 uv sync --no-install-project
 ```

@@ -4,6 +4,51 @@ type ModuleTypes {
   pub all: [TypeDef!]! {
     [
       typeDef.withObject("DaggerBase", description: "DaggerBase class."),
+      typeDef.withObject("Checker", description: "Python SDK checker.")
+        .withFunction(
+          function("check", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
+            .withDescription("Run type checks in the project of the provided source Directory.")
+            .withCheck
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("init", typeDef.withObject("Changeset"))
+            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
+            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
+            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
+            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        ),
+      typeDef.withObject("Tester", description: "Python SDK tester.")
+        .withFunction(
+          function("init", typeDef.withObject("Changeset"))
+            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
+            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
+            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
+            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("unit", typeDef.withKind(TypeDefKind.STRING_KIND))
+            .withDescription("Run unit tests in the project of the provided source Directory.")
+            .withArg("keyword", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Run tests that match substring expression", defaultValue: ("null" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        ),
+      typeDef.withObject("Auditor", description: "Python SDK Security Auditor.")
+        .withFunction(
+          function("audit", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
+            .withDescription("Run security audit analysis in the project.")
+            .withCheck
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("init", typeDef.withObject("Changeset"))
+            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
+            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
+            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
+            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        ),
       typeDef.withObject("Jupyter", description: "Python SDK jupyter.")
         .withFunction(
           function("init", typeDef.withObject("Changeset"))
@@ -22,6 +67,49 @@ type ModuleTypes {
           function("service", typeDef.withObject("Service"))
             .withDescription("Returns a jupyter notebooks service with the project of the provided source Directory.")
             .withArg("backend_port", typeDef.withKind(TypeDefKind.INTEGER_KIND), description: "Jupyter notebooks port", defaultValue: ("8888" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        ),
+      typeDef.withObject("Releaser", description: "Python SDK Releaser.")
+        .withFunction(
+          function("dry_run", typeDef.withKind(TypeDefKind.STRING_KIND))
+            .withDescription("Perform a dry run of the release process.")
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("init", typeDef.withObject("Changeset"))
+            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
+            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
+            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
+            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("release", typeDef.withKind(TypeDefKind.STRING_KIND))
+            .withDescription("Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.")
+            .withArg("auth_token", typeDef.withObject("Secret"), description: "Authorization token with write access to the repository and its releases (GitLab tokens need the api scope)")
+            .withArg("auth_user_name", typeDef.withKind(TypeDefKind.STRING_KIND), description: "User name sent with the authorization token (any non-empty value works with GitHub and GitLab access tokens)", defaultValue: ("\"x-access-token\"" :: Dagger.JSON!))
+            .withArg("branch", typeDef.withKind(TypeDefKind.STRING_KIND), description: "Branch to release from and push the release commit to", defaultValue: ("\"main\"" :: Dagger.JSON!))
+            .withArg("vcs_user_name", typeDef.withKind(TypeDefKind.STRING_KIND), description: "VCS user name used for the release commit", defaultValue: ("\"CI Release Bot\"" :: Dagger.JSON!))
+            .withArg("vcs_user_email", typeDef.withKind(TypeDefKind.STRING_KIND), description: "VCS user email used for the release commit", defaultValue: ("\"ci@shiryu.dev\"" :: Dagger.JSON!))
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        ),
+      typeDef.withObject("Documenter", description: "Python SDK documenter.")
+        .withFunction(
+          function("audit", typeDef.withKind(TypeDefKind.STRING_KIND))
+            .withDescription("Audit source code docstrings.")
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("document", typeDef.withObject("Changeset"))
+            .withDescription("Run documenter document in the project of the provided source Directory.")
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
+          function("init", typeDef.withObject("Changeset"))
+            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
+            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
+            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
+            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         ),
       typeDef.withObject("Linter", description: "Python SDK linter.")
@@ -79,94 +167,6 @@ type ModuleTypes {
             .withCheck
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         ),
-      typeDef.withObject("Documenter", description: "Python SDK documenter.")
-        .withFunction(
-          function("audit", typeDef.withKind(TypeDefKind.STRING_KIND))
-            .withDescription("Audit source code docstrings.")
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("document", typeDef.withObject("Changeset"))
-            .withDescription("Run documenter document in the project of the provided source Directory.")
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("init", typeDef.withObject("Changeset"))
-            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
-            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
-            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
-            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        ),
-      typeDef.withObject("Checker", description: "Python SDK checker.")
-        .withFunction(
-          function("check", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
-            .withDescription("Run type checks in the project of the provided source Directory.")
-            .withCheck
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("init", typeDef.withObject("Changeset"))
-            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
-            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
-            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
-            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        ),
-      typeDef.withObject("Tester", description: "Python SDK tester.")
-        .withFunction(
-          function("init", typeDef.withObject("Changeset"))
-            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
-            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
-            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
-            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("unit", typeDef.withKind(TypeDefKind.STRING_KIND))
-            .withDescription("Run unit tests in the project of the provided source Directory.")
-            .withArg("keyword", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Run tests that match substring expression", defaultValue: ("null" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        ),
-      typeDef.withObject("Auditor", description: "Python SDK Security Auditor.")
-        .withFunction(
-          function("audit", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
-            .withDescription("Run security audit analysis in the project.")
-            .withCheck
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("init", typeDef.withObject("Changeset"))
-            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
-            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
-            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
-            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        ),
-      typeDef.withObject("Releaser", description: "Python SDK Releaser.")
-        .withFunction(
-          function("dry_run", typeDef.withKind(TypeDefKind.STRING_KIND))
-            .withDescription("Perform a dry run of the release process.\n\nPerform a dry run of the release process without making any changes.")
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("init", typeDef.withObject("Changeset"))
-            .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
-            .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
-            .withArg("is_update", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Whether to update project directory files or not", defaultValue: ("false" :: Dagger.JSON!))
-            .withArg("scm", typeDef.withListOf(typeDef.withEnum("SCM", description: "SCM options.")), description: "Project Source Code Management (SCM) list to be targeted or configured", defaultValue: ("[\"GITLAB\"]" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
-          function("release", typeDef.withKind(TypeDefKind.STRING_KIND))
-            .withDescription("Bump version, update changelog, commit, tag, push and create the GitHub/GitLab release.")
-            .withArg("auth_token", typeDef.withObject("Secret"), description: "Authorization token with write access to the repository and its releases (GitLab tokens need the api scope)")
-            .withArg("auth_user_name", typeDef.withKind(TypeDefKind.STRING_KIND), description: "User name sent with the authorization token (any non-empty value works with GitHub and GitLab access tokens)", defaultValue: ("\"x-access-token\"" :: Dagger.JSON!))
-            .withArg("branch", typeDef.withKind(TypeDefKind.STRING_KIND), description: "Branch to release from and push the release commit to", defaultValue: ("\"main\"" :: Dagger.JSON!))
-            .withArg("vcs_user_name", typeDef.withKind(TypeDefKind.STRING_KIND), description: "VCS user name used for the release commit", defaultValue: ("\"CI Release Bot\"" :: Dagger.JSON!))
-            .withArg("vcs_user_email", typeDef.withKind(TypeDefKind.STRING_KIND), description: "VCS user email used for the release commit", defaultValue: ("\"ci@shiryu.dev\"" :: Dagger.JSON!))
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        ),
       typeDef.withObject("python_module")
         .withFunction(
           function("auditor", typeDef.withObject("Auditor"))
@@ -212,17 +212,13 @@ type ModuleTypes {
       typeDef.withObject("Shiryu", description: "Shiryu class.")
         .withFunction(
           function("python", typeDef.withObject("python_module"))
-            .withDescription("python_module(source: dagger_clients.core.Directory, project_name: str, security_audit: collections.abc.Set[shiryu.utils.dagger.function.SecurityAudit])")
+            .withDescription("python_module(source: dagger_clients.core.Directory, project_name: str)")
         )
         .withConstructor(
           function("", typeDef.withObject("Shiryu"))
-            .withDescription("Dagger factory class method.\n\nArgs:\n    ws: Dagger auto-populates it from the current workspace. The caller passes nothing for\n        it, and no project files are uploaded up front. The module pulls only the paths it\n        asks for.\n    security_audit: Security audit checks that can be enabled in the pipeline.\n\nReturns:\n    An instance built with `cls(...)`.")
+            .withDescription("Dagger factory class method.\n\nArgs:\n    ws: Dagger auto-populates it from the current workspace. The caller passes nothing for\n        it, and no project files are uploaded up front. The module pulls only the paths it\n        asks for.\n\nReturns:\n    An instance built with `cls(...)`.")
             .withArg("ws", typeDef.withObject("Workspace"), description: "A Dagger workspace detected from the current working directory or\nconstructed from a Directory.")
-            .withArg("security_audit", typeDef.withListOf(typeDef.withEnum("SecurityAudit", description: "SecurityAudit options.")), description: "Security audit checks that can be enabled in the pipeline.", defaultValue: ("[\"CONTAINER\", \"DEPENDENCIES\"]" :: Dagger.JSON!))
         ),
-      typeDef.withEnum("SecurityAudit", description: "SecurityAudit options.")
-        .withEnumMember("CONTAINER", value: "container")
-        .withEnumMember("DEPENDENCIES", value: "dependencies"),
       typeDef.withEnum("SCM", description: "SCM options.")
         .withEnumMember("GITHUB", value: "github")
         .withEnumMember("GITLAB", value: "gitlab"),

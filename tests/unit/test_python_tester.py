@@ -63,7 +63,7 @@ async def test_python_tester_init(dagger_session: dagger.Session, test_case: Tes
 
     init_changeset = (
         await (await Shiryu.create(ws=inputs.workspace))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .tester()
         .init(
             project_name=inputs.project_name,
@@ -89,14 +89,14 @@ async def test_python_tester_unit(dagger_session: dagger.Session) -> None:
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .tester()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
     stdout = (
         await (await Shiryu.create(ws=init_source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .tester()
         .unit(platform=platform)
     )

@@ -85,7 +85,7 @@ async def test_python_documenter_init(
 
     init_changeset = (
         await (await Shiryu.create(ws=inputs.workspace))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .documenter()
         .init(
             project_name=inputs.project_name,
@@ -111,14 +111,14 @@ async def test_python_documenter_document(dagger_session: dagger.Session) -> Non
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .documenter()
         .init(project_name=project_name, platform=platform)
     )
     init_source = source.with_changes(init_changeset)
     document_changeset = (
         await (await Shiryu.create(ws=init_source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .documenter()
         .document(platform=platform)
     )
@@ -134,12 +134,14 @@ async def test_python_documenter_document(dagger_session: dagger.Session) -> Non
         r"^assets/javascripts/$",
         r"^assets/javascripts/LICENSE$",
         r"^assets/javascripts/bundle\.[a-f0-9]{8}\.min\.js$",
+        r"^assets/javascripts/git-revision-date-localized\.[a-f0-9]{8}\.min\.js$",
         r"^assets/javascripts/workers/$",
         r"^assets/javascripts/workers/search\.[a-f0-9]{8}\.min\.js$",
         r"^assets/stylesheets/$",
         r"^assets/stylesheets/classic/$",
         r"^assets/stylesheets/classic/main\.[a-f0-9]{8}\.min\.css$",
         r"^assets/stylesheets/classic/palette\.[a-f0-9]{8}\.min\.css$",
+        r"assets/stylesheets/git-revision-date-localized\.[a-f0-9]{8}\.min\.css",
         r"^assets/stylesheets/modern/$",
         r"^assets/stylesheets/modern/main\.[a-f0-9]{8}\.min\.css$",
         r"^assets/stylesheets/modern/palette\.[a-f0-9]{8}\.min\.css$",

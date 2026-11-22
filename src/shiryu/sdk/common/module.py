@@ -10,17 +10,13 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
-from dagger_clients.core import Changeset, Container, Directory, Platform, core
+from dagger_clients.core import Changeset, Container, Directory, ExistsType, Platform, core
 
 from ...utils.class_name import ClassName
 from ...utils.dagger.client import container_git
 from ...utils.dagger.directory import directory_with_new_file
-from ...utils.dagger.function import (
-    ProjectNameType,
-    SecurityAuditType,
-    SourceType,
-    add_enum_values_as_methods,
-)
+from ...utils.dagger.file import TargetFile
+from ...utils.dagger.function import ProjectNameType, SourceType, add_enum_values_as_methods
 from ...utils.enum import create_enum
 from ...utils.template import Mapping, Template, TemplateFile
 from .context import (
@@ -148,7 +144,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         init_context_vcs: SDKModuleInitContextDirectoryVcs,
         directory: Directory,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Initialize the directory with the VCS folders and files.
 
@@ -157,7 +153,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             init_context_vcs: SDK module initialization directory VCS context.
             directory: A directory to VCS initialize.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             Returns a directory with the VCS folders and files.
@@ -165,7 +161,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         _project_authors = sorted(project_authors, key=lambda author: author.name)
         project_author = _project_authors[0] if len(_project_authors) else ProjectAuthor()
         _directory = (
-            (await container_git(platform, security_audit))
+            (await container_git(platform, container_security_audit_file))
             .with_directory(".", directory)
             .with_exec(["git", "init", "--initial-branch", VCS_PRIMARY_BRANCH])
             .with_exec(["git", "config", "user.name", project_author.name])
@@ -233,6 +229,43 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             COMMON_JINJA_ENVIRONMENT, cls._readme_md_template_file(), readme_md_template_mapping
         )
 
+    @final
+    @classmethod
+    def _license_template_file(cls) -> TemplateFile:
+        """LICENSE template file.
+
+        Returns:
+            The LICENSE template file.
+        """
+        # License file names must be SPDX compliant.
+        # https://spdx.dev/learn/handling-license-info/
+        return TemplateFile(Path("Apache-2.0"), output_file_name=PurePosixPath("LICENSE"))
+
+    @final
+    @classmethod
+    def _trivyignore_template_file(cls) -> TemplateFile:
+        """.trivyignore template file.
+
+        Returns:
+            The .trivyignore template file.
+        """
+        return TemplateFile(Path(".trivyignore.shiryu"))
+
+    @final
+    @classmethod
+    def _trivyignore_template(cls) -> Template:
+        """.trivyignore template.
+
+        Returns:
+            The .trivyignore template.
+        """
+        _trivyignore_template_mapping: Mapping = {}
+        return Template(
+            COMMON_JINJA_ENVIRONMENT,
+            cls._trivyignore_template_file(),
+            _trivyignore_template_mapping,
+        )
+
     @classmethod
     async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
@@ -241,7 +274,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -251,7 +284,7 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
@@ -262,11 +295,17 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
             init_context_directory.vcs,
             directory,
             platform,
-            security_audit,
+            container_security_audit_file,
         )
         # README.md
         readme_md_template = cls._readme_md_template(project_metadata.name)
         directory = directory_with_new_file(directory, readme_md_template)
+        # LICENSE
+        license_template_mapping: Mapping = {}
+        license_template = Template(
+            COMMON_JINJA_ENVIRONMENT, cls._license_template_file(), license_template_mapping
+        )
+        directory = directory_with_new_file(directory, license_template)
         # CHANGELOG.md
         changelog_md_template_mapping: Mapping = {}
         changelog_md_template = Template(
@@ -288,7 +327,6 @@ class SDKModule[
 
     source: SourceType
     project_name: ProjectNameType
-    security_audit: SecurityAuditType
 
     @staticmethod
     @abstractmethod
@@ -313,19 +351,19 @@ class SDKModule[
     @final
     @staticmethod
     async def __get_module_tag_or_branch(
-        platform: PlatformType, security_audit: SecurityAuditType, module_source: Directory
+        platform: PlatformType, container_security_audit_file: TargetFile, module_source: Directory
     ) -> str:
         """Get the exact Git tag or current branch name for the module source.
 
         Args:
             platform: The target platform type.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
             module_source: The directory containing the module source.
 
         Returns:
             The exact Git tag if available, otherwise the current branch name.
         """
-        container = (await container_git(platform, security_audit)).with_directory(
+        container = (await container_git(platform, container_security_audit_file)).with_directory(
             ".", module_source
         )
         try:
@@ -340,13 +378,13 @@ class SDKModule[
     @final
     @classmethod
     async def __get_shiryu_metadata(
-        cls, platform: PlatformType, security_audit: SecurityAuditType
+        cls, platform: PlatformType, container_security_audit_file: TargetFile
     ) -> DaggerModuleMetadata:
         """Returns shiryu metadata.
 
         Args:
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             Shiryu metadata.
@@ -358,7 +396,9 @@ class SDKModule[
             module_source = core().current_module().source()
             dagger_engine_version, git_tag_or_branch = await asyncio.gather(
                 module_source.as_module_source().engine_version(),
-                cls.__get_module_tag_or_branch(platform, security_audit, module_source),
+                cls.__get_module_tag_or_branch(
+                    platform, container_security_audit_file, module_source
+                ),
             )
             return DaggerModuleMetadata(
                 dagger_version=dagger_engine_version.removeprefix("v"),
@@ -381,7 +421,7 @@ class SDKModule[
         source: SourceType,
         project_name: ProjectNameType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> ProjectMetadata:
         """Get project metadata.
 
@@ -391,15 +431,15 @@ class SDKModule[
             source: Project source directory.
             project_name: Project name.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The project metadata.
         """
         project_author = ProjectAuthor()
-        project_container = (await container_git(platform, security_audit)).with_directory(
-            ".", source
-        )
+        project_container = (
+            await container_git(platform, container_security_audit_file)
+        ).with_directory(".", source)
         try:
             project_author_name = (
                 await project_container.with_exec(["git", "config", "user.name"]).stdout()
@@ -414,9 +454,7 @@ class SDKModule[
             project_author = replace(project_author, email=project_author_email)
         except dagger.QueryError:
             ...
-        return ProjectMetadata(
-            name=project_name, version=PROJECT_VERSION_DEFAULT, authors=frozenset({project_author})
-        )
+        return ProjectMetadata(project_name, PROJECT_VERSION_DEFAULT, frozenset({project_author}))
 
     @final
     @classmethod
@@ -425,7 +463,7 @@ class SDKModule[
         source: SourceType,
         project_name: ProjectNameType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> tuple[DaggerModuleMetadata, ProjectMetadata]:
         """Helper function to return metadata for the SDK module and project.
 
@@ -433,28 +471,30 @@ class SDKModule[
             source: Project source directory.
             project_name: Project name.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The shiryu module and project metadata.
         """
         shiryu_metadata, project_metadata = await asyncio.gather(
-            cls.__get_shiryu_metadata(platform, security_audit),
-            cls._get_project_metadata(source, project_name, platform, security_audit),
+            cls.__get_shiryu_metadata(platform, container_security_audit_file),
+            cls._get_project_metadata(
+                source, project_name, platform, container_security_audit_file
+            ),
         )
         return (shiryu_metadata, project_metadata)
 
     @final
     @classmethod
     async def __is_vcs_init(
-        cls, source: SourceType, platform: PlatformType, security_audit: SecurityAuditType
+        cls, source: SourceType, platform: PlatformType, container_security_audit_file: TargetFile
     ) -> bool:
         """Whether the dagger directory is initialized or not.
 
         Args:
             source: The project source directory.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             `True` if directory is git initialized, `False` otherwise.
@@ -462,7 +502,7 @@ class SDKModule[
         is_vcs_init: bool
         try:
             await (
-                (await container_git(platform, security_audit))
+                (await container_git(platform, container_security_audit_file))
                 .with_directory(".", source)
                 .with_exec(["git", "rev-parse", "--is-inside-work-tree"])
                 .sync()
@@ -480,7 +520,7 @@ class SDKModule[
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Returns a SDK module initialized directory.
 
@@ -489,7 +529,7 @@ class SDKModule[
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             A SDK module initialized directory.
@@ -503,7 +543,12 @@ class SDKModule[
         # Build initialized directory.
         init_directory = core().directory()
         return await initializer_cls._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
 
     @final
@@ -514,7 +559,7 @@ class SDKModule[
         source: SourceType,
         is_update: IsUpdateType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Changeset:
         """Returns a project output directory merged with the SDK module initialized directory.
 
@@ -523,13 +568,13 @@ class SDKModule[
             source: Project source directory.
             is_update: Whether to update project directory files or not.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             A project directory merged with the SDK module initialized directory.
         """
         # Check if project is git initialized.
-        is_vcs_init = await cls.__is_vcs_init(source, platform, security_audit)
+        is_vcs_init = await cls.__is_vcs_init(source, platform, container_security_audit_file)
         # Merge directories.
         vcs_excludes = [".git/"] if is_vcs_init else []
         init_directory_filtered = init_directory.filter(exclude=vcs_excludes)
@@ -539,6 +584,30 @@ class SDKModule[
             else init_directory_filtered.with_directory(".", source)
         ).changes(source)
         return changeset
+
+    @final
+    @classmethod
+    async def _container_security_audit_file(cls, source: SourceType) -> TargetFile:
+        """Get the container security audit file.
+
+        Args:
+            source: Project source directory.
+
+        Returns:
+            The container security audit file.
+        """
+        initializer_cls = cls._initializer_cls()
+        _trivyignore_template = initializer_cls._trivyignore_template()
+        _trivyignore_output_path = _trivyignore_template.template_file.output_path
+        _trivyignore_output_path_str = str(_trivyignore_output_path)
+
+        return (
+            TargetFile(source.file(_trivyignore_output_path_str), _trivyignore_output_path)
+            if await source.exists(
+                _trivyignore_output_path_str, expected_type=ExistsType.REGULAR_TYPE
+            )
+            else TargetFile.from_template(_trivyignore_template)
+        )
 
     async def _init(
         self,
@@ -560,18 +629,18 @@ class SDKModule[
         """
         source = self.source
         _project_name = self.project_name if project_name is None else project_name
-        security_audit = self.security_audit
+        container_security_audit_file = await self._container_security_audit_file(source)
         # Gather metadata.
         shiryu_metadata, project_metadata = await self._get_metadata(
-            source, _project_name, platform, security_audit
+            source, _project_name, platform, container_security_audit_file
         )
         # Build an initialized directory.
         init_directory = await self.__build_init_directory(
-            shiryu_metadata, project_metadata, scm, platform, security_audit
+            shiryu_metadata, project_metadata, scm, platform, container_security_audit_file
         )
         # Merge the SDK module initialized directory with the project output directory.
         return await self.__build_output_directory(
-            init_directory, source, is_update, platform, security_audit
+            init_directory, source, is_update, platform, container_security_audit_file
         )
 
     def log(self, exception: dagger.ExecError) -> None:
@@ -650,8 +719,21 @@ class SDKModule[
             The updated SDK module initialization container context.
         """
         return init_context_container.evolve(
-            apt_packages=init_context_container.apt_packages | {"git"}
+            container_packages=init_context_container.container_packages | {"git"}
         )
+
+    @classmethod
+    @abstractmethod
+    async def _dependencies_security_audit_file(cls, source: SourceType) -> TargetFile:
+        """Get the project dependencies security audit file.
+
+        Args:
+            source: Project source directory.
+
+        Returns:
+            The project dependencies security audit file.
+        """
+        ...
 
     @classmethod
     @abstractmethod
@@ -659,14 +741,16 @@ class SDKModule[
         cls,
         init_context_container: SDKModuleInitContextContainerType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
+        dependencies_security_audit_file: TargetFile,
     ) -> Container:
         """Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
+            dependencies_security_audit_file: Project dependencies security audit file.
 
         Returns:
             A base container.
@@ -681,7 +765,6 @@ class SDKModule[
         source: SourceType,
         exclude: list[str],
         platform: PlatformType,
-        security_audit: SecurityAuditType,
     ) -> Container:
         """Helper function to return an initialized container for the SDK module.
 
@@ -690,13 +773,21 @@ class SDKModule[
             source: Project source directory.
             exclude: Exclude source files and folders.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
 
         Returns:
             An initialized container for the SDK module.
         """
+        container_security_audit_file, dependencies_security_audit_file = await asyncio.gather(
+            cls._container_security_audit_file(source),
+            cls._dependencies_security_audit_file(source),
+        )
         return (
-            await cls._base_container(init_context_container, platform, security_audit)
+            await cls._base_container(
+                init_context_container,
+                platform,
+                container_security_audit_file,
+                dependencies_security_audit_file,
+            )
         ).with_directory(".", source, exclude=exclude)
 
     @final
@@ -715,9 +806,7 @@ class SDKModule[
         """
         init_context_container = self._create_init_context_container()
         init_context_container = self._init_context_container(init_context_container)
-        return await self._init_container(
-            init_context_container, source, exclude, platform, self.security_audit
-        )
+        return await self._init_container(init_context_container, source, exclude, platform)
 
 
 def get_sdk_language(
@@ -792,4 +881,4 @@ def get_sdk_language(
         )
     )
 
-    return sdk_language  # ty: ignore[invalid-return-type]
+    return sdk_language  # ty: ignore[invalid-explicit-return]

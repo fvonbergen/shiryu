@@ -3,53 +3,49 @@ name = "{{ project_name }}"
 version = "{{ project_version }}"
 description = ""
 readme = "{{ readme_file_name }}"
+license = "{{ license }}"
+license-files = ["{{ license_file_name }}"]
 authors = [
   {% for project_author in project_authors|sort(attribute="name") %}
   { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
   {% endfor %}
 ]
-# linked to [tool.uv] environments
-# python3.6
-# - uv minium python support - https://docs.astral.sh/uv/reference/policies/python/#python-versions
-# python3.7
-# - pytest >= 7.1.0 (tester) - https://docs.pytest.org/en/stable/changelog.html#pytest-7-1-0-2022-03-13
-# python3.8
-# - uv >= 0.7 (auditor) - https://github.com/astral-sh/uv/blob/main/changelogs/0.7.x.md
-# - ty minimum python support - (checker) - https://github.com/astral-sh/ty/blob/0.0.2/pyproject.toml#L4
-# python3.9
-# - commit-check >= 2.0.0 (linter) - https://github.com/commit-check/commit-check/blob/v2.0.0/pyproject.toml#L14
-# python3.10
-# - zensical minimum python support - (documenter) - https://github.com/zensical/zensical/blob/v0.0.3/pyproject.toml#L36
-requires-python = ">=3.10"
+maintainers = [
+  {% for project_author in project_authors|sort(attribute="name") %}
+  { name = "{{ project_author.name }}", email = "{{ project_author.email }}" },
+  {% endfor %}
+]
+keywords = []
+requires-python = ">={{ requires_python }}"
+# NOTE: Keep these aligned with [project].requires-python; update if minimum Python changes.
+classifiers = [
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  {% for major, group in python_versions | sort(attribute='release') | groupby('release.0') %}
+  "Programming Language :: Python :: {{ major }}",
+  {% for version in group | sort(attribute='release') %}
+  "Programming Language :: Python :: {{ version }}",
+  {% endfor %}
+  {% endfor %}
+  "Typing :: Typed",
+]
 dependencies = []
+
+[project.urls]
+# Homepage = ""
+# Documentation = ""
+# Repository = ""
+# Issues = ""
+# Changelog = ""
+# Release Notes = ""
+# Community = ""
 
 # Dependencies that will be installed for the specific module call.
 [dependency-groups]
-{% for module, dependencies in dependency_groups|dictsort %}
-{{ module }} = [{% if dependencies|length !=0 %}"{{ dependencies|list|sort|join('", "') }}"{% endif %}]
+{% for dependency_group, specifiers in dependency_groups_specifiers|dictsort %}
+{{ dependency_group }} = [{% if specifiers|length !=0 %}"{{ specifiers|list|sort|join('", "') }}"{% endif %}]
 {% endfor %}
-
-[project.urls]
-# "Homepage" = ""
-# "Documentation" = ""
-# "Repository" = ""
-# "Issues" = ""
-# "Changelog" = ""
-# "Release Notes" = ""
-# "Community" = ""
-# "Twitter" = ""
 
 [build-system]
 requires = ["hatchling==1.31.0"]
 build-backend = "hatchling.build"
-
-[tool.uv]
-# linked to [project] requires-python
-environments = [
-  "python_version == '3.10'",
-  "python_version == '3.11'",
-  "python_version == '3.12'",
-  "python_version == '3.13'",
-  "python_version == '3.14'",
-  "python_version == '3.15'",
-]

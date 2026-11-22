@@ -8,10 +8,12 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 import dagger
 from dagger_clients.core import Container, Directory, ReturnType, Secret
+from packaging.version import Version
 
 from ....utils.dagger.client import container_debian, container_git
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SecurityAuditType, SourceType
+from ....utils.dagger.file import TargetFile
+from ....utils.dagger.function import SourceType
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -35,7 +37,7 @@ from ...common.scm import (
     build_gitlab_stage_job,
 )
 from ...common.vcs import VCS_PRIMARY_BRANCH
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
@@ -198,7 +200,8 @@ class ReleaserInitializer(PythonModuleInitializer):
                 {
                     # https://github.com/commitizen-tools/commitizen/blob/master/CHANGELOG.md#v430-2025-02-28
                     # >= 4.3.0: Add uv_provider
-                    "commitizen >= 4.3.0"
+                    # https://github.com/commitizen-tools/commitizen/blob/v4.3.0/pyproject.toml#L12
+                    DistributionPackage("commitizen", Version("4.3.0"), Version("3.9"))
                 },
             ),
         )
@@ -221,7 +224,7 @@ class ReleaserInitializer(PythonModuleInitializer):
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -231,13 +234,18 @@ class ReleaserInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
         # .cz.toml
         _cz_toml_template_mapping: Mapping = {}
@@ -295,7 +303,7 @@ class Releaser(PythonModule):
     @final
     @classmethod
     async def __get_clean_push_urls(
-        cls, source: SourceType, platform: PlatformType, security_audit: SecurityAuditType
+        cls, source: SourceType, platform: PlatformType, container_security_audit_file: TargetFile
     ) -> PushUrls:
         """Retrieve cleaned HTTPS Git push URLs for a project directory.
 
@@ -305,13 +313,13 @@ class Releaser(PythonModule):
         Args:
             source: Project source directory.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             A list of validated, credential-free HTTPS Git remote URLs.
         """
         raw_origin = await (
-            (await container_git(platform, security_audit))
+            (await container_git(platform, container_security_audit_file))
             .with_directory(".", source)
             .with_exec(["git", "remote", "get-url", "--all", "--push", "origin"])
             .stdout()
@@ -348,6 +356,7 @@ class Releaser(PythonModule):
             )
             raise RuntimeError(exception_message)
 
+    # TODO: use packageing version
     @final
     @classmethod
     async def __bump(
@@ -420,6 +429,7 @@ class Releaser(PythonModule):
         _, _, notes = changelog.strip().partition("\n")
         return notes.strip()
 
+    # TODO: use packaging version
     @final
     @classmethod
     async def __push(  # noqa: PLR0913, PLR0917
@@ -483,7 +493,7 @@ class Releaser(PythonModule):
         notes: str,
         auth_token: AuthTokenType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Container:
         """Create the GitHub or GitLab release of a pushed tag in every push URL.
 
@@ -493,14 +503,14 @@ class Releaser(PythonModule):
             notes: The release notes.
             auth_token: Token with write access to the repository releases.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The container after creating the releases.
         """
         container = (
             await container_debian(
-                platform, security_audit, apt_packages={"ca-certificates", "curl"}
+                platform, container_security_audit_file, apt_packages={"ca-certificates", "curl"}
             )
         ).with_secret_variable("RELEASE_AUTH_TOKEN", auth_token)
         curl_command = (
@@ -545,11 +555,12 @@ class Releaser(PythonModule):
         Raises:
             RuntimeError: If release validation or version bump execution fails.
         """
-        security_audit = self.security_audit
+        source = self.source
+        container_security_audit_file = await self._container_security_audit_file(source)
         exclude: list[str] = []
         container, push_urls = await asyncio.gather(
-            self._exec_container(self.source, exclude, platform),
-            self.__get_clean_push_urls(self.source, platform, security_audit),
+            self._exec_container(source, exclude, platform),
+            self.__get_clean_push_urls(source, platform, container_security_audit_file),
         )
         await self.__ensure_branch_head(container, branch)
         bump_result = await self.__bump(container, vcs_user_name, vcs_user_email)
@@ -562,7 +573,7 @@ class Releaser(PythonModule):
         )
         await (
             await self.__create_releases(
-                push_urls, f"v{version}", notes, auth_token, platform, security_audit
+                push_urls, f"v{version}", notes, auth_token, platform, container_security_audit_file
             )
         ).sync()
         return f"v{version}"

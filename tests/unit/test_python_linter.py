@@ -77,7 +77,7 @@ async def test_python_linter_init(dagger_session: dagger.Session, test_case: Tes
 
     init_changeset = (
         await (await Shiryu.create(ws=inputs.workspace))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(
             project_name=inputs.project_name,
@@ -113,7 +113,7 @@ async def test_python_linter_lint_code_success(
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(project_name=project_name, platform=platform)
     )
@@ -122,7 +122,7 @@ async def test_python_linter_lint_code_success(
         init_source = init_source.with_new_file(path=str(file.path), contents=file.contents)
     await (
         (await Shiryu.create(ws=init_source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .lint_code(platform=platform)
     )
@@ -151,7 +151,7 @@ async def test_python_linter_lint_code_failure(
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(project_name=project_name, platform=platform)
     )
@@ -161,7 +161,7 @@ async def test_python_linter_lint_code_failure(
     with pytest.raises(dagger.ExecError) as exc_info:
         await (
             (await Shiryu.create(ws=init_source.as_workspace()))
-            .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+            .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
             .linter()
             .lint_code(platform=platform)
         )
@@ -192,7 +192,7 @@ async def test_python_linter_fix_success(
 
     init_changeset = (
         await (await Shiryu.create(ws=source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .init(project_name=project_name, platform=platform)
     )
@@ -201,7 +201,7 @@ async def test_python_linter_fix_success(
         init_source = init_source.with_new_file(path=str(file.path), contents=file.contents)
     changeset = (
         await (await Shiryu.create(ws=init_source.as_workspace()))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .linter()
         .fix_code(platform=platform)
     )

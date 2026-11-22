@@ -7,10 +7,12 @@ from pathlib import Path, PurePosixPath
 from typing import Final, final
 
 from dagger_clients.core import Container, Directory
+from packaging.version import Version
 
 from ...utils.dagger.client import container_uv
 from ...utils.dagger.directory import directory_with_new_file
-from ...utils.dagger.function import ProjectNameType, SecurityAuditType, SourceType
+from ...utils.dagger.file import TargetFile
+from ...utils.dagger.function import ProjectNameType, SourceType
 from ...utils.template import Mapping, Template, TemplateFile
 from ..common.context import DaggerModuleMetadata, SDKModuleInitContextContainer
 from ..common.module import (
@@ -27,6 +29,58 @@ from .templates import PYTHON_JINJA_ENVIRONMENT
 from .utils import get_package_name_canonical
 
 SDK_MODULE_NAME: Final = str(Path(__file__).parent.name)
+
+# PINNED: latest python 0.x version
+# https://www.python.org/download/releases/early/
+LATEST_PYTHON_0_VERSION: Final = Version("0.9")
+# PINNED: latest python 1.x version
+# https://www.python.org/download/releases/
+LATEST_PYTHON_1_VERSION: Final = Version("1.6")
+# PINNED: latest python 2.x version and 3.y version
+# https://peps.python.org/pep-0361/
+# https://devguide.python.org/versions/#full-chart
+# EOL:
+# - 2.7: 2020-01-01
+# - 3.10: 2026-10-01
+LATEST_PYTHON_2_VERSION: Final = Version("2.7")
+LATEST_PYTHON_3_VERSION: Final = Version("3.15")
+# LATEST_PYTHON_4_VERSION: Final = Version("4.0")
+
+
+def _python_supported_versions(python_lower_bound_version: Version) -> frozenset[Version]:
+    """Python supported versions.
+
+    Args:
+        python_lower_bound_version: Python lower_bound_version.
+
+    Returns:
+        Python supported versions.
+    """
+    latest_versions = {
+        LATEST_PYTHON_0_VERSION,
+        LATEST_PYTHON_1_VERSION,
+        LATEST_PYTHON_2_VERSION,
+        LATEST_PYTHON_3_VERSION,
+        # LATEST_PYTHON_4_VERSION,
+    }
+    lower_bound = python_lower_bound_version
+    versions = set()
+    current_major = lower_bound.major
+    max_major = max(version.major for version in latest_versions)
+
+    while current_major <= max_major:
+        # Find the specific upper bound for this major version
+        upper_bound = next(version for version in latest_versions if version.major == current_major)
+        start_minor = lower_bound.minor if current_major == lower_bound.major else 0
+        current_minor = start_minor
+
+        while current_minor <= upper_bound.minor:
+            versions.add(Version(f"{current_major}.{current_minor}"))
+            current_minor += 1
+
+        current_major += 1
+
+    return frozenset(versions)
 
 
 @unique
@@ -89,6 +143,52 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         """
         return TemplateFile(Path("pyproject.toml"))
 
+    @final
+    @classmethod
+    def _uv_lower_bound_requires_python(cls) -> Version:
+        """Uv lower bound requires python.
+
+        Returns:
+            Uv lower bound requires python.
+        """
+        # PINNED: minimal uv python version
+        # - uv minium python support - https://docs.astral.sh/uv/reference/policies/python/#python-versions
+        return Version("3.6")
+
+    @final
+    @classmethod
+    def _uv_toml_template_file(cls) -> TemplateFile:
+        """uv.toml template file.
+
+        Returns:
+            The uv.toml template file.
+        """
+        return TemplateFile(Path("uv.toml"))
+
+    @final
+    @classmethod
+    def _uv_toml_template(cls) -> Template:
+        """uv.toml template.
+
+        Returns:
+            The uv.toml template.
+        """
+        uv_toml_template_mapping: Mapping = {}
+        return Template(
+            PYTHON_JINJA_ENVIRONMENT, cls._uv_toml_template_file(), uv_toml_template_mapping
+        )
+
+    @final
+    @classmethod
+    def _uv_cmd(cls) -> list[str]:
+        """Build the base ``uv`` command pre-configured with the config file.
+
+        Returns:
+            Command argument list starting with ``uv`` and ``--config-file``
+            pointing to the resolved ``uv.toml`` path.
+        """
+        return ["uv", f"--config-file={cls._uv_toml_template_file().file_name}"]
+
     @classmethod
     async def _init_directory(  # noqa: PLR0913, PLR0917
         cls,
@@ -97,7 +197,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -107,13 +207,18 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
         project_name = project_metadata.name
         project_authors = project_metadata.authors
@@ -121,12 +226,20 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         # A decision is made to not run uv init and let shiryu create the files.
         pyproject_toml_template_file = cls._pyproject_toml_template_file()
         # pyproject.toml
+        dependency_groups = init_context_directory.dependency_groups
+        lower_bound_requires_python = max(
+            cls._uv_lower_bound_requires_python(), dependency_groups.lower_bound_requires_python
+        )
         pyproject_toml_template_mapping: Mapping = {
             "project_name": project_name,
             "project_authors": project_authors,
             "project_version": project_metadata.version,
             "readme_file_name": str(cls._readme_md_template_file().output_file_name),
-            "dependency_groups": init_context_directory.dependency_groups,
+            "license": str(cls._license_template_file().file_name),
+            "license_file_name": str(cls._license_template_file().output_file_name),
+            "requires_python": lower_bound_requires_python,
+            "python_versions": _python_supported_versions(lower_bound_requires_python),
+            "dependency_groups_specifiers": dependency_groups.specifiers,
         }
         pyproject_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT, pyproject_toml_template_file, pyproject_toml_template_mapping
@@ -145,9 +258,12 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             py_typed_template_mapping,
         )
         init_directory = directory_with_new_file(init_directory, py_typed_template)
+        # uv.toml
+        uv_toml_template = cls._uv_toml_template()
+        init_directory = directory_with_new_file(init_directory, uv_toml_template)
         # uv.lock
         # uv run needs the project to be a package and have files.
-        # __init__.py
+        # <source_code>/<package_name>/__init__.py
         __init___py_template_mapping: Mapping = {"project_name": project_name}
         __init___py_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
@@ -158,9 +274,15 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         )
         init_directory = directory_with_new_file(init_directory, __init___py_template)
         return (
-            (await container_uv(platform, security_audit))
+            (
+                await container_uv(
+                    platform,
+                    container_security_audit_file,
+                    TargetFile.from_template(uv_toml_template),
+                )
+            )
             .with_directory(".", init_directory)
-            .with_exec(["uv", "lock"])
+            .with_exec([*cls._uv_cmd(), "lock"])
             .directory(".")
         )
 
@@ -185,7 +307,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         source: SourceType,
         project_name: ProjectNameType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> ProjectMetadata:
         """Get project metadata.
 
@@ -193,14 +315,14 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
             source: Project source directory.
             project_name: Project name.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The project metadata.
         """
         initializer = cls._initializer_cls()
         project_metadata = await super()._get_project_metadata(
-            source, project_name, platform, security_audit
+            source, project_name, platform, container_security_audit_file
         )
         pyproject_toml_path_str = str(initializer._pyproject_toml_template_file().output_path)
         if await source.exists(pyproject_toml_path_str):
@@ -213,7 +335,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
                 version=pyproject_toml_project.get("version", project_metadata.version),
                 authors=frozenset(
                     {
-                        ProjectAuthor(name=project_author["name"], email=project_author["email"])
+                        ProjectAuthor(project_author["name"], project_author["email"])
                         for project_author in pyproject_toml_project["authors"]
                     }
                 ),
@@ -232,24 +354,46 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
 
     @final
     @classmethod
+    async def _dependencies_security_audit_file(cls, source: SourceType) -> TargetFile:
+        """Get the project dependencies security audit file.
+
+        Args:
+            source: Project source directory.
+
+        Returns:
+            The project dependencies security audit file.
+        """
+        initializer_cls = cls._initializer_cls()
+        uv_toml_output_path = initializer_cls._uv_toml_template().template_file.output_path
+        uv_toml_output_path_str = str(uv_toml_output_path)
+
+        return TargetFile(source.file(uv_toml_output_path_str), uv_toml_output_path)
+
+    @final
+    @classmethod
     async def _base_container(
         cls,
         init_context_container: SDKModuleInitContextContainer,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
+        dependencies_security_audit_file: TargetFile,
     ) -> Container:
         """Base container.
 
         Args:
             init_context_container: SDK module initialization container context.
             platform: The container platform.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
+            dependencies_security_audit_file: Project dependencies security audit file.
 
         Returns:
             A base container.
         """
         return await container_uv(
-            platform, security_audit, apt_packages=init_context_container.apt_packages
+            platform,
+            container_security_audit_file,
+            dependencies_security_audit_file,
+            apt_packages=init_context_container.container_packages,
         )
 
     @final
@@ -266,8 +410,9 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
         Returns:
             The uv command to run.
         """
+        initializer = cls._initializer_cls()
         return [
-            "uv",
+            *initializer._uv_cmd(),
             "run",
             "--locked",
             f"--group={cls.name()}",

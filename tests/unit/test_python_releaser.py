@@ -82,7 +82,7 @@ async def test_python_releaser_bump_git_identity(vcs_user_name: str, vcs_user_em
     executed_container.exit_code = AsyncMock(return_value=0)
     executed_container.with_exec.return_value.stdout = AsyncMock(return_value="0.1.0\n")
 
-    bump_container, version = await Releaser._Releaser__bump(  # ty: ignore[unresolved-attribute]
+    bump_container, version = await Releaser._Releaser__bump(  # ty: ignore[missing-attribute]
         container, vcs_user_name, vcs_user_email
     )
 
@@ -119,7 +119,7 @@ async def test_python_releaser_init(
 
     init_changeset = (
         await (await Shiryu.create(ws=inputs.workspace))
-        .python()  # ty: ignore[unresolved-attribute] # pyright: ignore[reportAttributeAccessIssue]
+        .python()  # ty: ignore[missing-attribute] # pyright: ignore[reportAttributeAccessIssue]
         .releaser()
         .init(
             project_name=inputs.project_name,

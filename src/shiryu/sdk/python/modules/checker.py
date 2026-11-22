@@ -6,9 +6,10 @@ from typing import Final, final
 
 import dagger
 from dagger_clients.core import Container, Directory
+from packaging.version import Version
 
 from ....utils.dagger.directory import directory_with_new_file
-from ....utils.dagger.function import SecurityAuditType
+from ....utils.dagger.file import TargetFile
 from ....utils.template import Mapping, Template, TemplateFile
 from ...common.context import DaggerModuleMetadata
 from ...common.module import (
@@ -28,7 +29,7 @@ from ...common.scm import (
     build_gitlab_stage_job,
 )
 from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
-from ..context import PythonModuleInitContextDirectory
+from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 
@@ -127,7 +128,8 @@ class CheckerInitializer(PythonModuleInitializer):
                 {
                     # https://github.com/astral-sh/ty/releases/tag/0.0.1-alpha.8
                     # >= 0.0.1-alpha.8: Add --config-file CLI arg.
-                    "ty >= 0.0.1-alpha.8"
+                    # https://github.com/astral-sh/ty/blob/0.0.1-alpha.8/pyproject.toml#L4
+                    DistributionPackage("ty", Version("0.0.1-alpha.8"), Version("3.8"))
                 },
             ),
         )
@@ -140,7 +142,7 @@ class CheckerInitializer(PythonModuleInitializer):
         project_metadata: ProjectMetadata,
         scm: SCMType,
         platform: PlatformType,
-        security_audit: SecurityAuditType,
+        container_security_audit_file: TargetFile,
     ) -> Directory:
         """Build the initialization directory.
 
@@ -150,13 +152,18 @@ class CheckerInitializer(PythonModuleInitializer):
             project_metadata: Project metadata.
             scm: Project Source Code Management (SCM) list to be targeted or configured.
             platform: The container platform used for initialization.
-            security_audit: Security audit checks that can be enabled in the pipeline.
+            container_security_audit_file: Container security audit file.
 
         Returns:
             The initialization directory.
         """
         init_directory = await super()._init_directory(
-            init_directory, init_context_directory, project_metadata, scm, platform, security_audit
+            init_directory,
+            init_context_directory,
+            project_metadata,
+            scm,
+            platform,
+            container_security_audit_file,
         )
         # ty.toml
         ty_toml_template_mapping: Mapping = {
