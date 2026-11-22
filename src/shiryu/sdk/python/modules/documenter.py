@@ -99,21 +99,19 @@ class DocumenterInitializer(PythonModuleInitializer):
         sdk_module_function = sdk_module_cls.document
         export_path = PROJECT_SITE_PATH
         github_action = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            dagger_version,
+            shiryu_version,
             export_path=export_path,
         )
         gitlab_documentation_folder_output = "public"
         gitlab_job = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            shiryu_version=shiryu_version,
-            variables=(),
-            pre_script=(),
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            shiryu_version,
             export_path=export_path,
             post_script=(
                 f"mkdir {gitlab_documentation_folder_output}",
@@ -126,16 +124,13 @@ class DocumenterInitializer(PythonModuleInitializer):
         stage_name = gitlab_stage.name
         environment = GitLabJobEnvironmentId.PRODUCTION.value
         gitlab_pages_stage_job = GitLabStageJob(
-            path=None,
-            name="pages",
-            extends=(),
-            variables=(),
-            stage=stage_name,
-            needs=(build_gitlab_stage_name(gitlab_stage_id_deploy, gitlab_job),),
-            rules=gitlab_stage.rules,
+            "pages",
+            stage_name,
+            (build_gitlab_stage_name(gitlab_stage_id_deploy, gitlab_job),),
+            gitlab_stage.rules,
             script=('echo "Deploying site"',),
             environment=environment,
-            artifacts=GitLabArtifacts(paths=(gitlab_documentation_folder_output,)),
+            artifacts=GitLabArtifacts((gitlab_documentation_folder_output,)),
         )
         pre_steps = (build_github_workflow_checkout_job(),)
 
@@ -151,11 +146,11 @@ class DocumenterInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.DEPLOY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_version,
+                            sdk_language,
+                            github_action,
+                            shiryu_version,
+                            pre_steps,
                             job_environment=GITHUB_PAGES_ENVIRONMENT,
-                            pre_steps=pre_steps,
                             post_steps=(
                                 GitHubWorkflowJobStep(
                                     "upload_artifact",
@@ -183,12 +178,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                     ).add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=pre_steps,
-                            post_steps=(),
+                            sdk_language, github_action, shiryu_version, pre_steps
                         ),
                     ),
                 ),
@@ -197,27 +187,25 @@ class DocumenterInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         gitlab_stage_id_deploy,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=gitlab_stage_id_deploy,
-                            gitlab_job=gitlab_job,
-                            environment=environment,
+                            gitlab_stage_id_deploy, gitlab_job, environment=environment
                         ),
                     )
                     .add(gitlab_stage_id_deploy, gitlab_pages_stage_job)
                     .add(
                         GitLabStageId.QUALITY,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
-                        ),
+                        build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
                     ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: mkdocstrings-python documenter dependency
                     # https://github.com/mkdocstrings/python/releases/tag/1.11.0
                     # >= 1.11.0: Hook into autorefs to provide context around cross-ref errors
                     # https://github.com/mkdocstrings/python/blob/1.11.0/pyproject.toml#L11
                     DistributionPackage("mkdocstrings-python", Version("1.11.0"), Version("3.8")),
+                    # PINNED: zensical documenter dependency
                     # https://github.com/zensical/zensical/releases/tag/v0.0.66
                     # >= 0.0.66: Support api-autonav plugin
                     # https://github.com/zensical/zensical/blob/v0.0.66/pyproject.toml#L37
@@ -356,25 +344,21 @@ class DocumenterInitializer(PythonModuleInitializer):
         summary_md_path = Path("SUMMARY.md")
         summary_md_template_mapping: Mapping = {
             "nav": (
-                (NavItem(title="Home", url=str(index_md_file_path)), None),
+                (NavItem("Home", str(index_md_file_path)), None),
                 (
-                    NavItem(title=tutorials_title, url=str(tutorials_path / index_md_file_path)),
+                    NavItem(tutorials_title, str(tutorials_path / index_md_file_path)),
                     None,
                 ),
                 (
-                    NavItem(
-                        title=how_to_guides_title, url=str(how_to_guides_path / index_md_file_path)
-                    ),
+                    NavItem(how_to_guides_title, str(how_to_guides_path / index_md_file_path)),
                     None,
                 ),
                 (
-                    NavItem(title=reference_title, url=str(reference_path / index_md_file_path)),
-                    (NavItem(title=api_reference_title, url=f"{reference_api_reference_path}/"),),
+                    NavItem(reference_title, str(reference_path / index_md_file_path)),
+                    (NavItem(api_reference_title, f"{reference_api_reference_path}/"),),
                 ),
                 (
-                    NavItem(
-                        title=explanation_title, url=str(explanation_path / index_md_file_path)
-                    ),
+                    NavItem(explanation_title, str(explanation_path / index_md_file_path)),
                     None,
                 ),
             )

@@ -111,29 +111,25 @@ class TesterInitializer(PythonModuleInitializer):
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.unit
         github_action = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            dagger_version,
+            shiryu_version,
         )
         gitlab_job = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            shiryu_version=shiryu_version,
-            variables=(),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            shiryu_version,
         )
         tests_code_dependencies = {
+            # PINNED: pytest tester dependency
             # https://docs.pytest.org/en/stable/changelog.html#pytest-7-4-0-2023-06-23
             # >= 7.4.0: Enhanced the CLI flag for -c to now include --config-file.
             # https://github.com/pytest-dev/pytest/blob/7.4.0/pyproject.toml
             DistributionPackage("pytest", Version("7.4.0"), Version("0.0")),
+            # PINNED: pytest-asyncio tester dependency
             # https://github.com/pytest-dev/pytest-asyncio/releases/tag/v0.24.0
             # https://pytest-asyncio.readthedocs.io/en/stable/reference/changelog.html#id67
             # >= 0.24.0: Added the asyncio_default_fixture_loop_scope configuration option
@@ -150,12 +146,10 @@ class TesterInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=pre_steps,
-                            post_steps=(),
+                            sdk_language,
+                            github_action,
+                            shiryu_version,
+                            pre_steps,
                         ),
                     ),
                 ),
@@ -163,9 +157,7 @@ class TesterInitializer(PythonModuleInitializer):
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.QUALITY,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
-                        ),
+                        build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
                     ),
                 ),
             ),
@@ -173,11 +165,13 @@ class TesterInitializer(PythonModuleInitializer):
                 sdk_module_name,
                 tests_code_dependencies
                 | {
+                    # PINNED: pytest-cov tester dependency
                     # https://pytest-cov.readthedocs.io/en/latest/changelog.html#id141
                     # >= 2.3.0: Add support for specifying output location for html, xml, and
                     #   annotate report.
                     # https://github.com/pytest-dev/pytest-cov/blob/v2.3.0/setup.py#L107
                     DistributionPackage("pytest-cov", Version("2.3.0"), Version("2.6")),
+                    # PINNED: pytest-xdist tester dependency
                     # https://pytest-xdist.readthedocs.io/en/latest/changelog.html#pytest-xdist-1-18-0-2017-06-26
                     # >= 1.18.0: Add long option --numprocesses as alternative for -n.
                     # https://github.com/pytest-dev/pytest-xdist/blob/v1.18.0/pyproject.toml

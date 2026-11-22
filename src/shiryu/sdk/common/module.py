@@ -5,7 +5,7 @@ import inspect
 import logging
 import sys
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
@@ -42,6 +42,8 @@ def warning(message: str) -> None:
     print(message, file=sys.stderr)
 
 
+# PINNED: gitlab docker version
+GITLAB_DOCKER_VERSION: Final = "29.9.2"
 PROJECT_VERSION_DEFAULT: Final = "0.0.0"
 OptionalProjectNameType = ProjectNameType | None
 OptionalProjectNameDaggerType = Annotated[OptionalProjectNameType, dagger.Doc("Project name")]
@@ -72,8 +74,8 @@ SCM_DAGGER_DEFAULT: Final = [SCM.GITLAB]
 class ProjectAuthor:
     """ProjectAuthor."""
 
-    name: str = VCS_USER_NAME_DEFAULT
-    email: str = VCS_USER_EMAIL_DEFAULT
+    name: str = field(default=VCS_USER_NAME_DEFAULT, kw_only=True)
+    email: str = field(default=VCS_USER_EMAIL_DEFAULT, kw_only=True)
 
 
 @final
@@ -118,7 +120,10 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         """
         dagger_name = "dagger"
         job_name = f".{dagger_name}"
-        dagger_yml_template_mapping: Mapping = {"dagger_version": shiryu_metadata.dagger_version}
+        dagger_yml_template_mapping: Mapping = {
+            "docker_version": GITLAB_DOCKER_VERSION,
+            "dagger_version": shiryu_metadata.dagger_version,
+        }
         dagger_yml_template = Template(
             COMMON_JINJA_ENVIRONMENT,
             TemplateFile(

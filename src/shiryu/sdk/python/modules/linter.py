@@ -86,31 +86,21 @@ class LinterInitializer(PythonModuleInitializer):
         sdk_module_function_lint_code = sdk_module_cls.lint_code
         sdk_module_function_lint_vcs = sdk_module_cls.lint_vcs
         github_action_linter_lint_code = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_lint_code,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_lint_code,
+            dagger_version,
+            shiryu_version,
         )
         github_action_linter_lint_vcs = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_lint_vcs,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_lint_vcs,
+            dagger_version,
+            shiryu_version,
         )
         gitlab_job_linter_lint_code = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_lint_code,
-            shiryu_version=shiryu_version,
-            variables=(),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
+            sdk_language, sdk_module_name, sdk_module_function_lint_code, shiryu_version
         )
         gitlab_pre_script = (
             # Define the pre-script for GitLab jobs to fetch the main branch to ensure
@@ -124,15 +114,12 @@ class LinterInitializer(PythonModuleInitializer):
             'if [ -n "$TARGET_BRANCH" ];then git checkout -B "$TARGET_BRANCH" "$CI_COMMIT_SHA";fi',
         )
         gitlab_job_linter_lint_vcs = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_lint_vcs,
-            shiryu_version=shiryu_version,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_lint_vcs,
+            shiryu_version,
             variables=(GitLabVariable("GIT_STRATEGY", "fetch"), GitLabVariable("GIT_DEPTH", "0")),
             pre_script=gitlab_pre_script,
-            export_path=None,
-            post_script=(),
-            artifacts=None,
         )
 
         return init_context_directory.evolve(
@@ -147,26 +134,22 @@ class LinterInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action_linter_lint_code,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=(build_github_workflow_checkout_job(),),
-                            post_steps=(),
+                            sdk_language,
+                            github_action_linter_lint_code,
+                            shiryu_version,
+                            (build_github_workflow_checkout_job(),),
                         ),
                     ).add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action_linter_lint_vcs,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=(
+                            sdk_language,
+                            github_action_linter_lint_vcs,
+                            shiryu_version,
+                            (
                                 build_github_workflow_checkout_job(
                                     (GitHubWorkflowStepInputParameter("fetch-depth", "0"),)
                                 ),
                             ),
-                            post_steps=(),
                         ),
                     ),
                 ),
@@ -191,10 +174,12 @@ class LinterInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: commit-check linter dependency
                     # https://github.com/commit-check/commit-check/releases/tag/v2.0.0
                     # >= 2.0.0: Configuration Migration and Removed Features
                     # https://github.com/commit-check/commit-check/blob/v2.0.0/pyproject.toml#L14
                     DistributionPackage("commit-check", Version("2.0.0"), Version("3.9")),
+                    # PINNED: ruff linter dependency
                     # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
                     # >= 0.1.2: New ruff format command
                     # https://github.com/astral-sh/ruff/blob/v0.1.2/pyproject.toml#L11

@@ -335,7 +335,7 @@ class PythonModule(SDKModule[PythonModuleInitializer, SDKModuleInitContextContai
                 version=pyproject_toml_project.get("version", project_metadata.version),
                 authors=frozenset(
                     {
-                        ProjectAuthor(project_author["name"], project_author["email"])
+                        ProjectAuthor(name=project_author["name"], email=project_author["email"])
                         for project_author in pyproject_toml_project["authors"]
                     }
                 ),

@@ -76,23 +76,17 @@ class CheckerInitializer(PythonModuleInitializer):
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.check
         github_action = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            dagger_version,
+            shiryu_version,
         )
         gitlab_job = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,  # pyright: ignore [reportArgumentType]
-            shiryu_version=shiryu_version,
-            variables=(),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,  # pyright: ignore [reportArgumentType]
+            shiryu_version,
         )
         pre_steps = (build_github_workflow_checkout_job(),)
 
@@ -104,12 +98,7 @@ class CheckerInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=pre_steps,
-                            post_steps=(),
+                            sdk_language, github_action, shiryu_version, pre_steps
                         ),
                     ),
                 ),
@@ -117,15 +106,14 @@ class CheckerInitializer(PythonModuleInitializer):
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.QUALITY,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
-                        ),
+                        build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
                     ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: ty checker dependency
                     # https://github.com/astral-sh/ty/releases/tag/0.0.1-alpha.8
                     # >= 0.0.1-alpha.8: Add --config-file CLI arg.
                     # https://github.com/astral-sh/ty/blob/0.0.1-alpha.8/pyproject.toml#L4

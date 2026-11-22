@@ -43,10 +43,8 @@ jobs:
     name: {{ job.name }}
     {% if job.environment is not none %}
     environment:
-    {% if job.environment.url is none %} {{ job.environment.name }}{% else %}
       name: {{ job.environment.name }}
       url: {{ job.environment.url }}
-    {% endif %}
     {% endif %}
     runs-on: ubuntu-latest
     {% if job.needs|length != 0 %}

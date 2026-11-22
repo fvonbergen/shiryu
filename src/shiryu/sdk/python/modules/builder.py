@@ -70,42 +70,30 @@ class BuilderInitializer(PythonModuleInitializer):
         sdk_module_function_publish = sdk_module_cls.publish
         sdk_module_function_test = sdk_module_cls.test
         github_action_builder_publish = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_publish,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_publish,
+            dagger_version,
+            shiryu_version,
         )
         github_action_builder_test = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_test,
-            dagger_version=dagger_version,
-            shiryu_version=shiryu_version,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_test,
+            dagger_version,
+            shiryu_version,
         )
         gitlab_job_builder_publish = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_publish,
-            shiryu_version=shiryu_version,
-            variables=(),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_publish,
+            shiryu_version,
         )
         gitlab_job_builder_test = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function_test,
-            shiryu_version=shiryu_version,
-            variables=(),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_test,
+            shiryu_version,
         )
         pre_steps = (build_github_workflow_checkout_job(),)
 
@@ -121,22 +109,12 @@ class BuilderInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.PUBLISH,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action_builder_publish,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=pre_steps,
-                            post_steps=(),
+                            sdk_language, github_action_builder_publish, shiryu_version, pre_steps
                         ),
                     ).add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action_builder_test,
-                            shiryu_version=shiryu_version,
-                            job_environment=None,
-                            pre_steps=pre_steps,
-                            post_steps=(),
+                            sdk_language, github_action_builder_test, shiryu_version, pre_steps
                         ),
                     ),
                 ),
@@ -146,22 +124,20 @@ class BuilderInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.PUBLISH,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.PUBLISH,
-                            gitlab_job=gitlab_job_builder_publish,
+                            GitLabStageId.PUBLISH,
+                            gitlab_job_builder_publish,
                             environment=GitLabJobEnvironmentId.PRODUCTION.value,
                         ),
                     ).add(
                         GitLabStageId.QUALITY,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY,
-                            gitlab_job=gitlab_job_builder_test,
-                        ),
+                        build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job_builder_test),
                     ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: hatch builder dependency
                     # All versions supported
                     # https://github.com/pypa/hatch/blob/hatch-v1rc2/pyproject.toml#L10
                     DistributionPackage("hatch", Version("0.0.0"), Version("3.8"))

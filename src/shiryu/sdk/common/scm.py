@@ -17,6 +17,10 @@ from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH
 
+# PINNED: dagger-for-github action version
+DAGGER_FOR_GITHUB_ACTION_VERSION: Final = "8.4.1"
+# PINNED: checkout action version
+CHECKOUT_ACTION_VERSION: Final = "7.0.1"
 MATCHING_TAGS_REGEX: Final = r"v[0-9]+\.[0-9]+\.[0-9]+"
 
 
@@ -105,7 +109,7 @@ def get_sdk_module_function_parameters(
                 f"--{to_kebab_case(parameter_name)}",
                 parameter_description,
                 parameter_default,
-                is_secret=__is_secret_type(parameter_annotation),
+                __is_secret_type(parameter_annotation),
             )
         )
     return tuple(sorted(sdk_module_function_parameters, key=lambda param: param.name))
@@ -184,8 +188,8 @@ type GitLabArrayType = tuple[GitLabArrayElementType, ...]
 class GitHubWorkflowTriggerActionPush:
     """GitHubWorkflowTriggerActionPush class."""
 
-    branches: GitLabArrayType | None = None
-    tags: GitLabArrayType | None = None
+    branches: GitLabArrayType | None = field(default=None, kw_only=True)
+    tags: GitLabArrayType | None = field(default=None, kw_only=True)
 
 
 @final
@@ -193,7 +197,7 @@ class GitHubWorkflowTriggerActionPush:
 class GitHubWorkflowTriggerActionWorkflowDispatch:
     """GitHubWorkflowTriggerActionWorkflowDispatch class."""
 
-    inputs: dict[str, str] | None
+    inputs: dict[str, str] | None = field(default=None, kw_only=True)
 
 
 class UnsetType(Enum):
@@ -210,8 +214,10 @@ UNSET: Final = UnsetType.UNSET
 class GitHubWorkflowTriggerAction:
     """GitHubWorkflowTriggerAction class."""
 
-    push: GitHubWorkflowTriggerActionPush | UnsetType | None
-    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | UnsetType | None
+    push: GitHubWorkflowTriggerActionPush | UnsetType | None = field(default=None, kw_only=True)
+    workflow_dispatch: GitHubWorkflowTriggerActionWorkflowDispatch | UnsetType | None = field(
+        default=None, kw_only=True
+    )
 
     def asdict(self) -> dict[str, Any]:
         """Converts the trigger action to a dictionary, excluding any fields set to UNSET.
@@ -242,8 +248,8 @@ class GitHubWorkflowProperties:
 
     name: str
     on: GitHubWorkflowTriggerAction
-    permissions: tuple[tuple[str, str], ...] = ()
-    concurrency: tuple[str, bool] | None = None
+    permissions: tuple[tuple[str, str], ...] = field(default=tuple(), kw_only=True)
+    concurrency: tuple[str, bool] | None = field(default=None, kw_only=True)
 
 
 @final
@@ -289,7 +295,7 @@ class GitHubJobEnvironment:
     """GitHubJobEnvironment class."""
 
     name: str
-    url: str | None
+    url: str
 
 
 @final
@@ -299,12 +305,12 @@ class GitHubWorkflowJob:
 
     id: str
     name: str
-    environment: GitHubJobEnvironment | None
     steps: GitHubWorkflowJobSteps
-    needs: tuple[str, ...] = ()
-    condition: str | None = None
-    outputs: tuple[tuple[str, str], ...] = ()
-    permissions: tuple[tuple[str, str], ...] = ()
+    environment: GitHubJobEnvironment | None = field(default=None, kw_only=True)
+    needs: tuple[str, ...] = field(default=tuple(), kw_only=True)
+    condition: str | None = field(default=None, kw_only=True)
+    outputs: tuple[tuple[str, str], ...] = field(default=tuple(), kw_only=True)
+    permissions: tuple[tuple[str, str], ...] = field(default=tuple(), kw_only=True)
 
 
 @final
@@ -522,17 +528,17 @@ class GitLabJobEnvironmentId(Enum):
 class GitLabStageJob:
     """GitLabStageJob class."""
 
-    path: str | None
     name: str
-    extends: GitLabArrayType
-    variables: GitLabVariables
     stage: GitLabStageName
     needs: GitLabArrayType
     rules: GitLabStageRules
-    when: GitLabJobWhen | None = None
-    script: GitLabScript = ()
-    environment: GitLabJobEnvironment | None = None
-    artifacts: GitLabArtifacts | None = None
+    path: str | None = field(default=None, kw_only=True)
+    extends: GitLabArrayType = field(default=tuple(), kw_only=True)
+    variables: GitLabVariables = field(default=tuple(), kw_only=True)
+    when: GitLabJobWhen | None = field(default=None, kw_only=True)
+    script: GitLabScript = field(default=tuple(), kw_only=True)
+    environment: GitLabJobEnvironment | None = field(default=None, kw_only=True)
+    artifacts: GitLabArtifacts | None = field(default=None, kw_only=True)
 
 
 @final
@@ -791,13 +797,14 @@ def gitlab_init(directory: Directory, gitlab_jobs_stages: GitLabJobsStages) -> D
 GITLAB_JOBS_FOLDER: Final = "jobs"
 
 
-def build_github_action(  # noqa: PLR0913, PLR0917
+def build_github_action(  # noqa: PLR0913
     sdk_language: str,
     sdk_module_name: str,
     sdk_module_function: FunctionType,
     dagger_version: str,
     shiryu_version: str,
-    export_path: PurePosixPath | None,
+    *,
+    export_path: PurePosixPath | None = None,
 ) -> GitHubAction:
     """Build a github action.
 
@@ -860,7 +867,7 @@ def build_github_action(  # noqa: PLR0913, PLR0917
             GitHubWorkflowRunStep(
                 f"call_dagger_{id_}",
                 f"Call Dagger {name}",
-                "dagger/dagger-for-github@v8.4.1",
+                f"dagger/dagger-for-github@v{DAGGER_FOR_GITHUB_ACTION_VERSION}",
                 (
                     *[
                         GitHubWorkflowStepEnvParameter(
@@ -916,17 +923,18 @@ def build_github_workflow_checkout_job(
         A configured GitHub Actions step object for checking out code.
     """
     return GitHubWorkflowJobStep(
-        "check_out_code", "Check out code", "actions/checkout@v7.0.1", with_
+        "check_out_code", "Check out code", f"actions/checkout@v{CHECKOUT_ACTION_VERSION}", with_
     )
 
 
-def build_github_workflow_job(  # noqa: PLR0913, PLR0917
+def build_github_workflow_job(  # noqa: PLR0913
     sdk_language: str,
     github_action: GitHubAction,
     shiryu_version: str,
-    job_environment: GitHubJobEnvironment | None,
     pre_steps: GitHubWorkflowJobSteps,
-    post_steps: GitHubWorkflowJobSteps,
+    *,
+    job_environment: GitHubJobEnvironment | None = None,
+    post_steps: GitHubWorkflowJobSteps = (),
     needs: tuple[str, ...] = (),
     condition: str | None = None,
     outputs: tuple[tuple[str, str], ...] = (),
@@ -938,9 +946,9 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
         sdk_language: SDK language.
         github_action: The GitHub action.
         shiryu_version: Shiryu version.
-        job_environment: GitHub job environment.
         pre_steps: GitHub workflow job pre action job steps.
         post_steps: GitHub workflow job post action job steps.
+        job_environment: GitHub job environment.
         needs: GitHub workflow jobs that must complete first.
         condition: GitHub Actions job condition.
         outputs: GitHub workflow job outputs.
@@ -977,12 +985,12 @@ def build_github_workflow_job(  # noqa: PLR0913, PLR0917
     return GitHubWorkflowJob(
         id_,
         name,
-        job_environment,
         (*pre_steps, action_step, *post_steps),
-        needs,
-        condition,
-        outputs,
-        permissions,
+        environment=job_environment,
+        needs=needs,
+        condition=condition,
+        outputs=outputs,
+        permissions=permissions,
     )
 
 
@@ -1005,16 +1013,17 @@ def __gitlab_param_manage(param: SDKModuleFunctionParameter) -> tuple[GitLabVari
     return GitLabVariable(var_name, value), f'{param.option}="${{{var_name}}}"'
 
 
-def build_gitlab_job(  # noqa: PLR0913, PLR0917
+def build_gitlab_job(  # noqa: PLR0913
     sdk_language: str,
     sdk_module_name: str,
     sdk_module_function: FunctionType,
     shiryu_version: str,
-    variables: GitLabVariables,
-    pre_script: GitLabScript,
-    export_path: PurePosixPath | None,
-    post_script: GitLabScript,
-    artifacts: GitLabArtifacts | None,
+    *,
+    variables: GitLabVariables = (),
+    pre_script: GitLabScript = (),
+    export_path: PurePosixPath | None = None,
+    post_script: GitLabScript = (),
+    artifacts: GitLabArtifacts | None = None,
 ) -> GitLabJob:
     """Build a GitLab job.
 
@@ -1025,8 +1034,8 @@ def build_gitlab_job(  # noqa: PLR0913, PLR0917
         shiryu_version: Shiryu version.
         variables: GitLab job variables.
         pre_script: GitLab commands to run before dagger module command in script section.
-        export_path: Append export path after dagger call.
         post_script: GitLab commands to run after dagger module command in script section.
+        export_path: Append export path after dagger call.
         artifacts: GitLab artifacts section.
 
     Returns:
@@ -1121,6 +1130,7 @@ def build_gitlab_stage_name(gitlab_stage_id: GitLabStageId, gitlab_job: GitLabJo
 def build_gitlab_stage_job(
     gitlab_stage_id: GitLabStageId,
     gitlab_job: GitLabJob,
+    *,
     needs: GitLabArrayType = (),
     when: GitLabJobWhen | None = None,
     environment: GitLabJobEnvironment | None = None,
@@ -1138,13 +1148,13 @@ def build_gitlab_stage_job(
         A GitLab stage job.
     """
     return GitLabStageJob(
+        build_gitlab_stage_name(gitlab_stage_id, gitlab_job),
+        gitlab_stage_id.name.lower(),
+        needs,
+        gitlab_stage_id.value.rules,
         path=str(gitlab_job.template.template_file.output_path),
-        name=build_gitlab_stage_name(gitlab_stage_id, gitlab_job),
         extends=(gitlab_job.name,),
         variables=(),
-        stage=gitlab_stage_id.name.lower(),
-        needs=needs,
-        rules=gitlab_stage_id.value.rules,
         when=when,
         environment=environment,
     )

@@ -139,23 +139,18 @@ class ReleaserInitializer(PythonModuleInitializer):
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.release
         github_action = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            dagger_version=shiryu_metadata.dagger_version,
-            shiryu_version=shiryu_metadata.git_tag_or_branch,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            shiryu_metadata.dagger_version,
+            shiryu_metadata.git_tag_or_branch,
         )
         gitlab_job = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            shiryu_version=shiryu_metadata.git_tag_or_branch,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            shiryu_metadata.git_tag_or_branch,
             variables=(GitLabVariable("GIT_STRATEGY", "fetch"), GitLabVariable("GIT_DEPTH", "0")),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
         )
         pre_steps = (
             build_github_workflow_checkout_job(
@@ -171,12 +166,10 @@ class ReleaserInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.RELEASE,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_metadata.git_tag_or_branch,
-                            job_environment=None,
+                            sdk_language,
+                            github_action,
+                            shiryu_metadata.git_tag_or_branch,
                             pre_steps=pre_steps,
-                            post_steps=(),
                             outputs=(("tag", "${{ steps.releaser_release.outputs.tag }}"),),
                             permissions=(("contents", "write"),),
                         ),
@@ -187,8 +180,8 @@ class ReleaserInitializer(PythonModuleInitializer):
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.RELEASE,
                         build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.RELEASE,
-                            gitlab_job=gitlab_job,
+                            GitLabStageId.RELEASE,
+                            gitlab_job,
                             when=GitLabJobWhen.MANUAL,
                             environment=GitLabJobEnvironmentId.PRODUCTION.value,
                         ),
@@ -198,6 +191,7 @@ class ReleaserInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: commitizen releaser dependency
                     # https://github.com/commitizen-tools/commitizen/blob/master/CHANGELOG.md#v430-2025-02-28
                     # >= 4.3.0: Add uv_provider
                     # https://github.com/commitizen-tools/commitizen/blob/v4.3.0/pyproject.toml#L12

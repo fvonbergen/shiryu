@@ -48,23 +48,17 @@ class AuditorInitializer(PythonModuleInitializer):
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.audit
         github_action = build_github_action(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            dagger_version=shiryu_metadata.dagger_version,
-            shiryu_version=shiryu_metadata.git_tag_or_branch,
-            export_path=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            shiryu_metadata.dagger_version,
+            shiryu_metadata.git_tag_or_branch,
         )
         gitlab_job = build_gitlab_job(
-            sdk_language=sdk_language,
-            sdk_module_name=sdk_module_name,
-            sdk_module_function=sdk_module_function,
-            shiryu_version=shiryu_metadata.git_tag_or_branch,
-            variables=(),
-            pre_script=(),
-            export_path=None,
-            post_script=(),
-            artifacts=None,
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function,
+            shiryu_metadata.git_tag_or_branch,
         )
         pre_steps = (build_github_workflow_checkout_job(),)
 
@@ -76,12 +70,10 @@ class AuditorInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language=sdk_language,
-                            github_action=github_action,
-                            shiryu_version=shiryu_metadata.git_tag_or_branch,
-                            job_environment=None,
-                            pre_steps=pre_steps,
-                            post_steps=(),
+                            sdk_language,
+                            github_action,
+                            shiryu_metadata.git_tag_or_branch,
+                            pre_steps,
                         ),
                     ),
                 ),
@@ -89,15 +81,14 @@ class AuditorInitializer(PythonModuleInitializer):
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs | {gitlab_job},
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.QUALITY,
-                        build_gitlab_stage_job(
-                            gitlab_stage_id=GitLabStageId.QUALITY, gitlab_job=gitlab_job
-                        ),
+                        build_gitlab_stage_job(GitLabStageId.QUALITY, gitlab_job),
                     ),
                 ),
             ),
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: uv auditor dependency
                     # https://github.com/astral-sh/uv/releases/tag/0.11.0
                     # >= 0.11.0: New uv audit command
                     # https://github.com/astral-sh/uv/blob/0.11.0/pyproject.toml#L10

@@ -60,9 +60,11 @@ class JupyterInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
+                    # PINNED: notebook jupyter dependency
                     # TODO: versions not studied.
                     # https://github.com/jupyter/notebook/blob/4.0.0/setup.py#L26
                     DistributionPackage("notebook", Version("4.0.0"), Version("2.7")),
+                    # PINNED: python-lsp-server jupyter dependency
                     # TODO: versions not studied.
                     DistributionPackage("python-lsp-server", Version("0.1.1"), Version("0.0")),
                 },

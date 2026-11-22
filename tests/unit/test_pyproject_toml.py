@@ -20,8 +20,8 @@ def test_pyproject_toml(render_template) -> None:
     # Unsorted input to explicitly verify your Jinja |sort filter works
     authors = frozenset(
         {
-            ProjectAuthor("name_2", "name_2@mail.com"),
-            ProjectAuthor("name_1", "name_1@mail.com"),
+            ProjectAuthor(name="name_2", email="name_2@mail.com"),
+            ProjectAuthor(name="name_1", email="name_1@mail.com"),
         }
     )
     dependency_groups = DependencyGroups()
