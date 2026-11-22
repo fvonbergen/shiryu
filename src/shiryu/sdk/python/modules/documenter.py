@@ -42,6 +42,10 @@ from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
 from ..utils import get_package_name_canonical
 
+# PINNED: upload-pages-artifact action version (2026/11/22)
+UPLOAD_PAGES_ARTIFACT_ACTION_VERSION: Final = Version("5.0.0")
+# PINNED: deploy-pages action version (2026/11/22)
+DEPLOY_PAGES_ACTION_VERSION: Final = Version("5.0.1")
 GITHUB_PAGES_ENVIRONMENT: Final = GitHubJobEnvironment(
     "github-pages", "${{ steps.deployment.outputs.page_url }}"
 )
@@ -155,7 +159,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                                 GitHubWorkflowJobStep(
                                     "upload_artifact",
                                     "Upload artifact",
-                                    "actions/upload-pages-artifact@v5.0.0",
+                                    f"actions/upload-pages-artifact@v{UPLOAD_PAGES_ARTIFACT_ACTION_VERSION}",
                                     (
                                         GitHubWorkflowStepInputParameter(
                                             "path", f"{PROJECT_SITE_PATH}/"
@@ -165,7 +169,7 @@ class DocumenterInitializer(PythonModuleInitializer):
                                 GitHubWorkflowJobStep(
                                     "deploy_to_github_pages",
                                     "Deploy to GitHub pages",
-                                    "actions/deploy-pages@v5.0.1",
+                                    f"actions/deploy-pages@v{DEPLOY_PAGES_ACTION_VERSION}",
                                     (),
                                 ),
                             ),
@@ -200,12 +204,10 @@ class DocumenterInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
-                    # PINNED: mkdocstrings-python documenter dependency
                     # https://github.com/mkdocstrings/python/releases/tag/1.11.0
                     # >= 1.11.0: Hook into autorefs to provide context around cross-ref errors
                     # https://github.com/mkdocstrings/python/blob/1.11.0/pyproject.toml#L11
                     DistributionPackage("mkdocstrings-python", Version("1.11.0"), Version("3.8")),
-                    # PINNED: zensical documenter dependency
                     # https://github.com/zensical/zensical/releases/tag/v0.0.66
                     # >= 0.0.66: Support api-autonav plugin
                     # https://github.com/zensical/zensical/blob/v0.0.66/pyproject.toml#L37

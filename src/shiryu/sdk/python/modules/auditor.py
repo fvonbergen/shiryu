@@ -88,7 +88,6 @@ class AuditorInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
-                    # PINNED: uv auditor dependency
                     # https://github.com/astral-sh/uv/releases/tag/0.11.0
                     # >= 0.11.0: New uv audit command
                     # https://github.com/astral-sh/uv/blob/0.11.0/pyproject.toml#L10

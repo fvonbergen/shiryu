@@ -137,7 +137,6 @@ class BuilderInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
-                    # PINNED: hatch builder dependency
                     # All versions supported
                     # https://github.com/pypa/hatch/blob/hatch-v1rc2/pyproject.toml#L10
                     DistributionPackage("hatch", Version("0.0.0"), Version("3.8"))

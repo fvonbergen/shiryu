@@ -176,12 +176,10 @@ class LinterInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
-                    # PINNED: commit-check linter dependency
                     # https://github.com/commit-check/commit-check/releases/tag/v2.0.0
                     # >= 2.0.0: Configuration Migration and Removed Features
                     # https://github.com/commit-check/commit-check/blob/v2.0.0/pyproject.toml#L14
                     DistributionPackage("commit-check", Version("2.0.0"), Version("3.9")),
-                    # PINNED: ruff linter dependency
                     # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
                     # >= 0.1.2: New ruff format command
                     # https://github.com/astral-sh/ruff/blob/v0.1.2/pyproject.toml#L11

@@ -191,7 +191,6 @@ class ReleaserInitializer(PythonModuleInitializer):
             dependency_groups=init_context_directory.dependency_groups.add(
                 sdk_module_name,
                 {
-                    # PINNED: commitizen releaser dependency
                     # https://github.com/commitizen-tools/commitizen/blob/master/CHANGELOG.md#v430-2025-02-28
                     # >= 4.3.0: Add uv_provider
                     # https://github.com/commitizen-tools/commitizen/blob/v4.3.0/pyproject.toml#L12

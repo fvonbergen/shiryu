@@ -6,31 +6,32 @@ from pathlib import PurePosixPath
 from typing import Final
 
 from dagger_clients.core import CacheSharingMode, Container, Directory, Platform, core
+from packaging.version import Version
 
 from .file import TargetFile
 
 WORKDIR_PATH: Final = PurePosixPath("/workspace")
 
-# PINNED: debian codename
-DEBIAN_CODENAME: Final = "trixie"
-# PINNED: debian snapshot datetime
+# PINNED: debian codename (2026/11/01)
+DEBIAN_VERSION_CODENAME: Final = "trixie"
+# PINNED: debian snapshot datetime (2026/11/01)
 # https://snapshot.debian.org/
 DEBIAN_SNAPSHOT_DATETIME: Final = "20261101T000000Z"
-# PINNED: debian manifest digest
+# PINNED: debian manifest digest (2026/11/22)
 # Pick the multi-architecture manifest wrapper.
-# https://hub.docker.com/layers/library/debian/trixie-slim/images/sha256-918311b7b6c4c6f68b232ba516584925f6c78ad82b6fd534b98979df6438e483
+# https://hub.docker.com/layers/library/debian/trixie-slim/images/sha256-a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 DEBIAN_MANIFEST_DIGEST: Final = (
-    "sha256:a29215f6a35e51e22adffa17f89e9d2ef06214e64a2bad10d765c46aea49f11f"
+    "sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2"
 )
 IMAGE_REF: Final = "docker.io"
 DEBIAN_IMAGE_NAMESPACE: Final = "library/debian"
 # IMAGE_REF: Final = "public.ecr.aws/"
 # DEBIAN_IMAGE_NAMESPACE: Final = "debian/debian"
 FULLY_QUALIFIED_IMAGE_NAME_DEBIAN: Final = (
-    f"{IMAGE_REF}/{DEBIAN_IMAGE_NAMESPACE}:{DEBIAN_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
+    f"{IMAGE_REF}/{DEBIAN_IMAGE_NAMESPACE}:{DEBIAN_VERSION_CODENAME}-slim@{DEBIAN_MANIFEST_DIGEST}"
 )
-# PINNED: uv version
-UV_VERSION: Final = "0.13.6"
+# PINNED: uv version (2026/11/22)
+UV_VERSION: Final = Version("0.13.8")
 # NOTE: trivy version will be pinned ont the dagger.lock file.
 FULLY_QUALIFIED_IMAGE_NAME_TRIVY: Final = f"{IMAGE_REF}/aquasec/trivy"
 
@@ -94,9 +95,9 @@ async def container_debian(
     container = core().container(platform=platform).from_(FULLY_QUALIFIED_IMAGE_NAME_DEBIAN)
     snapshot_sources = (
         f"deb http://snapshot.debian.org/archive/debian/{DEBIAN_SNAPSHOT_DATETIME} "
-        f"{DEBIAN_CODENAME} main\n"
+        f"{DEBIAN_VERSION_CODENAME} main\n"
         f"deb http://snapshot.debian.org/archive/debian-security/{DEBIAN_SNAPSHOT_DATETIME} "
-        f"{DEBIAN_CODENAME}-security main\n"
+        f"{DEBIAN_VERSION_CODENAME}-security main\n"
     )
     container = (
         # Prevent hanging scripts due to interactive prompts
@@ -117,14 +118,14 @@ async def container_debian(
         .with_mounted_cache(
             "/var/cache/apt/archives",
             core().cache_volume(
-                f"shiryu-apt-archives-debian-{DEBIAN_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
+                f"shiryu-apt-archives-debian-{DEBIAN_VERSION_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
             ),
             sharing=CacheSharingMode.LOCKED,
         )
         .with_mounted_cache(
             "/var/lib/apt/lists",
             core().cache_volume(
-                f"shiryu-apt-lists-debian-{DEBIAN_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
+                f"shiryu-apt-lists-debian-{DEBIAN_VERSION_CODENAME}-slim-{DEBIAN_SNAPSHOT_DATETIME}"
             ),
             sharing=CacheSharingMode.LOCKED,
         )

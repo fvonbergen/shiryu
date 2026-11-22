@@ -30,21 +30,19 @@ from .utils import get_package_name_canonical
 
 SDK_MODULE_NAME: Final = str(Path(__file__).parent.name)
 
-# PINNED: hatchling version
+# PINNED: hatchling version (2026/11/22)
 HATCHLING_VERSION: Final = Version("1.33.0")
-# PINNED: latest python 0.x version
 # https://www.python.org/download/releases/early/
 LATEST_PYTHON_0_VERSION: Final = Version("0.9")
-# PINNED: latest python 1.x version
 # https://www.python.org/download/releases/
 LATEST_PYTHON_1_VERSION: Final = Version("1.6")
-# PINNED: latest python 2.x version and 3.y version
 # https://peps.python.org/pep-0361/
 # https://devguide.python.org/versions/#full-chart
 # EOL:
 # - 2.7: 2020-01-01
 # - 3.10: 2026-10-01
 LATEST_PYTHON_2_VERSION: Final = Version("2.7")
+# PINNED: latest python 3.x version (2026/11/22)
 LATEST_PYTHON_3_VERSION: Final = Version("3.15")
 # LATEST_PYTHON_4_VERSION: Final = Version("4.0")
 
@@ -153,7 +151,6 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
         Returns:
             Uv lower bound requires python.
         """
-        # PINNED: minimal uv python version
         # - uv minium python support - https://docs.astral.sh/uv/reference/policies/python/#python-versions
         return Version("3.6")
 

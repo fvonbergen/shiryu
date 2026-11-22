@@ -42,8 +42,8 @@ def warning(message: str) -> None:
     print(message, file=sys.stderr)
 
 
-# PINNED: gitlab docker version
-GITLAB_DOCKER_VERSION: Final = Version("29.9.2")
+# PINNED: gitlab docker version (2026/11/22)
+GITLAB_DOCKER_VERSION: Final = Version("29.10.0")
 PROJECT_VERSION_DEFAULT: Final = "0.0.0"
 OptionalProjectNameType = ProjectNameType | None
 OptionalProjectNameDaggerType = Annotated[OptionalProjectNameType, dagger.Doc("Project name")]

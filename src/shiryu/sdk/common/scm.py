@@ -18,9 +18,9 @@ from ...utils.template import Mapping, Template, TemplateFile
 from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH
 
-# PINNED: dagger-for-github action version
+# PINNED: dagger-for-github action version (2026/11/22)
 DAGGER_FOR_GITHUB_ACTION_VERSION: Final = Version("8.4.1")
-# PINNED: checkout action version
+# PINNED: checkout action version (2026/11/22)
 CHECKOUT_ACTION_VERSION: Final = Version("7.0.1")
 MATCHING_TAGS_REGEX: Final = r"v[0-9]+\.[0-9]+\.[0-9]+"
 
