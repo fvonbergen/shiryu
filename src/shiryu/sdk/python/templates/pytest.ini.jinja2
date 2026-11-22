@@ -6,5 +6,18 @@ testpaths = {{ project_tests_path }}
 # pytest-asyncio
 asyncio_mode = strict
 asyncio_default_fixture_loop_scope = function
-# pytest, pytest-cov, pytest-xdist
-addopts = -vv --cov --cov-report=term --cov-report=xml --cov-config={{ project_coveragerc_path }} --numprocesses=auto --dist=load
+# pytest addopts
+addopts =
+  # pytest
+  -vv
+  -ra
+  --strict-markers
+  --strict-config
+# pytest-cov
+  --cov
+  --cov-report=term
+  --cov-report=xml
+  --cov-config={{ project_coveragerc_path }}
+# pytest-xdist
+  --numprocesses=auto
+  --dist=load

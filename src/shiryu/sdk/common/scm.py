@@ -10,6 +10,7 @@ from typing import Any, Final, Self, final, get_args, get_origin
 
 import dagger
 from dagger_clients.core import Changeset, Directory, Secret
+from packaging.version import Version
 
 from ...utils.case import to_kebab_case, to_snake_case
 from ...utils.dagger.directory import directory_with_new_file
@@ -18,9 +19,9 @@ from .templates import COMMON_JINJA_ENVIRONMENT
 from .vcs import VCS_PRIMARY_BRANCH
 
 # PINNED: dagger-for-github action version
-DAGGER_FOR_GITHUB_ACTION_VERSION: Final = "8.4.1"
+DAGGER_FOR_GITHUB_ACTION_VERSION: Final = Version("8.4.1")
 # PINNED: checkout action version
-CHECKOUT_ACTION_VERSION: Final = "7.0.1"
+CHECKOUT_ACTION_VERSION: Final = Version("7.0.1")
 MATCHING_TAGS_REGEX: Final = r"v[0-9]+\.[0-9]+\.[0-9]+"
 
 
@@ -801,7 +802,7 @@ def build_github_action(  # noqa: PLR0913
     sdk_language: str,
     sdk_module_name: str,
     sdk_module_function: FunctionType,
-    dagger_version: str,
+    dagger_version: Version,
     shiryu_version: str,
     *,
     export_path: PurePosixPath | None = None,

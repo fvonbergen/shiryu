@@ -1,7 +1,6 @@
 """module package."""
 
 import asyncio
-import inspect
 import logging
 import sys
 from abc import ABC, abstractmethod
@@ -11,6 +10,7 @@ from typing import Annotated, Final, final
 
 import dagger
 from dagger_clients.core import Changeset, Container, Directory, ExistsType, Platform, core
+from packaging.version import Version
 
 from ...utils.class_name import ClassName
 from ...utils.dagger.client import container_git
@@ -43,7 +43,7 @@ def warning(message: str) -> None:
 
 
 # PINNED: gitlab docker version
-GITLAB_DOCKER_VERSION: Final = "29.9.2"
+GITLAB_DOCKER_VERSION: Final = Version("29.9.2")
 PROJECT_VERSION_DEFAULT: Final = "0.0.0"
 OptionalProjectNameType = ProjectNameType | None
 OptionalProjectNameDaggerType = Annotated[OptionalProjectNameType, dagger.Doc("Project name")]
@@ -121,8 +121,8 @@ class SDKModuleInitializer[SDKModuleInitContextDirectoryType: SDKModuleInitConte
         dagger_name = "dagger"
         job_name = f".{dagger_name}"
         dagger_yml_template_mapping: Mapping = {
-            "docker_version": GITLAB_DOCKER_VERSION,
-            "dagger_version": shiryu_metadata.dagger_version,
+            "docker_version": str(GITLAB_DOCKER_VERSION),
+            "dagger_version": str(shiryu_metadata.dagger_version),
         }
         dagger_yml_template = Template(
             COMMON_JINJA_ENVIRONMENT,
@@ -406,14 +406,14 @@ class SDKModule[
                 ),
             )
             return DaggerModuleMetadata(
-                dagger_version=dagger_engine_version.removeprefix("v"),
+                dagger_version=Version(dagger_engine_version),
                 git_tag_or_branch=git_tag_or_branch,
             )
         except dagger.QueryError:
             # TODO: https://github.com/dagger/dagger/issues/13054
             # TODO: the try-exception block is necessary because dagger.dag.current_module() fails
             # in dagger-in-dagger used in our tester unit module call with a QueryError
-            dagger_version = "undefined"
+            dagger_version = Version("v1.0.0-beta.26")
             git_tag_or_branch = "undefined"
             return DaggerModuleMetadata(
                 dagger_version=dagger_version, git_tag_or_branch=git_tag_or_branch
@@ -647,35 +647,6 @@ class SDKModule[
         return await self.__build_output_directory(
             init_directory, source, is_update, platform, container_security_audit_file
         )
-
-    def log(self, exception: dagger.ExecError) -> None:
-        """Logs a Dagger execution error with context on where it failed.
-
-        Automatically inspects the call stack to determine the calling method's name, retrieves the
-        class name via `self.name()`, and logs both stdout and exit codes.
-
-        Args:
-            exception: The Dagger `ExecError` caught during execution.
-        """
-        # Get the stack frame of the function that called this log() method
-        class_name = self.name()
-        func_name = "Unknown"
-        current_frame = inspect.currentframe()
-        if current_frame is not None:
-            caller_frame = current_frame.f_back
-            if caller_frame is not None:
-                func_name = caller_frame.f_code.co_name
-
-        logger.error(
-            "[%s - %s] Execution failed with exit code %s",
-            class_name,
-            func_name,
-            exception.exit_code,
-        )
-        if exception.stdout:
-            logger.error("STDOUT:\n%s", exception.stdout)
-        # if exception.stderr:
-        #     logger.error("STDERR:\n%s", exception.stderr)
 
     @dagger.function(
         doc="Returns a changeset to initialize a project with the SDK module directory."

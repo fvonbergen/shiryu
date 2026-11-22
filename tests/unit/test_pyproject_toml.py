@@ -16,6 +16,7 @@ def test_pyproject_toml(render_template) -> None:
     license_ = "Apache-2.0"
     license_file_name = "LICENSE"
     lower_bound_requires_python = Version("3.10")
+    hatchling_version = Version("1.33.0")
 
     # Unsorted input to explicitly verify your Jinja |sort filter works
     authors = frozenset(
@@ -45,6 +46,7 @@ def test_pyproject_toml(render_template) -> None:
             }
         ),
         "dependency_groups_specifiers": dependency_groups.specifiers,
+        "hatchling_version": str(hatchling_version),
     }
 
     # Render directly by name from your pre-configured environment
@@ -101,7 +103,7 @@ dependencies = []
 [dependency-groups]
 
 [build-system]
-requires = ["hatchling==1.31.0"]
+requires = ["hatchling=={hatchling_version}"]
 build-backend = "hatchling.build\""""
 
     assert rendered.strip() == expected_output.strip()

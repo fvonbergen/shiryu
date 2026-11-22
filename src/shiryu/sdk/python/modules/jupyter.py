@@ -61,9 +61,11 @@ class JupyterInitializer(PythonModuleInitializer):
                 sdk_module_name,
                 {
                     # PINNED: notebook jupyter dependency
-                    # TODO: versions not studied.
-                    # https://github.com/jupyter/notebook/blob/4.0.0/setup.py#L26
-                    DistributionPackage("notebook", Version("4.0.0"), Version("2.7")),
+                    # https://github.com/jupyter/notebook/releases/tag/5.0.0
+                    # >= 5.0.0 The Notebook will refuse to run as root unless the --allow-root flag
+                    #   is given (#1115).
+                    # https://github.com/jupyter/notebook/blob/5.0.0/setup.py#L26
+                    DistributionPackage("notebook", Version("5.0.0"), Version("2.7")),
                     # PINNED: python-lsp-server jupyter dependency
                     # TODO: versions not studied.
                     DistributionPackage("python-lsp-server", Version("0.1.1"), Version("0.0")),

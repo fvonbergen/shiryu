@@ -37,42 +37,50 @@ dagger module install https://github.com/fvonbergen/shiryu.git
 Once installed, invoke functions directly via the Dagger CLI:
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
-  call                                                    \
-  shiryu                                                  \
-  <shiryu_function>
+DO_NOT_TRACK=1 dagger     \
+  --progress=plain        \
+  api                     \
+    call                  \
+      shiryu              \
+        <shiryu_function>
 ```
 
 For initializing a project:
 
 ```bash
-DO_NOT_TRACK=1 dagger generate
+DO_NOT_TRACK=1 dagger \
+  generate
 ```
 
 For running checks:
 
 ```bash
-DO_NOT_TRACK=1 dagger check
+DO_NOT_TRACK=1 dagger \
+  check
 ```
 
 Alternatively, you can run functions directly from the remote reference without
 prior installation:
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
-  call                                                    \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
-  <shiryu_function>
+DO_NOT_TRACK=1 dagger                                         \
+  --progress=plain                                            \
+  api                                                         \
+    call                                                      \
+      --load-module=https://github.com/fvonbergen/shiryu.git  \
+      <shiryu_function>
 ```
 
 ```bash
-DO_NOT_TRACK=1 dagger generate                      \
-  --module=https://github.com/fvonbergen/shiryu.git
+DO_NOT_TRACK=1 dagger                                 \
+  generate                                            \
+    --module=https://github.com/fvonbergen/shiryu.git
 ```
 
 ```bash
-DO_NOT_TRACK=1 dagger check                               \
-  --load-module=https://github.com/fvonbergen/shiryu.git
+DO_NOT_TRACK=1 dagger                                       \
+  check                                                     \
+    --load-module=https://github.com/fvonbergen/shiryu.git
 ```
 
 ### Python SDK
@@ -88,45 +96,52 @@ presence of a `uv.lock` file to manage deterministic environments.
 List commands:
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
-  call                                                    \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
-  python --help
+DO_NOT_TRACK=1 dagger                                         \
+  --progress=plain                                            \
+  api                                                         \
+    call                                                      \
+      --load-module=https://github.com/fvonbergen/shiryu.git  \
+      python                                                  \
+        --help
 ```
 
 Initialize a new project using either of the following equivalent methods:
 
 ```bash
-DO_NOT_TRACK=1 dagger generate                            \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
+DO_NOT_TRACK=1 dagger                                       \
+  generate                                                  \
+    --load-module=https://github.com/fvonbergen/shiryu.git  \
 ```
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
-  call                                                    \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
-  python                                                  \
-  init                                                    \
-    --project-name=<project_name>                         \
+DO_NOT_TRACK=1 dagger                                         \
+  --progress=plain                                            \
+  api                                                         \
+    call                                                      \
+      --load-module=https://github.com/fvonbergen/shiryu.git  \
+      python                                                  \
+        init
 ```
 
 Update a project:
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
-  call                                                    \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
-  python                                                  \
-  init                                                    \
-    --project-name=<project_name>                         \
-    --is-update                                           \
+DO_NOT_TRACK=1 dagger                                         \
+  --progress=plain                                            \
+  api                                                         \
+    call                                                      \
+      --load-module=https://github.com/fvonbergen/shiryu.git  \
+      python                                                  \
+        init                                                  \
+          --is-update                                         \
 ```
 
 Run project checks:
 
 ```bash
-DO_NOT_TRACK=1 dagger check                               \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
+DO_NOT_TRACK=1 dagger                                       \
+  check                                                     \
+    --load-module=https://github.com/fvonbergen/shiryu.git  \
 ```
 
 ### With GitHub
@@ -148,19 +163,23 @@ To run Shiryu locally when cloned from source:
 ```bash
 git clone https://github.com/fvonbergen/shiryu.git
 cd shiryu
-DO_NOT_TRACK=1 dagger api \
-  call                    \
-  --load-module=.         \
-  <shiryu_function>
+DO_NOT_TRACK=1 dagger   \
+  --progress=plain      \
+  api                   \
+    call                \
+      --load-module=.   \
+      <shiryu_function>
 ```
 
 To run Shiryu directly from the remote repository:
 
 ```bash
-DO_NOT_TRACK=1 dagger api                                 \
-  call                                                    \
-  --load-module=https://github.com/fvonbergen/shiryu.git  \
-  <shiryu_function>
+DO_NOT_TRACK=1 dagger                                         \
+  --progress=plain                                            \
+  api                                                         \
+    call                                                      \
+      --load-module=https://github.com/fvonbergen/shiryu.git  \
+      <shiryu_function>
 ```
 
 ### Local virtual environment

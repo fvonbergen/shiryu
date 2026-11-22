@@ -444,12 +444,7 @@ class Documenter(PythonModule):
         source = self.source
         exclude = []
         container = await self._exec_container(source, exclude, platform)
-        try:
-            return self.__document(container).changes(source)
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        return self.__document(container).changes(source)
 
     @final
     @dagger.function(doc="Audit source code docstrings.")

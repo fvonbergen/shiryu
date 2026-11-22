@@ -54,7 +54,7 @@ Changelog = "https://github.com/fvonbergen/shiryu/blob/master/CHANGELOG.md"
 # Dependencies that will be installed for the specific module call.
 [dependency-groups]
 auditor = ["uv >= 0.11.0"]
-builder = ["hatch"]
+builder = ["hatch >= 0.0.0"]
 checker = [
   "pytest >= 7.4.0",
   "pytest-asyncio >= 0.24.0",
@@ -66,6 +66,7 @@ checker = [
   "ty >= 0.0.102",
 ]
 documenter = ["mkdocstrings-python >= 1.11.0", "zensical >= 0.0.66"]
+jupyter = ["notebook >= 5.0.0", "python-lsp-server >= 0.1.1"]
 linter = [
   "commit-check >= 2.0.0",
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160
@@ -85,7 +86,7 @@ tester = [
 # Build system changed in dagger v0.18.6 (https://github.com/dagger/dagger/releases/tag/sdk%2Fpython%2Fv0.18.16)
 # requires = ["uv_build>=0.8.4,<0.12.0"]
 # build-backend = "uv_build"
-requires = ["hatchling==1.31.0"]
+requires = ["hatchling==1.33.0"]
 build-backend = "hatchling.build"
 
 [tool.uv.workspace]

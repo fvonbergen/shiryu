@@ -30,6 +30,8 @@ from .utils import get_package_name_canonical
 
 SDK_MODULE_NAME: Final = str(Path(__file__).parent.name)
 
+# PINNED: hatchling version
+HATCHLING_VERSION: Final = Version("1.33.0")
 # PINNED: latest python 0.x version
 # https://www.python.org/download/releases/early/
 LATEST_PYTHON_0_VERSION: Final = Version("0.9")
@@ -240,6 +242,7 @@ class PythonModuleInitializer(SDKModuleInitializer[PythonModuleInitContextDirect
             "requires_python": lower_bound_requires_python,
             "python_versions": _python_supported_versions(lower_bound_requires_python),
             "dependency_groups_specifiers": dependency_groups.specifiers,
+            "hatchling_version": str(HATCHLING_VERSION),
         }
         pyproject_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT, pyproject_toml_template_file, pyproject_toml_template_mapping

@@ -126,13 +126,8 @@ class Auditor(PythonModule):
         initializer = self._initializer_cls()
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        try:
-            uv_audit_command = self._build_uv_run_command([*initializer._uv_cmd(), "audit"])
-            await container.with_exec(uv_audit_command).sync()
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        uv_audit_command = self._build_uv_run_command([*initializer._uv_cmd(), "audit"])
+        await container.with_exec(uv_audit_command).sync()
 
 
 sdk_module: Final = Auditor

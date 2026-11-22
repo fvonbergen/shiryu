@@ -146,10 +146,7 @@ class TesterInitializer(PythonModuleInitializer):
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language,
-                            github_action,
-                            shiryu_version,
-                            pre_steps,
+                            sdk_language, github_action, shiryu_version, pre_steps
                         ),
                     ),
                 ),
@@ -310,12 +307,7 @@ class Tester(PythonModule):
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         container = await self.__unit(container, keyword)
-        try:
-            return await container.stdout()
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        return await container.stdout()
 
     # @final
     # @dagger.function

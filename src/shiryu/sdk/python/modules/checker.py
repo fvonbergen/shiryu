@@ -76,11 +76,7 @@ class CheckerInitializer(PythonModuleInitializer):
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function = sdk_module_cls.check
         github_action = build_github_action(
-            sdk_language,
-            sdk_module_name,
-            sdk_module_function,
-            dagger_version,
-            shiryu_version,
+            sdk_language, sdk_module_name, sdk_module_function, dagger_version, shiryu_version
         )
         gitlab_job = build_gitlab_job(
             sdk_language,
@@ -205,12 +201,7 @@ class Checker(PythonModule):
         """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        try:
-            await self.__check(container)
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        await self.__check(container)
 
 
 sdk_module: Final = Checker

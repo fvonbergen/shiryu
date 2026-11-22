@@ -8,6 +8,8 @@ source control management (SCM), and version control systems (VCS).
 from dataclasses import dataclass, field, replace
 from typing import Self, final
 
+from packaging.version import Version
+
 from .scm import GitHubActionsWorkflows, GitHubWorkflows, GitLabJobsStages, GitLabStages
 
 
@@ -22,7 +24,7 @@ class DaggerModuleMetadata:
         git_tag_or_branch: The specific Git reference (tag or branch) for the module.
     """
 
-    dagger_version: str
+    dagger_version: Version
     git_tag_or_branch: str
 
 

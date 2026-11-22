@@ -299,40 +299,35 @@ class Builder(PythonModule):
             self._dependencies_security_audit_file(source),
         )
         exclude = []
-        try:
-            container = await self._exec_container(source, exclude, platform)
-            project_metadata = await self._get_project_metadata(
-                source, self.project_name, platform, container_security_audit_file
-            )
-            package_name = project_metadata.name
-            package_name_version = f"{package_name}=={project_metadata.version}"
-            directory = self.__build(container, platform)
-            uv_cmd = initializer._uv_cmd()
-            await (
-                (
-                    await container_uv(
-                        platform, container_security_audit_file, dependencies_security_audit_file
-                    )
+        container = await self._exec_container(source, exclude, platform)
+        project_metadata = await self._get_project_metadata(
+            source, self.project_name, platform, container_security_audit_file
+        )
+        package_name = project_metadata.name
+        package_name_version = f"{package_name}=={project_metadata.version}"
+        directory = self.__build(container, platform)
+        uv_cmd = initializer._uv_cmd()
+        await (
+            (
+                await container_uv(
+                    platform, container_security_audit_file, dependencies_security_audit_file
                 )
-                .with_directory(".", directory)
-                .with_exec([*uv_cmd, "venv"])
-                .with_exec(
-                    [
-                        *uv_cmd,
-                        "pip",
-                        "install",
-                        "--no-build-isolation",
-                        f"--find-links={PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform}",
-                        package_name_version,
-                    ]
-                )
-                .with_exec([*uv_cmd, "pip", "uninstall", package_name])
-                .sync()
             )
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+            .with_directory(".", directory)
+            .with_exec([*uv_cmd, "venv"])
+            .with_exec(
+                [
+                    *uv_cmd,
+                    "pip",
+                    "install",
+                    "--no-build-isolation",
+                    f"--find-links={PurePosixPath(PROJECT_DISTRIBUTABLE_FOLDER) / platform}",
+                    package_name_version,
+                ]
+            )
+            .with_exec([*uv_cmd, "pip", "uninstall", package_name])
+            .sync()
+        )
 
 
 sdk_module: Final = Builder

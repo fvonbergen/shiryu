@@ -111,7 +111,9 @@ class LinterInitializer(PythonModuleInitializer):
             # executing any scripts. Gitlab CI  doesn't ensure that the job is running
             # on the correct branch, and it detaches the HEAD by default.
             'TARGET_BRANCH="${{CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_BRANCH}}"',
-            'if [ -n "$TARGET_BRANCH" ];then git checkout -B "$TARGET_BRANCH" "$CI_COMMIT_SHA";fi',
+            'if [ -n "$TARGET_BRANCH" ]; '
+            'then git checkout -B "$TARGET_BRANCH" "$CI_COMMIT_SHA"; '
+            "fi",
         )
         gitlab_job_linter_lint_vcs = build_gitlab_job(
             sdk_language,
@@ -379,12 +381,7 @@ class Linter(PythonModule):
         """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        try:
-            await self.__lint_fix_code(container, False)
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        await self.__lint_fix_code(container, False)
 
     @final
     @dagger.function(doc="Run linter fixes in the project code of the provided source Directory.")
@@ -404,12 +401,7 @@ class Linter(PythonModule):
         """
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        try:
-            return await self.__lint_fix_code(container, True)
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        return await self.__lint_fix_code(container, True)
 
     @final
     @dagger.function(doc="Run linter analysis in the project VCS of the provided source Directory.")
@@ -431,12 +423,7 @@ class Linter(PythonModule):
         """
         exclude = []
         container = await self._exec_container(self.source, exclude, platform)
-        try:
-            await self.__lint_vcs(container, branch_history)
-        except dagger.ExecError as exception:
-            self.log(exception)
-
-            raise
+        await self.__lint_vcs(container, branch_history)
 
 
 sdk_module: Final = Linter
