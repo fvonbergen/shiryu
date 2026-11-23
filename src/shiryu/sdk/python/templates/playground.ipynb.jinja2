@@ -17,18 +17,12 @@
       "source": [
         "\"\"\"jupyter notebook configuration.\"\"\"\n",
         "\n",
-        "import site\n",
-        "from importlib import reload\n",
-        "\n",
         "# Modules are reloaded after 2 seconds\n",
         "%load_ext autoreload\n",
         "%autoreload 2\n",
         "\n",
-        "# Add project as editable package.\n",
-        "!uv sync --package .. --quiet\n",
-        "\n",
-        "# Update the sys.path() list manually to include the editable package.\n",
-        "reload(site);"
+        "# Install project as editable package.\n",
+        "%uv pip install -e .."
       ]
     },
     {

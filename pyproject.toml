@@ -66,7 +66,7 @@ checker = [
   "ty >= 0.0.102",
 ]
 documenter = ["mkdocstrings-python >= 1.11.0", "zensical >= 0.0.66"]
-jupyter = ["notebook >= 5.0.0", "python-lsp-server >= 0.1.1"]
+jupyter = ["notebook >= 5.0.0", "python-lsp-server >= 0.1.1", "uv >= 0.0.5"]
 linter = [
   "commit-check >= 2.0.0",
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160

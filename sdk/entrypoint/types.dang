@@ -51,6 +51,11 @@ type ModuleTypes {
         ),
       typeDef.withObject("Jupyter", description: "Python SDK jupyter.")
         .withFunction(
+          function("changeset", typeDef.withObject("Changeset"))
+            .withDescription("Returns a jupyter notebooks Directory.")
+            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
+        )
+        .withFunction(
           function("init", typeDef.withObject("Changeset"))
             .withDescription("Returns a changeset to initialize a project with the SDK module directory.")
             .withArg("project_name", typeDef.withOptional(true).withKind(TypeDefKind.STRING_KIND).withOptional(true), description: "Project name", defaultValue: ("null" :: Dagger.JSON!))
@@ -59,14 +64,10 @@ type ModuleTypes {
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         )
         .withFunction(
-          function("notebooks", typeDef.withObject("Directory"))
-            .withDescription("Returns a jupyter notebooks Directory.")
-            .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
-        )
-        .withFunction(
           function("service", typeDef.withObject("Service"))
             .withDescription("Returns a jupyter notebooks service with the project of the provided source Directory.")
             .withArg("backend_port", typeDef.withKind(TypeDefKind.INTEGER_KIND), description: "Jupyter notebooks port", defaultValue: ("8888" :: Dagger.JSON!))
+            .withArg("prune", typeDef.withKind(TypeDefKind.BOOLEAN_KIND), description: "Prune jupyter cache", defaultValue: ("false" :: Dagger.JSON!))
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         ),
       typeDef.withObject("Releaser", description: "Python SDK Releaser.")

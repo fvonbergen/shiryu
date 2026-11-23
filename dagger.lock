@@ -14,6 +14,7 @@
 ["","git-sha",["github.com/dagger/sdk-helpers","refs/tags/v1.0.9"],"daffbc01a1b3f3df7b1c417a7d2c83cd06d1bd33"]
 ["","oci-latest",["docker.io/aquasec/trivy"],"0.76.2"]
 ["","oci-sha",["docker.io/aquasec/trivy:0.76.2"],"sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb"]
+["","oci-sha",["docker.io/library/alpine:3.22.1"],"sha256:4bcff63911fcb4448bd4fdacec207030997caf25e9bea4045fa6c8c44de311d1"]
 ["","oci-sha",["docker.io/library/debian:trixie-slim"],"sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2"]
 ["","oci-sha",["docker.io/library/golang:1.25-alpine"],"sha256:1ae0735f00daffa3aaf1363a5184c0d2dc55c78e3db4ec70241cdac97bf84b59"]
 ["","oci-sha",["docker.io/library/python:3.12-slim"],"sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b"]

@@ -4,8 +4,10 @@ from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
 
 import dagger
-from dagger_clients.core import CacheSharingMode, Container, Directory, Service, core
+from dagger_clients.core import CacheSharingMode, Changeset, Container, Directory, Service, core
 from packaging.version import Version
+
+from shiryu.sdk.common.utils import PROJECT_SOURCE_CODE_FOLDER
 
 from ....utils.dagger.client import container_debian
 from ....utils.dagger.directory import directory_with_new_file
@@ -25,10 +27,13 @@ from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 PortType = int
 PortDaggerType = Annotated[PortType, dagger.Doc("Jupyter notebooks port")]
+PruneType = bool
+PruneDaggerType = Annotated[PruneType, dagger.Doc("Prune jupyter cache")]
 
 PROJECT_NOTEBOOKS_FOLDER: Final = "notebooks"
 PORT_DAGGER_DEFAULT: Final = 8888
-JUPYTER_NOTEBOOKS_CACHE_VOLUME = core().cache_volume("shiryu-jupyter")
+PRUNE_DAGGER_DEFAULT: Final = False
+JUPYTER_CACHE_VOLUME = core().cache_volume("shiryu-jupyter")
 
 
 class JupyterInitializer(PythonModuleInitializer):
@@ -67,6 +72,9 @@ class JupyterInitializer(PythonModuleInitializer):
                     DistributionPackage("notebook", Version("5.0.0"), Version("2.7")),
                     # TODO: versions not studied.
                     DistributionPackage("python-lsp-server", Version("0.1.1"), Version("0.0")),
+                    # TODO: versions not studied.
+                    # https://github.com/astral-sh/uv/blob/0.0.5/pyproject.toml#L10
+                    DistributionPackage("uv", Version("0.0.5"), Version("3.8")),
                 },
             ),
         )
@@ -130,44 +138,31 @@ class Jupyter(PythonModule):
 
     @final
     @classmethod
-    def __notebooks_cache_folder(cls) -> str:
-        """Get the container project notebooks cache folder.
+    def __cache_folder(cls) -> str:
+        """Get the juyter cache folder.
 
         Returns:
-            The container project notebooks cache folder.
+            The jupyter cache folder.
         """
-        return "notebooks_cache"
+        return "jupyter_cache"
 
     @final
     @classmethod
-    async def __serve(cls, container: Container, jupyter_port: PortType) -> Service:
+    async def __serve(
+        cls, container: Container, jupyter_port: PortType, prune: PruneType
+    ) -> Service:
         """Jupyter pipeline.
 
         Args:
             container: Project container.
             jupyter_port: Jupyter notebooks port.
+            prune: Prune jupyter cache.
 
         Returns:
             A Service running the jupyter notebook server.
         """
-        jupyter_notebooks_cache_folder = cls.__notebooks_cache_folder()
-        container = (
-            await container.with_mounted_cache(
-                jupyter_notebooks_cache_folder,
-                JUPYTER_NOTEBOOKS_CACHE_VOLUME,
-                sharing=CacheSharingMode.LOCKED,
-            )
-            .with_exec(
-                [
-                    "cp",
-                    "--no-clobber",
-                    "--archive",
-                    f"{PROJECT_NOTEBOOKS_FOLDER}/.",
-                    f"{jupyter_notebooks_cache_folder}/",
-                ]
-            )
-            .sync()
-        )
+        cache_folder = cls.__cache_folder()
+        cache_path_str = f"/{cache_folder}"
         jupyter_command = cls._build_uv_run_command(
             [
                 "jupyter",
@@ -176,9 +171,22 @@ class Jupyter(PythonModule):
                 f"--port={jupyter_port}",
                 "--no-browser",
                 "--allow-root",
-                jupyter_notebooks_cache_folder,
+                cache_path_str,
             ]
         )
+        container = container.with_exec(["mkdir", cache_path_str]).with_mounted_cache(
+            cache_path_str, JUPYTER_CACHE_VOLUME, sharing=CacheSharingMode.LOCKED
+        )
+        container = (
+            container.with_exec(["rm", "--recursive", "--force", f"{cache_path_str}/*"]).with_exec(
+                ["cp", "--archive", "./.", f"{cache_path_str}/"]
+            )
+            if prune
+            else container.with_exec(
+                ["cp", "--no-clobber", "--archive", "./.", f"{cache_path_str}/"]
+            )
+        )
+
         return container.as_service(args=jupyter_command)
 
     @final
@@ -189,50 +197,53 @@ class Jupyter(PythonModule):
         self,
         *,
         backend_port: PortDaggerType = PORT_DAGGER_DEFAULT,
+        prune: PruneDaggerType = PRUNE_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> Service:
         """Returns a jupyter notebooks service with the project of the provided source Directory.
 
         Args:
             backend_port: Jupyter notebooks port.
+            prune: Prune jupyter cache.
             platform: The container platform.
 
         Returns:
             A jupyter notebooks service.
         """
-        exclude = []
+        exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
-        return await self.__serve(container, backend_port)
+        return await self.__serve(container, backend_port, prune)
 
     @final
     @dagger.function(doc="Returns a jupyter notebooks Directory.")
-    async def notebooks(
+    async def changeset(
         self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT
-    ) -> Directory:
-        """Returns a jupyter notebooks Directory.
+    ) -> Changeset:
+        """Returns the source code and jupyter notebooks changes.
 
         Args:
             platform: The container platform.
 
         Returns:
-            A jupyter notebooks Directory.
+            The changes of the modified source code and notebooks.
         """
-        container_security_audit_file = await self._container_security_audit_file(self.source)
-        jupyter_notebooks_cache_folder = self.__notebooks_cache_folder()
-        export_path_str = "/export"
+        source = self.source
+        container_security_audit_file = await self._container_security_audit_file(source)
+        cache_folder = self.__cache_folder()
+        exported_cache_folder = f"exported_{cache_folder}"
         # TODO: decide what to do with folders: .Trash-0, .ipynb_checkpoints
-        return (
+        exported_cache = (
             (await container_debian(platform, container_security_audit_file))
-            .with_mounted_cache(
-                jupyter_notebooks_cache_folder,
-                JUPYTER_NOTEBOOKS_CACHE_VOLUME,
-                sharing=CacheSharingMode.LOCKED,
-            )
-            .with_exec(
-                ["cp", "--archive", f"{jupyter_notebooks_cache_folder}/.", f"{export_path_str}/"]
-            )
-            .directory(export_path_str)
+            .with_exec(["mkdir", cache_folder])
+            .with_mounted_cache(cache_folder, JUPYTER_CACHE_VOLUME, sharing=CacheSharingMode.LOCKED)
+            .with_exec(["mkdir", exported_cache_folder])
+            .with_exec(["cp", "--archive", f"{cache_folder}/.", f"{exported_cache_folder}/"])
+            .directory(exported_cache_folder)
         )
+        include = [PROJECT_SOURCE_CODE_FOLDER + "/**", PROJECT_NOTEBOOKS_FOLDER + "/**"]
+        return exported_cache.filter(
+            include=include, exclude=[".Trash/**", ".ipynb_checkpoints/**"]
+        ).changes(source.filter(include=include))
 
 
 sdk_module: Final = Jupyter
