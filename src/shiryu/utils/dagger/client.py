@@ -93,6 +93,14 @@ async def container_debian(
         A debian container.
     """
     container = core().container(platform=platform).from_(FULLY_QUALIFIED_IMAGE_NAME_DEBIAN)
+
+    # Load environment variables from the .env file if it exists in the host directory
+    # only .env file name are allowed.
+    host_dir = core().host().directory(".", include=[".env"])
+    if await host_dir.exists(".env"):
+        env_file = host_dir.file(".env").as_env_file()
+        container = container.with_env_file_variables(env_file)
+
     snapshot_sources = (
         f"deb http://snapshot.debian.org/archive/debian/{DEBIAN_SNAPSHOT_DATETIME} "
         f"{DEBIAN_VERSION_CODENAME} main\n"
