@@ -12,3 +12,7 @@ source = "./"
 [sdks.python.scopes."."]
 is-module = true
 name = "shiryu"
+[sdks.python.scopes.".".settings]
+# PINNED: dagger engine (2026/11/25)
+# limited by github.com/dagger/python-sdk v1.9.0
+targetVersion = "v1.0.0-beta.27"

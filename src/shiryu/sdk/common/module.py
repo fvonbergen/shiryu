@@ -398,6 +398,7 @@ class SDKModule[
         try:
             # TODO: it seems that something changed again and the module source is not returning
             # with the .git/ folder so no git information is retrieved.
+            # TODO: read class ModuleSource in the sdk code
             module_source = core().current_module().source()
             dagger_engine_version, git_tag_or_branch = await asyncio.gather(
                 module_source.as_module_source().engine_version(),
