@@ -69,6 +69,7 @@ documenter = ["mkdocstrings-python >= 1.11.0", "zensical >= 0.0.66"]
 jupyter = ["notebook >= 5.0.0", "python-lsp-server >= 0.1.1", "uv >= 0.0.5"]
 linter = [
   "commit-check >= 2.0.0",
+  "pymarkdownlnt >= 0.9.32",
   # https://github.com/astral-sh/ruff/blob/main/CHANGELOG.md#0160
   # >= 0.16.0: New PLR0917 rule
   "ruff >= 0.16.0",

@@ -1,10 +1,7 @@
-# target-version = "py38"
 cache-dir = "{{cache_folder}}"
-{% if exclude is defined and exclude|length > 0 %}
-exclude = ["{{ exclude|join('", "') }}"]
-{% endif %}
 respect-gitignore = true
-line-length = 100
+line-length = {{ line_length}}
+extend-exclude = []
 
 [lint]
 select = [
@@ -37,7 +34,7 @@ ignore = [
   "S101",    # Use of assert detected (highly annoying if using pytest)
   "PLR2004", # Magic value used in comparison
 ]
-# extend-ignore = []
+extend-ignore = []
 
 [lint.pydocstyle]
 convention = "google"

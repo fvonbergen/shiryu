@@ -36,7 +36,7 @@ from ...common.scm import (
     build_gitlab_stage_name,
 )
 from ...common.templates import COMMON_JINJA_ENVIRONMENT
-from ...common.utils import PROJECT_SOURCE_CODE_FOLDER
+from ...common.utils import PROJECT_SOURCE_CODE_FOLDER, SOURCE_CODE_MAXIMUM_LINE_LENGTH
 from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import PythonModule, PythonModuleInitializer
 from ..templates import PYTHON_JINJA_ENVIRONMENT
@@ -381,6 +381,7 @@ class DocumenterInitializer(PythonModuleInitializer):
             "project_docs_path": PROJECT_DOCUMENTATION_FOLDER,
             "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
             "nav_file": str(summary_md_path),
+            "line_length": SOURCE_CODE_MAXIMUM_LINE_LENGTH,
             "project_src_module_path": str(
                 PurePosixPath(PROJECT_SOURCE_CODE_FOLDER) / get_package_name_canonical(project_name)
             ),

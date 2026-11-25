@@ -87,7 +87,7 @@ paths = ["{{ project_src_path }}"] # Root directory containing Python source pac
 [project.plugins.mkdocstrings.handlers.python.options]
 # Style and formatting
 docstring_style = "google"   # Parse Google-style docstrings (Args, Returns, etc.)
-line_length = 100            # Target line length for formatted signatures
+line_length = {{ line_length }}            # Target line length for formatted signatures
 members_order = "source"     # Order API members as they appear in source code
 merge_init_into_class = true # Combine __init__ docstrings with class-level docstrings
 # Display switches

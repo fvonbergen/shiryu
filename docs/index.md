@@ -2,22 +2,30 @@
 title: Home
 ---
 
-# Project Documentation
-
-This repository uses the [Diátaxis](https://diataxis.fr/) documentation framework to organize technical content into four distinct categories based on reader intent.
+This repository uses the [Diátaxis](https://diataxis.fr/) documentation framework to organize
+technical content into four distinct categories based on reader intent.
 
 ## Framework Structure
 
-> "The core idea of Diátaxis is that there are fundamentally four identifiable kinds of documentation, that respond to four different needs. The four kinds are: tutorials, how-to guides, reference and explanation. Each has a different purpose, and needs to be written in a different way."
+> "The core idea of Diátaxis is that there are fundamentally four identifiable kinds of
+documentation, that respond to four different needs. The four kinds are: tutorials, how-to guides,
+reference and explanation. Each has a different purpose, and needs to be written in a different
+way."
 >
-> - Source [Diátaxis: The four kinds of Documentation](https://diataxis.fr/start-here/#the-four-kinds-of-documentation)
-> "The four kinds of documentation and the relationships between them can be summarised in the Diátaxis map.
-> Diátaxis is not just a list of four different things, but a conceptual arrangement of them. It shows how the four kinds of documentation are related to each other, and distinct from each other.
-> Crossing or blurring the boundaries described in the map is at the heart of a vast number of problems in documentation."
+> — Source: [Diátaxis: The four kinds of Documentation](https://diataxis.fr/start-here/#the-four-kinds-of-documentation)
 >
-> - Source: [Diátaxis: The Diátaxis map](https://diataxis.fr/start-here/#the-diataxis-map)
+> "The four kinds of documentation and the relationships between them can be summarised in the
+Diátaxis map.
+>
+> Diátaxis is not just a list of four different things, but a conceptual arrangement of them. It
+shows how the four kinds of documentation are related to each other, and distinct from each other.
+>
+> Crossing or blurring the boundaries described in the map is at the heart of a vast number of
+problems in documentation."
+>
+> — Source: [Diátaxis: The Diátaxis map](https://diataxis.fr/start-here/#the-diataxis-map)
 
-```
+```plaintext
                       PRACTICAL STEPS
                             │
          Tutorials          │         How-To Guides
@@ -34,11 +42,17 @@ LEARNING ───────────────────┼───�
 
 ## Directory Structure & Guidelines
 
-At the core of [Diátaxis](https://diataxis.fr/) are the four different kinds of documentation it identifies.
+At the core of [Diátaxis](https://diataxis.fr/) are the four different kinds of documentation it
+identifies.
 
-- [**Tutorials**](./tutorials/index.md): Learning-oriented experiences. Examples: guided, hands-on lessons for complete beginners.
-- [**How-To Guides**](./how-to-guides/index.md): Goal-oriented directions. Examples: step-by-step recipes to solve specific real-world problems.
-- [**Reference**](./reference/index.md): Information-oriented technical description. Examples: factual specifications, API schemas, and technical descriptions for lookup.
-- [**Explanation**](./explanation/index.md): Understanding-oriented discussion. Examples: high-level architecture, background context, and design trade-offs.
+- [**Tutorials**](./tutorials/index.md): Learning-oriented experiences. Examples: guided, hands-on
+lessons for complete beginners.
+- [**How-To Guides**](./how-to-guides/index.md): Goal-oriented directions. Examples: step-by-step
+recipes to solve specific real-world problems.
+- [**Reference**](./reference/index.md): Information-oriented technical description. Examples:
+factual specifications, API schemas, and technical descriptions for lookup.
+- [**Explanation**](./explanation/index.md): Understanding-oriented discussion. Examples: high-level
+architecture, background context, and design trade-offs.
 
-Before adding new documentation, consult the template file in the target directory for writing rules and structural conventions.
+Before adding new documentation, consult the template file in the target directory for writing rules
+and structural conventions.

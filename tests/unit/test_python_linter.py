@@ -33,6 +33,7 @@ def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
         *(
             (
                 ".gitlab/jobs/.linter_lint_code.yml",
+                ".gitlab/jobs/.linter_lint_documentation.yml",
                 ".gitlab/jobs/.linter_lint_vcs.yml",
                 ".gitlab/stages/",
                 ".gitlab/stages/quality.yml",
@@ -46,6 +47,8 @@ def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
                 ".github/actions/",
                 ".github/actions/linter_lint_code/",
                 ".github/actions/linter_lint_code/action.yml",
+                ".github/actions/linter_lint_documentation/",
+                ".github/actions/linter_lint_documentation/action.yml",
                 ".github/actions/linter_lint_vcs/",
                 ".github/actions/linter_lint_vcs/action.yml",
                 ".github/workflows/",
@@ -55,6 +58,7 @@ def python_linter_init_paths(project_name: ProjectNameType, scm: SCMType) -> Pat
             else ()
         ),
         *(
+            ".pymarkdown.toml",
             "cchk.toml",
             "ruff.toml",
         ),

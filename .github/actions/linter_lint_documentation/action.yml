@@ -1,0 +1,30 @@
+name: "linter lint-documentation"
+description: "Runs linter lint-documentation function on a project"
+
+inputs:
+  dagger_cloud_token:
+    required: true
+    description: "Dagger cloud token"
+  shiryu_version:
+    required: false
+    description: "Shiryu version"
+    default: "feat/add-python-sdk"
+  sdk_language:
+    description: "SDK programming language"
+    default: "python"
+  platform:
+    description: "Platform config OS and architecture in a Container"
+    default: "linux/amd64"
+
+runs:
+  using: "composite"
+  steps:
+    - id: call_dagger_linter_lint_documentation
+      name: Call Dagger Linter lint-documentation
+      uses: dagger/dagger-for-github@v8.4.1
+      with:
+        version: "v1.0.0-beta.26"
+        verb: call
+        module: github.com/fvonbergen/shiryu@${{ inputs.shiryu_version }}
+        args: ${{ inputs.sdk_language }} linter lint-documentation --platform="${{ inputs.platform }}"
+        cloud-token: ${{ inputs.dagger_cloud_token }}

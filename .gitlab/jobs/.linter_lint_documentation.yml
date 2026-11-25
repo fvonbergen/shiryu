@@ -1,0 +1,11 @@
+include:
+  - local: ".gitlab/jobs/.dagger.yml"
+
+.linter_lint_documentation:
+  extends: .dagger
+  variables:
+    SHIRYU_VERSION: "feat/add-python-sdk"
+    SDK_LANGUAGE: "python"
+    PLATFORM: "linux/amd64"
+  script:
+    - dagger --load-module=gitlab.com/fvonbergen1/shiryu@${SHIRYU_VERSION} api call ${SDK_LANGUAGE} linter lint-documentation --platform="${PLATFORM}"

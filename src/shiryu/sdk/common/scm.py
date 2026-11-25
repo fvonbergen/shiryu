@@ -45,8 +45,8 @@ def __is_secret_type(param_type: Any) -> bool:
 
     Args:
         param_type: The type annotation or object of the parameter (e.g.,
-        `dagger_clients.core.Secret`, `typing.Annotated[dagger_clients.core.Secret, ...]`, or string
-        representation).
+            `dagger_clients.core.Secret`, `typing.Annotated[dagger_clients.core.Secret, ...]`, or
+            string representation).
 
     Returns:
         `True` if the type corresponds to a `dagger_clients.core.Secret`, `False` otherwise.

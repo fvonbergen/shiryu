@@ -4,6 +4,7 @@ include:
   - local: ".gitlab/jobs/.checker_check.yml"
   - local: ".gitlab/jobs/.documenter_document.yml"
   - local: ".gitlab/jobs/.linter_lint_code.yml"
+  - local: ".gitlab/jobs/.linter_lint_documentation.yml"
   - local: ".gitlab/jobs/.linter_lint_vcs.yml"
   - local: ".gitlab/jobs/.tester_unit.yml"
 
@@ -25,6 +26,10 @@ quality Documenter document:
   needs: []
 quality Linter lint-code:
   extends: .linter_lint_code
+  stage: quality
+  needs: []
+quality Linter lint-documentation:
+  extends: .linter_lint_documentation
   stage: quality
   needs: []
 quality Linter lint-vcs:

@@ -85,6 +85,21 @@ jobs:
           shiryu_version: "feat/add-python-sdk"
           sdk_language: "python"
           platform: "linux/amd64"
+  linter_lint_documentation:
+    name: Linter lint-documentation
+    runs-on: ubuntu-latest
+    steps:
+      - id: check_out_code
+        name: Check out code
+        uses: actions/checkout@v7.0.1
+      - id: linter_lint_documentation
+        name: Linter lint-documentation
+        uses: "./.github/actions/linter_lint_documentation"
+        with:
+          dagger_cloud_token: ${{ secrets.DAGGER_CLOUD_TOKEN }}
+          shiryu_version: "feat/add-python-sdk"
+          sdk_language: "python"
+          platform: "linux/amd64"
   linter_lint_vcs:
     name: Linter lint-vcs
     runs-on: ubuntu-latest

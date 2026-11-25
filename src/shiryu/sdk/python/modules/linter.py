@@ -31,7 +31,7 @@ from ...common.scm import (
     build_gitlab_job,
     build_gitlab_stage_job,
 )
-from ...common.utils import TESTS_UNIT_PATH
+from ...common.utils import SOURCE_CODE_MAXIMUM_LINE_LENGTH, TESTS_UNIT_PATH
 from ...common.vcs import VCS_PRIMARY_BRANCH
 from ..context import DistributionPackage, PythonModuleInitContextDirectory
 from ..module import ExecutionMode, PythonModule, PythonModuleInitializer
@@ -39,8 +39,9 @@ from ..templates import PYTHON_JINJA_ENVIRONMENT
 
 logger = logging.getLogger(__name__)
 
+BranchHistoryType = bool
 BranchHistoryDaggerType = Annotated[
-    bool, dagger.Doc("Whether to lint over branch VCS history or not")
+    BranchHistoryType, dagger.Doc("Whether to lint over branch VCS history or not")
 ]
 BRANCH_HISTORY_DAGGER_DEFAULT: Final = True
 
@@ -84,11 +85,19 @@ class LinterInitializer(PythonModuleInitializer):
         sdk_language = sdk_module_cls._sdk_name()
         sdk_module_name = sdk_module_cls.name()
         sdk_module_function_lint_code = sdk_module_cls.lint_code
+        sdk_module_function_lint_documentation = sdk_module_cls.lint_documentation
         sdk_module_function_lint_vcs = sdk_module_cls.lint_vcs
         github_action_linter_lint_code = build_github_action(
             sdk_language,
             sdk_module_name,
             sdk_module_function_lint_code,
+            dagger_version,
+            shiryu_version,
+        )
+        github_action_linter_lint_documentation = build_github_action(
+            sdk_language,
+            sdk_module_name,
+            sdk_module_function_lint_documentation,
             dagger_version,
             shiryu_version,
         )
@@ -102,6 +111,9 @@ class LinterInitializer(PythonModuleInitializer):
         gitlab_job_linter_lint_code = build_gitlab_job(
             sdk_language, sdk_module_name, sdk_module_function_lint_code, shiryu_version
         )
+        gitlab_job_linter_lint_documentation = build_gitlab_job(
+            sdk_language, sdk_module_name, sdk_module_function_lint_documentation, shiryu_version
+        )
         gitlab_pre_script = (
             # Define the pre-script for GitLab jobs to fetch the main branch to ensure
             # the target branch can be checked out correctly and run correctly the uv
@@ -110,7 +122,7 @@ class LinterInitializer(PythonModuleInitializer):
             # Also ensures that the GitLab job has the correct branch context before
             # executing any scripts. Gitlab CI  doesn't ensure that the job is running
             # on the correct branch, and it detaches the HEAD by default.
-            'TARGET_BRANCH="${{CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_BRANCH}}"',
+            'TARGET_BRANCH="${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME:-$CI_COMMIT_BRANCH}"',
             'if [ -n "$TARGET_BRANCH" ]; '
             'then git checkout -B "$TARGET_BRANCH" "$CI_COMMIT_SHA"; '
             "fi",
@@ -123,6 +135,7 @@ class LinterInitializer(PythonModuleInitializer):
             variables=(GitLabVariable("GIT_STRATEGY", "fetch"), GitLabVariable("GIT_DEPTH", "0")),
             pre_script=gitlab_pre_script,
         )
+        pre_steps = (build_github_workflow_checkout_job(),)
 
         return init_context_directory.evolve(
             vcs=init_context_directory.vcs.evolve(
@@ -132,16 +145,27 @@ class LinterInitializer(PythonModuleInitializer):
             scm=init_context_directory.scm.evolve(
                 github_actions_workflows=init_context_directory.scm.github_actions_workflows.evolve(
                     actions=init_context_directory.scm.github_actions_workflows.actions
-                    | {github_action_linter_lint_code, github_action_linter_lint_vcs},
+                    | {
+                        github_action_linter_lint_code,
+                        github_action_linter_lint_documentation,
+                        github_action_linter_lint_vcs,
+                    },
                     workflows=init_context_directory.scm.github_actions_workflows.workflows.add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
-                            sdk_language,
-                            github_action_linter_lint_code,
-                            shiryu_version,
-                            (build_github_workflow_checkout_job(),),
+                            sdk_language, github_action_linter_lint_code, shiryu_version, pre_steps
                         ),
-                    ).add(
+                    )
+                    .add(
+                        GitHubWorkflowId.QUALITY,
+                        build_github_workflow_job(
+                            sdk_language,
+                            github_action_linter_lint_documentation,
+                            shiryu_version,
+                            pre_steps,
+                        ),
+                    )
+                    .add(
                         GitHubWorkflowId.QUALITY,
                         build_github_workflow_job(
                             sdk_language,
@@ -157,14 +181,26 @@ class LinterInitializer(PythonModuleInitializer):
                 ),
                 gitlab_jobs_stages=init_context_directory.scm.gitlab_jobs_stages.evolve(
                     jobs=init_context_directory.scm.gitlab_jobs_stages.jobs
-                    | {gitlab_job_linter_lint_code, gitlab_job_linter_lint_vcs},
+                    | {
+                        gitlab_job_linter_lint_code,
+                        gitlab_job_linter_lint_documentation,
+                        gitlab_job_linter_lint_vcs,
+                    },
                     stages=init_context_directory.scm.gitlab_jobs_stages.stages.add(
                         GitLabStageId.QUALITY,
                         build_gitlab_stage_job(
                             gitlab_stage_id=GitLabStageId.QUALITY,
                             gitlab_job=gitlab_job_linter_lint_code,
                         ),
-                    ).add(
+                    )
+                    .add(
+                        GitLabStageId.QUALITY,
+                        build_gitlab_stage_job(
+                            gitlab_stage_id=GitLabStageId.QUALITY,
+                            gitlab_job=gitlab_job_linter_lint_documentation,
+                        ),
+                    )
+                    .add(
                         GitLabStageId.QUALITY,
                         build_gitlab_stage_job(
                             gitlab_stage_id=GitLabStageId.QUALITY,
@@ -180,6 +216,10 @@ class LinterInitializer(PythonModuleInitializer):
                     # >= 2.0.0: Configuration Migration and Removed Features
                     # https://github.com/commit-check/commit-check/blob/v2.0.0/pyproject.toml#L14
                     DistributionPackage("commit-check", Version("2.0.0"), Version("3.9")),
+                    # https://pymarkdown.readthedocs.io/en/latest/changelog/#version-0932-2025-08-12
+                    # >= 0.9.32: added support for --enable-extensions to the command line and API
+                    # https://github.com/jackdewinter/pymarkdown/blob/v0.9.32/setup.py#L90
+                    DistributionPackage("pymarkdownlnt", Version("0.9.32"), Version("3.9")),
                     # https://github.com/astral-sh/ruff/blob/main/changelogs/0.1.x.md#012
                     # >= 0.1.2: New ruff format command
                     # https://github.com/astral-sh/ruff/blob/v0.1.2/pyproject.toml#L11
@@ -207,6 +247,16 @@ class LinterInitializer(PythonModuleInitializer):
             The ruff.toml template file.
         """
         return TemplateFile(Path("ruff.toml"))
+
+    @final
+    @classmethod
+    def _pymarkdown_toml_template_file(cls) -> TemplateFile:
+        """.pymarkdown.toml template file.
+
+        Returns:
+            The .pymarkdown.toml template file.
+        """
+        return TemplateFile(Path(".pymarkdown.toml"))
 
     @classmethod
     async def _init_directory(  # noqa: PLR0913, PLR0917
@@ -248,12 +298,24 @@ class LinterInitializer(PythonModuleInitializer):
         # ruff.toml
         ruff_toml_template_mapping: Mapping = {
             "cache_folder": cls._ruff_cache_folder(),
+            "line_length": SOURCE_CODE_MAXIMUM_LINE_LENGTH,
             "tests_unit_path": str(TESTS_UNIT_PATH),
         }
         ruff_toml_template = Template(
             PYTHON_JINJA_ENVIRONMENT, cls._ruff_toml_template_file(), ruff_toml_template_mapping
         )
-        return directory_with_new_file(init_directory, ruff_toml_template)
+        init_directory = directory_with_new_file(init_directory, ruff_toml_template)
+        # .pymarkdown.toml
+        _pymarkdown_toml_template_mapping: Mapping = {
+            "line_length": SOURCE_CODE_MAXIMUM_LINE_LENGTH
+        }
+        _pymarkdown_toml_template = Template(
+            PYTHON_JINJA_ENVIRONMENT,
+            cls._pymarkdown_toml_template_file(),
+            _pymarkdown_toml_template_mapping,
+        )
+        init_directory = directory_with_new_file(init_directory, _pymarkdown_toml_template)
+        return init_directory
 
 
 @dagger.object_type
@@ -309,7 +371,42 @@ class Linter(PythonModule):
 
     @final
     @classmethod
-    async def __lint_vcs(cls, container: Container, branch_history: bool) -> None:
+    async def __lint_fix_documentation(cls, container: Container, fix: bool) -> Changeset:
+        """Lint or fix documentation pipeline.
+
+        Args:
+            container: Project container.
+            fix: Whether to fix the project files or not.
+
+        Returns:
+            Changeset between the project directory before and after running commands.
+        """
+        initializer = cls._initializer_cls()
+        _pymarkdown_toml_file_name = initializer._pymarkdown_toml_template_file().file_name
+        pymarkdown_command = cls._build_uv_run_command(
+            [
+                "pymarkdown",
+                "--strict-config",
+                f"--config={_pymarkdown_toml_file_name}",
+                "--enable-extensions=front-matter,markdown-tables",
+            ]
+        )
+        expect_check = ReturnType.SUCCESS
+        if fix:
+            expect_check = ReturnType.ANY
+            pymarkdown_command = [*pymarkdown_command, "fix"]
+        else:
+            pymarkdown_command = [*pymarkdown_command, "scan"]
+        pymarkdown_command = [*pymarkdown_command, "--recurse", "README.md", "docs/"]
+        # Diff directories before and after command.
+        initial_dir = container.directory(".")
+        executed_container = container.with_exec(pymarkdown_command, expect=expect_check)
+        modified_dir = executed_container.directory(".")
+        return await modified_dir.changes(initial_dir).sync()
+
+    @final
+    @classmethod
+    async def __lint_vcs(cls, container: Container, branch_history: BranchHistoryType) -> None:
         """Lint VCS pipeline.
 
         Args:
@@ -400,6 +497,49 @@ class Linter(PythonModule):
         exclude = [".git/"]
         container = await self._exec_container(self.source, exclude, platform)
         return await self.__lint_fix_code(container, True)
+
+    @final
+    @dagger.function(
+        doc="Run linter analysis in the project documentation of the provided source Directory."
+    )
+    @dagger.check
+    async def lint_documentation(
+        self,
+        *,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> None:
+        """Run linter analysis in the project VCS of the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Raises:
+            dagger.ExecError: If VCS linter execution fails.
+        """
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
+        await self.__lint_fix_documentation(container, False)
+
+    @final
+    @dagger.function(
+        doc="Run linter fixes in the project documentation of the provided source Directory."
+    )
+    async def fix_documentation(
+        self,
+        *,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> Changeset:
+        """Run linter fixes in the project VCS of the provided source Directory.
+
+        Args:
+            platform: The container platform.
+
+        Raises:
+            dagger.ExecError: If VCS linter execution fails.
+        """
+        exclude = [".git/"]
+        container = await self._exec_container(self.source, exclude, platform)
+        return await self.__lint_fix_documentation(container, True)
 
     @final
     @dagger.function(doc="Run linter analysis in the project VCS of the provided source Directory.")
