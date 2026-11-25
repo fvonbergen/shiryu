@@ -260,7 +260,7 @@ class Builder(PythonModule):
         repository_password: RepositoryPasswordDaggerType,
         *,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
-    ) -> str:
+    ) -> None:
         """Build and publish project distributable of the provided source Directory.
 
         Args:
@@ -277,7 +277,6 @@ class Builder(PythonModule):
         await self.__publish(
             container, repository_url, repository_user, repository_password, platform
         )
-        return "Publish successfull"
 
     @final
     @dagger.function(doc="Test the project installation process for the provided source Directory.")

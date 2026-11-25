@@ -55,10 +55,7 @@ class AuditorInitializer(PythonModuleInitializer):
             shiryu_metadata.git_tag_or_branch,
         )
         gitlab_job = build_gitlab_job(
-            sdk_language,
-            sdk_module_name,
-            sdk_module_function,
-            shiryu_metadata.git_tag_or_branch,
+            sdk_language, sdk_module_name, sdk_module_function, shiryu_metadata.git_tag_or_branch
         )
         pre_steps = (build_github_workflow_checkout_job(),)
 

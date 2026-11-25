@@ -413,7 +413,10 @@ class SDKModule[
             # TODO: https://github.com/dagger/dagger/issues/13054
             # TODO: the try-exception block is necessary because dagger.dag.current_module() fails
             # in dagger-in-dagger used in our tester unit module call with a QueryError
-            dagger_version = Version("v1.0.0-beta.26")
+            # TODO: we must get somehow the sdk/entrypoint/dang.toml
+            # TODO: I will pick the latest version
+            # PINNED: dagger engine version (2026/11/25)
+            dagger_version = Version("v1.0.0-beta.29")
             git_tag_or_branch = "undefined"
             return DaggerModuleMetadata(
                 dagger_version=dagger_version, git_tag_or_branch=git_tag_or_branch

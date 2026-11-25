@@ -216,11 +216,11 @@ class FileType(_Enum):
 class FunctionCachePolicy(_Enum):
     """The behavior configured for function result caching."""
 
-    Default = 'Default'
+    DEFAULT = 'DEFAULT'
 
-    Never = 'Never'
+    NEVER = 'NEVER'
 
-    PerSession = 'PerSession'
+    PER_SESSION = 'PER_SESSION'
 
 
 class GitPushDisposition(_Enum):
@@ -255,27 +255,21 @@ class IdentifierWordKind(_Enum):
 class ImageLayerCompression(_Enum):
     """Compression algorithm to use for image layers."""
 
-    EStarGZ = 'EStarGZ'
-    ESTARGZ = 'EStarGZ'
+    ESTARGZ = 'ESTARGZ'
 
-    Gzip = 'Gzip'
-    GZIP = 'Gzip'
+    GZIP = 'GZIP'
 
-    Uncompressed = 'Uncompressed'
-    UNCOMPRESSED = 'Uncompressed'
+    UNCOMPRESSED = 'UNCOMPRESSED'
 
-    Zstd = 'Zstd'
-    ZSTD = 'Zstd'
+    ZSTD = 'ZSTD'
 
 
 class ImageMediaTypes(_Enum):
     """Mediatypes to use in published or exported image metadata."""
 
-    DockerMediaTypes = 'DockerMediaTypes'
-    DOCKER = 'DockerMediaTypes'
+    DOCKER = 'DOCKER'
 
-    OCIMediaTypes = 'OCIMediaTypes'
-    OCI = 'OCIMediaTypes'
+    OCI = 'OCI'
 
 
 class LLMContentBlockKind(_Enum):
@@ -524,6 +518,8 @@ class BuildArg(_Input):
         if not (isinstance(self.value, str)):
             raise _type_error("BuildArg.__init__", "value", self.value, "str")
 
+    _graphql_names = (('name', 'name'), ('value', 'value'))
+
 
 @_dataclass(slots=True)
 class LLMContentBlockInput(_Input):
@@ -586,6 +582,8 @@ class LLMContentBlockInput(_Input):
         if not (self.tool_name is None or isinstance(self.tool_name, str)):
             raise _type_error("LLMContentBlockInput.__init__", "tool_name", self.tool_name, "str | None")
 
+    _graphql_names = (('kind', 'kind'), ('arguments', 'arguments'), ('call_id', 'callId'), ('content', 'content'), ('data', 'data'), ('errored', 'errored'), ('file', 'file'), ('mime_type', 'mimeType'), ('signature', 'signature'), ('text', 'text'), ('tool_name', 'toolName'))
+
 
 @_dataclass(slots=True)
 class LLMMessageOriginInput(_Input):
@@ -614,6 +612,8 @@ class LLMMessageOriginInput(_Input):
         if not (self.reply_to is None or isinstance(self.reply_to, str)):
             raise _type_error("LLMMessageOriginInput.__init__", "reply_to", self.reply_to, "str | None")
 
+    _graphql_names = (('kind', 'kind'), ('agent_name', 'agentName'), ('ref', 'ref'), ('reply_to', 'replyTo'))
+
 
 @_dataclass(slots=True)
 class PipelineLabel(_Input):
@@ -630,6 +630,8 @@ class PipelineLabel(_Input):
             raise _type_error("PipelineLabel.__init__", "name", self.name, "str")
         if not (isinstance(self.value, str)):
             raise _type_error("PipelineLabel.__init__", "value", self.value, "str")
+
+    _graphql_names = (('name', 'name'), ('value', 'value'))
 
 
 @_dataclass(slots=True)
@@ -652,6 +654,8 @@ class PortForward(_Input):
             raise _type_error("PortForward.__init__", "frontend", self.frontend, "int | None")
         if not (self.protocol is None or isinstance(self.protocol, NetworkProtocol)):
             raise _type_error("PortForward.__init__", "protocol", self.protocol, "NetworkProtocol | None")
+
+    _graphql_names = (('backend', 'backend'), ('frontend', 'frontend'), ('protocol', 'protocol'))
 
 
 @_runtime_checkable
@@ -3164,7 +3168,7 @@ class Cloud(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("traceURL", _args)
+        _ctx = self._select("traceUrl", _args)
         return await _ctx.execute(str)
 
 
@@ -3481,7 +3485,7 @@ class Container(_Type):
         _ctx = self._select("asService", _args)
         return Service(_ctx)
 
-    def as_tarball(self, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, source_date_epoch: int | None = None,) -> "File":
+    def as_tarball(self, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCI, source_date_epoch: int | None = None,) -> "File":
         """Package the container state as an OCI image, and return it as a tar
         archive
 
@@ -3523,7 +3527,7 @@ class Container(_Type):
         _args = [
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
-            _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("mediaTypes", media_types, ImageMediaTypes.OCI),
             _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("asTarball", _args)
@@ -3743,22 +3747,22 @@ class Container(_Type):
         _ctx = self._select("exitCode", _args)
         return await _ctx.execute(int)
 
-    def experimental_with_all_gp_us(self) -> _Self:
+    def experimental_with_all_gpus(self) -> _Self:
         """Configures all available GPUs on the host to be accessible to this
         container.
 
         This currently works for Nvidia devices only.
 
         .. deprecated::
-            Use "withGPU" instead.
+            Use "withGpu" instead.
         """
         _warnings.warn(
-            "Method \"experimental_with_all_gp_us\" is deprecated: Use \"withGPU\" instead.",
+            "Method \"experimental_with_all_gpus\" is deprecated: Use \"withGpu\" instead.",
             DeprecationWarning,
             stacklevel=4,
         )                
         _args: list[_Arg] = []
-        _ctx = self._select("experimentalWithAllGPUs", _args)
+        _ctx = self._select("experimentalWithAllGpus", _args)
         return Container(_ctx)
 
     def experimental_with_gpu(self, devices: list[str]) -> _Self:
@@ -3768,7 +3772,7 @@ class Container(_Type):
         This currently works for Nvidia devices only.
 
         .. deprecated::
-            Use "withGPU" instead, which exposes all GPUs available on the
+            Use "withGpu" instead, which exposes all GPUs available on the
             host.
 
         Parameters
@@ -3777,7 +3781,7 @@ class Container(_Type):
             List of devices to be accessible to this container.
         """
         _warnings.warn(
-            "Method \"experimental_with_gpu\" is deprecated: Use \"withGPU\" instead, which exposes all GPUs available on the host.",
+            "Method \"experimental_with_gpu\" is deprecated: Use \"withGpu\" instead, which exposes all GPUs available on the host.",
             DeprecationWarning,
             stacklevel=4,
         )                
@@ -3786,10 +3790,10 @@ class Container(_Type):
         _args = [
             _Arg("devices", devices),
         ]
-        _ctx = self._select("experimentalWithGPU", _args)
+        _ctx = self._select("experimentalWithGpu", _args)
         return Container(_ctx)
 
-    async def export(self, path: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, expand: bool | None = False, source_date_epoch: int | None = None,) -> str:
+    async def export(self, path: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCI, expand: bool | None = False, source_date_epoch: int | None = None,) -> str:
         """Writes the container as an OCI tarball to the destination file path on
         the host.
 
@@ -3859,14 +3863,14 @@ class Container(_Type):
             _Arg("path", path),
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
-            _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("mediaTypes", media_types, ImageMediaTypes.OCI),
             _Arg("expand", expand, False),
             _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("export", _args)
         return await _ctx.execute(str)
 
-    async def export_image(self, name: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, source_date_epoch: int | None = None,) -> Void:
+    async def export_image(self, name: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCI, source_date_epoch: int | None = None,) -> Void:
         """Exports the container as an image to the host's container image store.
 
         Parameters
@@ -3925,7 +3929,7 @@ class Container(_Type):
             _Arg("name", name),
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
-            _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("mediaTypes", media_types, ImageMediaTypes.OCI),
             _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("exportImage", _args)
@@ -4010,7 +4014,7 @@ class Container(_Type):
             _Arg("version", version, ''),
             _Arg("registryService", registry_service, None),
             _Arg("protocol", protocol, None),
-            _Arg("insecureSkipTLSVerify", insecure_skip_tls_verify, False),
+            _Arg("insecureSkipTlsVerify", insecure_skip_tls_verify, False),
             _Arg("noLock", no_lock, False),
         ]
         _ctx = self._select("from", _args)
@@ -4125,7 +4129,7 @@ class Container(_Type):
         _ctx = self._select("labels", _args)
         return await _ctx.execute_object_list(Label)
 
-    def layer(self, id: str, *, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes,) -> "File":
+    def layer(self, id: str, *, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCI,) -> "File":
         """Returns the image layer or configuration blob with the given digest as
         a File.
 
@@ -4154,12 +4158,12 @@ class Container(_Type):
         _args = [
             _Arg("id", id),
             _Arg("forcedCompression", forced_compression, None),
-            _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("mediaTypes", media_types, ImageMediaTypes.OCI),
         ]
         _ctx = self._select("layer", _args)
         return File(_ctx)
 
-    def manifest(self, *, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes,) -> "File":
+    def manifest(self, *, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCI,) -> "File":
         """Computes and returns the manifest for this container as a File.
 
         Parameters
@@ -4181,7 +4185,7 @@ class Container(_Type):
             raise _type_error("Container.manifest", "media_types", media_types, "ImageMediaTypes | None")
         _args = [
             _Arg("forcedCompression", forced_compression, None),
-            _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("mediaTypes", media_types, ImageMediaTypes.OCI),
         ]
         _ctx = self._select("manifest", _args)
         return File(_ctx)
@@ -4228,7 +4232,7 @@ class Container(_Type):
         _ctx = self._select("platform", _args)
         return await _ctx.execute(Platform)
 
-    async def publish(self, address: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCIMediaTypes, registry_service: "Service | None" = None, protocol: RegistryProtocol | None = None, insecure_skip_tls_verify: bool | None = False, source_date_epoch: int | None = None,) -> str:
+    async def publish(self, address: str, *, platform_variants: "list[Container] | None" = None, forced_compression: ImageLayerCompression | None = None, media_types: ImageMediaTypes | None = ImageMediaTypes.OCI, registry_service: "Service | None" = None, protocol: RegistryProtocol | None = None, insecure_skip_tls_verify: bool | None = False, source_date_epoch: int | None = None,) -> str:
         """Package the container state as an OCI image, and publish it to a
         registry
 
@@ -4309,10 +4313,10 @@ class Container(_Type):
             _Arg("address", address),
             _Arg("platformVariants", [] if platform_variants is None else platform_variants, []),
             _Arg("forcedCompression", forced_compression, None),
-            _Arg("mediaTypes", media_types, ImageMediaTypes.OCIMediaTypes),
+            _Arg("mediaTypes", media_types, ImageMediaTypes.OCI),
             _Arg("registryService", registry_service, None),
             _Arg("protocol", protocol, None),
-            _Arg("insecureSkipTLSVerify", insecure_skip_tls_verify, False),
+            _Arg("insecureSkipTlsVerify", insecure_skip_tls_verify, False),
             _Arg("sourceDateEpoch", source_date_epoch, None),
         ]
         _ctx = self._select("publish", _args)
@@ -5135,7 +5139,7 @@ class Container(_Type):
         to run with GPU support enabled.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("withGPU", _args)
+        _ctx = self._select("withGpu", _args)
         return Container(_ctx)
 
     def with_label(self, name: str, value: str) -> _Self:
@@ -8940,7 +8944,7 @@ class File(_Type):
     def as_json(self) -> "JSONValue":
         """Parse the file contents as JSON."""
         _args: list[_Arg] = []
-        _ctx = self._select("asJSON", _args)
+        _ctx = self._select("asJson", _args)
         return JSONValue(_ctx)
 
     def chown(self, owner: str) -> _Self:
@@ -10177,7 +10181,7 @@ class GeneratedCode(_Type):
         _args = [
             _Arg("paths", paths),
         ]
-        _ctx = self._select("withVCSGeneratedPaths", _args)
+        _ctx = self._select("withVcsGeneratedPaths", _args)
         return GeneratedCode(_ctx)
 
     def with_vcs_ignored_paths(self, paths: list[str]) -> _Self:
@@ -10187,7 +10191,7 @@ class GeneratedCode(_Type):
         _args = [
             _Arg("paths", paths),
         ]
-        _ctx = self._select("withVCSIgnoredPaths", _args)
+        _ctx = self._select("withVcsIgnoredPaths", _args)
         return GeneratedCode(_ctx)
 
     def with_(self, cb: _Callable[["GeneratedCode"], "GeneratedCode"]) -> "GeneratedCode":
@@ -10318,7 +10322,7 @@ class GitBundle(_Type):
         _ctx = self._select("objectFormat", _args)
         return await _ctx.execute(str)
 
-    async def prerequisite_sh_as(self) -> list[str]:
+    async def prerequisite_shas(self) -> list[str]:
         """Commits that must already exist wherever this bundle is applied.
 
         Returns
@@ -10336,7 +10340,7 @@ class GitBundle(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("prerequisiteSHAs", _args)
+        _ctx = self._select("prerequisiteShas", _args)
         return await _ctx.execute(list[str])
 
     async def refs(self) -> list["GitBundleRef"]:
@@ -10840,7 +10844,7 @@ class GitCommit(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("treeSHA", _args)
+        _ctx = self._select("treeSha", _args)
         return await _ctx.execute(str)
 
 
@@ -10913,7 +10917,7 @@ class GitPushResult(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("previousSHA", _args)
+        _ctx = self._select("previousSha", _args)
         return await _ctx.execute(str)
 
     async def ref(self) -> str:
@@ -10993,7 +10997,7 @@ class GitRef(_Type):
         """The resolved commit id at this ref.
 
         .. deprecated::
-            Use "commitSHA" instead.
+            Use "commitSha" instead.
 
         Returns
         -------
@@ -11010,7 +11014,7 @@ class GitRef(_Type):
             If the API returns an error.
         """
         _warnings.warn(
-            "Method \"commit\" is deprecated: Use \"commitSHA\" instead.",
+            "Method \"commit\" is deprecated: Use \"commitSha\" instead.",
             DeprecationWarning,
             stacklevel=4,
         )                
@@ -11036,7 +11040,7 @@ class GitRef(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("commitSHA", _args)
+        _ctx = self._select("commitSha", _args)
         return await _ctx.execute(str)
 
     def common_ancestor(self, other: _Self) -> _Self:
@@ -11210,7 +11214,7 @@ class GitRef(_Type):
             _Arg("to", to, None),
             _Arg("remote", remote, ''),
             _Arg("branch", branch, ''),
-            _Arg("expectedRemoteSHA", expected_remote_sha, ''),
+            _Arg("expectedRemoteSha", expected_remote_sha, ''),
         ]
         _ctx = self._select("push", _args)
         return GitPushResult(_ctx)
@@ -11531,9 +11535,9 @@ class GitRepository(_Type):
             Identifier of the commit (e.g.,
             "b6315d8f2810962c601af73f86831f6866ea798b").
             May be abbreviated to an unambiguous hex prefix (4-40 characters),
-            which is expanded against locally available objects. Remote
-            repositories (resolved via ls-remote) can only expand prefixes of
-            already-fetched commits; use the full SHA otherwise.
+            which is expanded to the full SHA. A remote repository that has
+            not fetched the commit yet fetches the history of the refs it
+            advertises to find it.
         """
         if not (isinstance(id, str)):
             raise _type_error("GitRepository.commit", "id", id, "str")
@@ -11634,10 +11638,10 @@ class GitRepository(_Type):
             or a fully-qualified ref).
             Commit identifiers may be abbreviated: an unambiguous hex prefix
             (4-40 characters) of a commit SHA resolves like git rev-parse,
-            with named refs taking precedence. Abbreviated SHAs resolve
-            against locally available objects, so remote repositories
-            (resolved via ls-remote) can only expand prefixes of already-
-            fetched commits; use the full SHA or a named ref otherwise.
+            with named refs taking precedence, to the full SHA. A remote
+            repository that has not fetched the commit yet fetches the history
+            of the refs it advertises to find it, so only commits reachable
+            from those refs can be abbreviated.
             The name may be followed by git revision suffixes, applied left to
             right: `~N` follows first parents N times and `^N` selects the Nth
             parent (`~` and `^` mean 1, `^0` is the commit itself), e.g.
@@ -13514,7 +13518,7 @@ class LLM(_Type):
             _Arg("name", name),
             _Arg("service", service),
         ]
-        _ctx = self._select("withMCPServer", _args)
+        _ctx = self._select("withMcpServer", _args)
         return LLM(_ctx)
 
     def with_model(self, model: str, *, provider: str | None = None,) -> _Self:
@@ -14774,7 +14778,7 @@ class Module(_Type):
         hidden.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("introspectionSchemaJSON", _args)
+        _ctx = self._select("introspectionSchemaJson", _args)
         return File(_ctx)
 
     async def name(self) -> str:
@@ -15340,7 +15344,7 @@ class ModuleSource(_Type):
         source.
 
         This is the schema consumed by client codegen: unlike
-        introspectionSchemaJSON (the module-facing schema), it hides no core
+        introspectionSchemaJson (the module-facing schema), it hides no core
         types and installs this module (reached via dag.<moduleName>) so a
         generated client can bind it. The module's dependencies are excluded:
         a client is generated for a single module plus core, not its
@@ -15363,7 +15367,7 @@ class ModuleSource(_Type):
         _args = [
             _Arg("clientVersion", client_version, ''),
         ]
-        _ctx = self._select("clientSchemaIntrospectionJSON", _args)
+        _ctx = self._select("clientSchemaIntrospectionJson", _args)
         return File(_ctx)
 
     async def clone_ref(self) -> str:
@@ -15565,7 +15569,7 @@ class ModuleSource(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("htmlRepoURL", _args)
+        _ctx = self._select("htmlRepoUrl", _args)
         return await _ctx.execute(str)
 
     async def html_url(self) -> str:
@@ -15587,7 +15591,7 @@ class ModuleSource(_Type):
             If the API returns an error.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("htmlURL", _args)
+        _ctx = self._select("htmlUrl", _args)
         return await _ctx.execute(str)
 
     async def id(self) -> str:
@@ -15628,7 +15632,7 @@ class ModuleSource(_Type):
         hidden.
         """
         _args: list[_Arg] = []
-        _ctx = self._select("introspectionSchemaJSON", _args)
+        _ctx = self._select("introspectionSchemaJson", _args)
         return File(_ctx)
 
     async def kind(self) -> ModuleSourceKind:
@@ -16070,7 +16074,7 @@ class ModuleSource(_Type):
         _args = [
             _Arg("source", source),
         ]
-        _ctx = self._select("withSDK", _args)
+        _ctx = self._select("withSdk", _args)
         return ModuleSource(_ctx)
 
     def with_source_subpath(self, path: str) -> _Self:
@@ -20542,13 +20546,13 @@ class Workspace(_Type):
         return Workspace(_ctx)
 
     def with_mounted_directory(self, path: str, source: Directory) -> _Self:
-        """Return this workspace with a directory mounted read-only at the given
-        path, without mutating the source.
+        """Return this workspace with a directory mounted at the given path,
+        without mutating the source.
 
-        Mounted content is readable through the normal workspace file tools
-        but shadows the source at the mount path and stays out of the pending
-        changeset: it never appears in changes, is never exported, and cannot
-        be modified.
+        Mounted content is readable and editable through the normal workspace
+        file tools but shadows the source at the mount path and stays out of
+        the pending changeset: neither it nor edits to it appear in changes or
+        are exported. Use withoutMount to remove the mount.
 
         Parameters
         ----------
@@ -20570,13 +20574,13 @@ class Workspace(_Type):
         return Workspace(_ctx)
 
     def with_mounted_file(self, path: str, source: File) -> _Self:
-        """Return this workspace with a file mounted read-only at the given path,
-        without mutating the source.
+        """Return this workspace with a file mounted at the given path, without
+        mutating the source.
 
-        Mounted content is readable through the normal workspace file tools
-        but shadows the source at the mount path and stays out of the pending
-        changeset: it never appears in changes, is never exported, and cannot
-        be modified.
+        Mounted content is readable and editable through the normal workspace
+        file tools but shadows the source at the mount path and stays out of
+        the pending changeset: neither it nor edits to it appear in changes or
+        are exported. Use withoutMount to remove the mount.
 
         Parameters
         ----------
@@ -20656,8 +20660,9 @@ class Workspace(_Type):
         applied, without mutating the source.
 
         Paths in the patch are relative to the workspace root, whatever its
-        cwd, as `git diff` writes them. Patching a path at or under a mount is
-        an error.
+        cwd, as `git diff` writes them. Sections for paths in a mount apply to
+        the mounted content; a section cannot move a file across a mount
+        boundary or delete a mount point.
 
         .. caution::
             Experimental: This API is highly experimental and may be removed
@@ -20754,7 +20759,7 @@ class Workspace(_Type):
             _Arg("here", here, False),
             _Arg("asSdkName", as_sdk_name, ''),
         ]
-        _ctx = self._select("withSDK", _args)
+        _ctx = self._select("withSdk", _args)
         return Workspace(_ctx)
 
     def with_updated_clients(self, *, modules: list[str] | None = None, all: bool | None = False, sdk: str | None = '',) -> _Self:
@@ -21090,7 +21095,7 @@ class Workspace(_Type):
             _Arg("name", name),
             _Arg("here", here, False),
         ]
-        _ctx = self._select("withoutSDK", _args)
+        _ctx = self._select("withoutSdk", _args)
         return Workspace(_ctx)
 
     def with_(self, cb: _Callable[["Workspace"], "Workspace"]) -> "Workspace":
@@ -21870,13 +21875,48 @@ class WorkspaceSDK(_Type):
         _ctx = self._select("ref", _args)
         return await _ctx.execute(str)
 
+    def scope_setting(self, path: str, key: str) -> JSONValue:
+        """The value a setting records in this SDK's scope settings, as a native
+        JSON value.
+
+        Reads [sdks.<name>.scopes."<scope>".settings] from the workspace
+        config, in the scope whose key resolves to path. The setting key is
+        matched without regard to case.
+
+        Null when no scope resolves to path, or the scope records no such
+        setting. Fails when the config is invalid, path escapes the workspace
+        root, key matches several recorded settings, or the value cannot be
+        represented as JSON.
+
+        Fails when this SDK is no longer installed in the workspace config,
+        even if Workspace.sdk returned it earlier.
+
+        Parameters
+        ----------
+        path:
+            Scope path, relative to the workspace cwd or absolute from the
+            workspace root.
+        key:
+            Setting name, matched without regard to case.
+        """
+        if not (isinstance(path, str)):
+            raise _type_error("WorkspaceSDK.scope_setting", "path", path, "str")
+        if not (isinstance(key, str)):
+            raise _type_error("WorkspaceSDK.scope_setting", "key", key, "str")
+        _args = [
+            _Arg("path", path),
+            _Arg("key", key),
+        ]
+        _ctx = self._select("scopeSetting", _args)
+        return JSONValue(_ctx)
+
 
 def core(*, session: _Session | None = None) -> Query:
     """The way into the core API."""
     return _client_root(Query, None, None, [], session=session)
 
 
-CORE_DIGEST = "sha256:20ea3d3a6500f1ae6b808fad88d89fd7368e291db28b31b30f6d85e8b95e3bd7"
+CORE_DIGEST = "sha256:27293f298aada6aaa98ad0b3a7fb860dbba2af23ce6fcaf880f56614112b73d3"
 """Digest of the core schema that this package was generated from."""
 
 

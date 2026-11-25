@@ -166,7 +166,7 @@ type ModuleTypes {
             .withArg("platform", typeDef.withScalar("Platform", description: "The platform config OS and architecture in a Container.  The format\nis [os]/[platform]/[version] (e.g., \"darwin/arm64/v7\",\n\"windows/amd64\", \"linux/arm64\"). "), description: "Platform config OS and architecture in a Container", defaultValue: ("\"linux/amd64\"" :: Dagger.JSON!))
         )
         .withFunction(
-          function("publish", typeDef.withKind(TypeDefKind.STRING_KIND))
+          function("publish", typeDef.withOptional(true).withKind(TypeDefKind.VOID_KIND))
             .withDescription("Build and publish project distributable of the provided source Directory.")
             .withArg("repository_url", typeDef.withKind(TypeDefKind.STRING_KIND), description: "Repository to push distributable")
             .withArg("repository_user", typeDef.withKind(TypeDefKind.STRING_KIND), description: "Repository user")
