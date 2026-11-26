@@ -1,5 +1,6 @@
 """documenter module."""
 
+import json
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Annotated, Final, final
@@ -67,6 +68,18 @@ LLMProviderDaggerType = Annotated[
     dagger.Doc('LLM provider used by the audit, e.g. "github-copilot", "google" or "anthropic"'),
 ]
 LLM_PROVIDER_DAGGER_DEFAULT: Final = "github-copilot"
+
+TargetBranchType = str
+TargetBranchDaggerType = Annotated[
+    TargetBranchType,
+    dagger.Doc(
+        "Git ref to compare against (e.g. origin/main); only the Python files changed since "
+        "then are audited. Empty, audits every Python file"
+    ),
+]
+# TODO: change it to main or the default branch of the repository we decide
+TARGET_BRANCH_DAGGER_DEFAULT: Final = "feat/add-python-sdk"
+
 
 @final
 @dataclass(frozen=True, slots=True)
@@ -466,13 +479,16 @@ class Documenter(PythonModule):
         *,
         model: LLMModelDaggerType = LLM_MODEL_DAGGER_DEFAULT,
         provider: LLMProviderDaggerType = LLM_PROVIDER_DAGGER_DEFAULT,
+        target_branch: TargetBranchDaggerType = TARGET_BRANCH_DAGGER_DEFAULT,
         platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
     ) -> str:
-        """Audit source code docstrings.
+        """Run LLM audit on source code docstrings.
 
         Args:
             model: The LLM model.
             provider: The LLM provider.
+            target_branch: Git ref to compare against (e.g. main); only
+              the Python files changed since then are audited. Empty audits every Python file.
             platform: The container platform.
 
         Returns:
@@ -481,12 +497,40 @@ class Documenter(PythonModule):
         exclude = []
         workspace = await self._exec_container(self.source, exclude, platform)
 
+        # all of src/ or only the ones changed since `changed_since`.
+        files = [f"{PROJECT_SOURCE_CODE_FOLDER}/"]
+        if target_branch:
+            # TODO we can get only those methods that have changed instead of the whole file
+            #  to save LLM tokens.
+            changed = await workspace.with_exec(
+                [  #  Get only the Python files changed since `changed_since`
+                    "sh",
+                    "-c",
+                    'base=$(git merge-base "$1" HEAD) && '
+                    'git diff --name-only --diff-filter=d "$base" -- "$2" && '
+                    'git ls-files --others --exclude-standard -- "$2"',
+                    "sh",
+                    target_branch,
+                    f"{PROJECT_SOURCE_CODE_FOLDER}/*.py",  # src/*.py
+                ]
+            ).stdout()
+            files = sorted(set(changed.splitlines()))
+            if not files:
+                return json.dumps(
+                    {
+                        "summary": {"total_files": 0, "total_issues": 0, "health_score": 100},
+                        "issues": [],
+                    }
+                )
         # Extract source code context before calling LLM
         source_code_dump = await workspace.with_exec(
-            [
+            [  # Find all Python files and dump their contents with line numbers for LLM audit
                 "sh",
                 "-c",
-                f"find {PROJECT_SOURCE_CODE_FOLDER} -name 'documenter.py' -exec echo '=== FILE: {{}} ===' \\; -exec awk '{{printf \"%d %s\\n\", FNR, $0}}' {{}} \\;",  # noqa: E501
+                'find "$@" -name "*.py" -exec echo "=== FILE: {} ===" \\; '
+                "-exec awk '{printf \"%d %s\\n\", FNR, $0}' {} \\;",
+                "sh",
+                *files,
             ]
         ).stdout()
 
