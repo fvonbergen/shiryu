@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
-from typing import Final, final
+from typing import Annotated, Final, final
 
 import dagger
 from dagger_clients.core import Changeset, Container, Directory, core
@@ -57,6 +57,16 @@ PROJECT_SITE_PATH: Final = PurePosixPath(PROJECT_SITE_FOLDER)
 PROJECT_SCRIPTS_FOLDER: Final = "scripts"
 PROJECT_SCRIPTS_PATH: Final = PurePosixPath(PROJECT_SCRIPTS_FOLDER)
 
+LMModelType = str
+LLMModelDaggerType = Annotated[LMModelType, dagger.Doc("LLM model used by the audit")]
+LLM_MODEL_DAGGER_DEFAULT: Final = "gpt-4.1"
+
+LLMProviderType = str
+LLMProviderDaggerType = Annotated[
+    LLMProviderType,
+    dagger.Doc('LLM provider used by the audit, e.g. "github-copilot", "google" or "anthropic"'),
+]
+LLM_PROVIDER_DAGGER_DEFAULT: Final = "github-copilot"
 
 @final
 @dataclass(frozen=True, slots=True)
@@ -451,10 +461,18 @@ class Documenter(PythonModule):
 
     @final
     @dagger.function(doc="Audit source code docstrings.")
-    async def audit(self, *, platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT) -> str:
+    async def audit(
+        self,
+        *,
+        model: LLMModelDaggerType = LLM_MODEL_DAGGER_DEFAULT,
+        provider: LLMProviderDaggerType = LLM_PROVIDER_DAGGER_DEFAULT,
+        platform: PlatformDaggerType = PLATFORM_DAGGER_DEFAULT,
+    ) -> str:
         """Audit source code docstrings.
 
         Args:
+            model: The LLM model.
+            provider: The LLM provider.
             platform: The container platform.
 
         Returns:
@@ -495,7 +513,7 @@ class Documenter(PythonModule):
         prompt = documenter_audit_prompt_txt_template.contents
         report = await (
             core()
-            .llm(model="gpt-4.1", provider="github-copilot")
+            .llm(model=model, provider=provider)
             .with_system_prompt(system_prompt)
             .with_prompt(prompt)
             .loop()
