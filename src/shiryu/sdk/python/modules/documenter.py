@@ -468,14 +468,22 @@ class Documenter(PythonModule):
             [
                 "sh",
                 "-c",
-                f"find {PROJECT_SOURCE_CODE_FOLDER} -name '*.py' -exec echo '=== FILE: {{}} ===' \\; -exec awk '{{printf \"%d %s\\n\", FNR, $0}}' {{}} \\;",  # noqa: E501
+                f"find {PROJECT_SOURCE_CODE_FOLDER} -name 'documenter.py' -exec echo '=== FILE: {{}} ===' \\; -exec awk '{{printf \"%d %s\\n\", FNR, $0}}' {{}} \\;",  # noqa: E501
             ]
         ).stdout()
 
-        # Render prompt template
+        # The fixed instructions go in the system prompt (a cachable prefix prompt)
+        # and only the source code dump goes in the user prompt.
+        documenter_audit_system_prompt_txt_template_mapping: Mapping = {
+            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
+        }
+        documenter_audit_system_prompt_txt_template = Template(
+            PYTHON_JINJA_ENVIRONMENT,
+            TemplateFile(Path("documenter_audit_system_prompt.txt")),
+            documenter_audit_system_prompt_txt_template_mapping,
+        )
         documenter_audit_propmpt_txt_template_mapping: Mapping = {
             "source_code_dump": source_code_dump,
-            "project_src_path": PROJECT_SOURCE_CODE_FOLDER,
         }
         documenter_audit_prompt_txt_template = Template(
             PYTHON_JINJA_ENVIRONMENT,
@@ -483,8 +491,16 @@ class Documenter(PythonModule):
             documenter_audit_propmpt_txt_template_mapping,
         )
 
+        system_prompt = documenter_audit_system_prompt_txt_template.contents
         prompt = documenter_audit_prompt_txt_template.contents
-        report = await core().llm(model="gemini-3.6-flash").with_prompt(prompt).loop().last_reply()
+        report = await (
+            core()
+            .llm(model="gpt-4.1", provider="github-copilot")
+            .with_system_prompt(system_prompt)
+            .with_prompt(prompt)
+            .loop()
+            .last_reply()
+        )
 
         return report
 
