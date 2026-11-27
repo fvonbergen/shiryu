@@ -138,3 +138,7 @@ pygments_lang_class = true # Add CSS class for language name on code blocks
 # Tabbed content blocks (`=== "Tab Title"`)
 [project.markdown_extensions."pymdownx.tabbed"]
 alternate_style = true # Modern tabbed UI style provided by Material theme
+
+# Include files into pages with `--8<-- "path"` (e.g. the generated CI files)
+[project.markdown_extensions."pymdownx.snippets"]
+check_paths = true # Fail the build if an included file does not exist

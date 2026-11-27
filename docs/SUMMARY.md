@@ -6,3 +6,5 @@
 * [Reference](reference/index.md)
   * [API Reference](reference/api-reference/)
 * [Explanation](explanation/index.md)
+  * [What is Dagger?](explanation/what-is-dagger.md)
+  * [What is Shiryu?](explanation/what-is-shiryu.md)
